@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useAggregateImpact } from '@/hooks/useAggregateImpact';
 import { CO_DASHBOARD_YEAR } from '@/lib/household';
+import { formatUSD } from '@/lib/format';
 import {
   BarChart,
   Bar,
@@ -103,12 +104,8 @@ export default function AggregateImpact({ triggered }: Props) {
 
   if (!data) return null;
 
-  const formatCurrency = (value: number) =>
-    `$${Math.abs(value).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-  const formatCurrencyWithSign = (value: number) => {
-    const formatted = formatCurrency(value);
-    return value >= 0 ? `+${formatted}` : `-${formatted}`;
-  };
+  const formatCurrencyWithSign = (value: number) =>
+    value >= 0 ? `+${formatUSD(value)}` : formatUSD(value);
   const formatBillions = (value: number) => {
     const abs = Math.abs(value);
     const sign = value >= 0 ? '+' : '-';

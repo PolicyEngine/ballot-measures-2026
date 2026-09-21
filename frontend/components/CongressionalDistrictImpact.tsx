@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import CODistrictMap, { CODistrictData } from './DynamicDistrictMap';
 import ChartWatermark from './ChartWatermark';
 import { CO_DASHBOARD_YEAR } from '@/lib/household';
+import { formatUSDWithSign } from '@/lib/format';
 
 interface Props {
   year?: number;
@@ -197,8 +198,7 @@ export default function CongressionalDistrictImpact({ year = CO_DASHBOARD_YEAR }
                     {d.party ? <span className="ml-1 text-xs">({d.party})</span> : null}
                   </td>
                   <td className="py-3 px-4 text-right text-gray-700">
-                    {d.average_household_income_change >= 0 ? '+' : ''}
-                    ${d.average_household_income_change.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+                    {formatUSDWithSign(d.average_household_income_change)}
                   </td>
                   <td className="py-3 px-4 text-right text-gray-700">
                     {(d.relative_household_income_change * 100).toFixed(2)}%
@@ -287,8 +287,7 @@ function DistrictDetailCard({
               isPositive ? 'text-teal-700' : isNegative ? 'text-red-700' : 'text-gray-700'
             }`}
           >
-            {isPositive ? '+' : ''}
-            ${avgChange.toLocaleString('en-US', { maximumFractionDigits: 0 })}
+            {formatUSDWithSign(avgChange)}
           </p>
           <p className="text-xs text-gray-500 mt-1">
             {(district.relative_household_income_change * 100).toFixed(2)}% of income

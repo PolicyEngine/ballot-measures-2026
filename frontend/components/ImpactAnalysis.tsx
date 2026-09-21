@@ -17,6 +17,7 @@ import type {
   HouseholdRequest,
 } from '@/lib/types';
 import { CO_DASHBOARD_YEAR } from '@/lib/household';
+import { formatUSD, formatUSDWithSign } from '@/lib/format';
 import ChartWatermark from './ChartWatermark';
 
 interface Props {
@@ -36,14 +37,8 @@ interface ChartRow {
   netIncomeChange: number;
 }
 
-const formatCurrency = (value: number) =>
-  `$${Math.round(value).toLocaleString('en-US')}`;
-const formatCurrencyWithSign = (value: number) => {
-  const formatted = formatCurrency(Math.abs(value));
-  if (value > 0) return `+${formatted}`;
-  if (value < 0) return `-${formatted}`;
-  return formatted;
-};
+const formatCurrency = formatUSD;
+const formatCurrencyWithSign = formatUSDWithSign;
 const formatIncome = (value: number) => {
   if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
   return `$${(value / 1000).toFixed(0)}k`;

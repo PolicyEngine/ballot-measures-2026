@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { HouseholdImpactResponse } from '@/lib/types';
+import { formatUSD, formatUSDWithSign } from '@/lib/format';
 
 export interface ExampleHouseholdProfile {
   label: string;
@@ -40,15 +41,8 @@ interface Payload {
   households: ExampleHousehold[];
 }
 
-const fmtCurrency = (v: number) =>
-  `$${Math.round(v).toLocaleString('en-US')}`;
-
-const fmtSigned = (v: number) => {
-  const base = fmtCurrency(Math.abs(v));
-  if (v > 0) return `+${base}`;
-  if (v < 0) return `-${base}`;
-  return base;
-};
+const fmtCurrency = formatUSD;
+const fmtSigned = formatUSDWithSign;
 
 /** Build a HouseholdImpactResponse-shaped payload from one of the
  *  precomputed example records, so the existing ImpactAnalysis chart
