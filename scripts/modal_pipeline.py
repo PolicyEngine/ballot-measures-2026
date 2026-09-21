@@ -88,6 +88,10 @@ image = (
     modal.Image.debian_slim(python_version="3.11")
     .pip_install(
         POLICYENGINE_US_PIN,
+        # policyengine-us 1.825.0 imports spm_calculator.geoadj, which
+        # was removed in spm-calculator 1.0.0 -- unpinned image builds
+        # now crash on import. 0.3.1 is the last release with geoadj.
+        "spm-calculator==0.3.1",
         "numpy>=1.24.0",
         "pandas>=2.0.0",
         "tables>=3.8.0",  # pandas-HDF reader for the populace h5

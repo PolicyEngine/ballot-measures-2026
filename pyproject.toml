@@ -11,6 +11,10 @@ dependencies = [
     # scripts/modal_pipeline.py, and scripts/modal_district_pipeline.py.
     # Keep all four in sync.
     "policyengine-us==1.825.0",
+    # policyengine-us 1.825.0 imports spm_calculator.geoadj, which was
+    # removed in spm-calculator 1.0.0 -- unpinned installs now crash on
+    # import. 0.3.1 is the last release with geoadj (matches uv.lock).
+    "spm-calculator==0.3.1",
     "numpy>=1.24.0",
 ]
 

@@ -63,16 +63,6 @@ PROFILES = [
         "dependents": [6, 9],
     },
     {
-        "label": "Retired couple, $60k pension + Social Security",
-        "income": 0,
-        "age_head": 68,
-        "age_spouse": 67,
-        "married": True,
-        "dependents": [],
-        "taxable_pension_income": 60_000,
-        "social_security_retirement": 30_000,
-    },
-    {
         "label": "Married couple, $1.2M wages, 2 kids",
         "income": 1_200_000,
         "age_head": 50,
