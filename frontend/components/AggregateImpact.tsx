@@ -172,19 +172,32 @@ export default function AggregateImpact({ triggered }: Props) {
                   Change in Colorado state tax collections
                 </p>
               </div>
-              <div className={`rounded-lg p-5 border ${
-                data.budget.federal_tax_revenue_impact >= 0 ? 'bg-green-50 border-success' : 'bg-red-50 border-red-300'
-              }`}>
-                <p className="text-sm text-gray-700 mb-2">Federal revenue change</p>
-                <p className={`text-2xl font-bold ${
-                  data.budget.federal_tax_revenue_impact >= 0 ? 'text-green-600' : 'text-red-600'
+              {data.budget.federal_tax_revenue_impact === 0 ? (
+                <div className="rounded-lg p-5 border bg-gray-50 border-gray-300">
+                  <p className="text-sm text-gray-700 mb-2">Federal revenue change</p>
+                  <p className="text-2xl font-bold text-gray-500">
+                    Not modeled*
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    *SALT feedback to federal tax is not modeled; see the
+                    validation &amp; methodology tab
+                  </p>
+                </div>
+              ) : (
+                <div className={`rounded-lg p-5 border ${
+                  data.budget.federal_tax_revenue_impact >= 0 ? 'bg-green-50 border-success' : 'bg-red-50 border-red-300'
                 }`}>
-                  {formatBillions(data.budget.federal_tax_revenue_impact)}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Spillover effect on federal collections
-                </p>
-              </div>
+                  <p className="text-sm text-gray-700 mb-2">Federal revenue change</p>
+                  <p className={`text-2xl font-bold ${
+                    data.budget.federal_tax_revenue_impact >= 0 ? 'text-green-600' : 'text-red-600'
+                  }`}>
+                    {formatBillions(data.budget.federal_tax_revenue_impact)}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Spillover effect on federal collections
+                  </p>
+                </div>
+              )}
               <div className={`rounded-lg p-5 border ${
                 data.total_cost >= 0 ? 'bg-green-50 border-success' : 'bg-red-50 border-red-300'
               }`}>

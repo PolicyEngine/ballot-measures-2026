@@ -9,7 +9,7 @@ import AggregateImpact from '../components/AggregateImpact';
 // tax increase).
 const mockMetricsCSV = `year,metric,value
 2027,budgetary_impact,2100000000
-2027,federal_tax_revenue_impact,150000000
+2027,federal_tax_revenue_impact,0
 2027,state_tax_revenue_impact,2000000000
 2027,tax_revenue_impact,2100000000
 2027,households,2300000
@@ -147,6 +147,9 @@ describe('AggregateImpact', () => {
     expect(screen.getByText('+$2.0B')).toBeInTheDocument();
     // total_cost = -$2.1B (household-side mirror)
     expect(screen.getByText('-$2.1B')).toBeInTheDocument();
+    // federal_tax_revenue_impact = 0 by construction (withholding proxy)
+    // renders as a footnoted "Not modeled*", not a bare $0
+    expect(screen.getByText('Not modeled*')).toBeInTheDocument();
   });
 
   it('shows the unavailable-data panel when CSVs are missing', async () => {

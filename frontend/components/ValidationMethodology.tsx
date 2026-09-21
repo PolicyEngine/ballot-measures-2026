@@ -161,11 +161,11 @@ export default function ValidationMethodology() {
           Key modeling limitations
         </h2>
         <p className="text-gray-700 mb-6">
-          Three simplifications in how this dashboard represents Initiative
+          Four simplifications in how this dashboard represents Initiative
           195 are large enough to shape the results and deserve prominence.
         </p>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-5">
             <p className="text-sm font-bold text-gray-900 mb-2">
               Home-sale carve-out unmodeled
@@ -191,6 +191,24 @@ export default function ValidationMethodology() {
               scope. All figures here cover the individual income-tax
               schedule only, while the LCS estimate includes both individual
               and corporate taxpayers.
+            </p>
+          </div>
+          <div className="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-5">
+            <p className="text-sm font-bold text-gray-900 mb-2">
+              Federal revenue effect not modeled
+            </p>
+            <p className="text-sm text-gray-700">
+              The federal revenue effect is not modeled (shown as &quot;not
+              modeled&quot; on the statewide tab). PolicyEngine computes the
+              federal SALT deduction from a flat-rate state withholding proxy
+              to break the circularity between Colorado taxable income and
+              federal itemized deductions, so Initiative 195&apos;s rate
+              changes do not feed back into federal tax. If modeled, the net
+              federal effect would likely be small (on the order of 1&ndash;2%
+              of the state revenue change) and would modestly increase
+              federal revenue: filers above $500,000 are already at the
+              phased-down SALT cap, while itemizers below $500,000 would
+              deduct up to $325 less.
             </p>
           </div>
           <div className="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-5">

@@ -60,7 +60,7 @@ describe('ValidationMethodology', () => {
     expect(screen.getByText(/Pending/)).toBeInTheDocument();
   });
 
-  it('lists the three key modeling limitations', () => {
+  it('lists the four key modeling limitations', () => {
     const queryClient = createTestQueryClient();
     render(
       <QueryClientProvider client={queryClient}>
@@ -72,8 +72,23 @@ describe('ValidationMethodology', () => {
       screen.getByText('Corporate and TABOR sections out of scope')
     ).toBeInTheDocument();
     expect(
+      screen.getByText('Federal revenue effect not modeled')
+    ).toBeInTheDocument();
+    expect(
       screen.getByText('District geography is PUMA-based')
     ).toBeInTheDocument();
+  });
+
+  it('explains the withholding-proxy circularity break quantitatively', () => {
+    const queryClient = createTestQueryClient();
+    render(
+      <QueryClientProvider client={queryClient}>
+        <ValidationMethodology />
+      </QueryClientProvider>
+    );
+    expect(screen.getByText(/withholding proxy/)).toBeInTheDocument();
+    expect(screen.getByText(/modestly increase/)).toBeInTheDocument();
+    expect(screen.getByText(/up to \$325 less/)).toBeInTheDocument();
   });
 
   it('names the Populace build P ACS-local dataset revision', () => {
