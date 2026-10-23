@@ -29,7 +29,15 @@ import {
 } from '@/lib/householdForm';
 import type { Measure } from '@/lib/registry';
 import { formatCount, formatIncomeTick, formatUSD, formatUSDWithSign } from '@/lib/format';
-import { CHART_MARGIN, ChartFigure, PillToggle, TICK_STYLE, niceStep } from './chartUtils';
+import {
+  CHART_MARGIN,
+  ChartFigure,
+  PillToggle,
+  SweepChartDescription,
+  TICK_STYLE,
+  niceStep,
+  type DescribedSeries,
+} from './chartUtils';
 import CoverageResults from './CoverageResults';
 import { MetricCard, toneOf, type Tone } from './ui';
 
@@ -206,6 +214,44 @@ export function HouseholdResults({
   const filing = filingStatusLabel(result.filing_status);
   const stateTaxChange = changeAt(result, 'state_tax');
 
+  const chartTitle =
+    view === 'change'
+      ? 'Change in net income by employment income'
+      : view === 'levels'
+        ? 'Net income by employment income'
+        : `${kind.label} by employment income`;
+  const kindAt = (policy: 'baseline' | 'reform') =>
+    kind.keys.reduce((total, key) => total + (result.at_income[policy][key] ?? 0), 0);
+  const described: { series: DescribedSeries[]; atIncome: { label: string; value: string }[] } =
+    view === 'change'
+      ? {
+          series: [
+            { label: 'Change in net income', values: rows.map((r) => r.change), format: formatUSDWithSign },
+          ],
+          atIncome: [{ label: 'change in net income', value: formatUSDWithSign(change) }],
+        }
+      : view === 'levels'
+        ? {
+            series: [
+              { label: labels.baseline, values: rows.map((r) => r.baseline), format: formatUSD },
+              { label: labels.reform, values: rows.map((r) => r.reform), format: formatUSD },
+            ],
+            atIncome: [
+              { label: labels.baseline, value: formatUSD(result.at_income.baseline.net_income) },
+              { label: labels.reform, value: formatUSD(result.at_income.reform.net_income) },
+            ],
+          }
+        : {
+            series: [
+              { label: labels.baseline, values: rows.map((r) => r.kindBaseline), format: formatUSD },
+              { label: labels.reform, values: rows.map((r) => r.kindReform), format: formatUSD },
+            ],
+            atIncome: [
+              { label: labels.baseline, value: formatUSD(kindAt('baseline')) },
+              { label: labels.reform, value: formatUSD(kindAt('reform')) },
+            ],
+          };
+
   const kindCard = (() => {
     switch (measure.kind) {
       case 'income_tax':
@@ -331,12 +377,15 @@ export function HouseholdResults({
       </div>
 
       <ChartFigure
-        title={
-          view === 'change'
-            ? 'Change in net income by employment income'
-            : view === 'levels'
-              ? 'Net income by employment income'
-              : `${kind.label} by employment income`
+        title={chartTitle}
+        description={
+          <SweepChartDescription
+            title={chartTitle}
+            incomes={rows.map((r) => r.income)}
+            series={described.series}
+            entered={entered}
+            atIncome={described.atIncome}
+          />
         }
         actions={
           <PillToggle

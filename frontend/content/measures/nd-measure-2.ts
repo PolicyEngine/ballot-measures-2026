@@ -14,7 +14,11 @@ const content: MeasureContent = {
   slug: 'nd-measure-2',
   description:
     'North Dakota Constitutional Measure No. 2 would require every public school to serve one free breakfast and one free lunch each school day to all enrolled students, starting in the 2027-28 school year.',
-  measureType: 'Citizen-initiated constitutional amendment; passes with a majority vote',
+  measureType: 'Citizen-initiated constitutional amendment',
+  voteRequirement: {
+    text: 'A majority vote. The Secretary of State’s measure guide says Measure No. 2 is “to be voted on in the Nov. 3, 2026, General Election where a majority vote would result in passage.”',
+    sources: [{ label: '2026 general election measure guide, page 3', url: `${GUIDE_URL}#page=3` }],
+  },
   ballotText: {
     label: 'Ballot language',
     paragraphs: [
@@ -51,8 +55,22 @@ const content: MeasureContent = {
     },
   ],
   whoIsAffected: [
-    'North Dakota public schools enrolled 116,762 students in kindergarten through grade 12 in 2024-25. About 11,600 attend schools that already serve every meal free under the federal community eligibility provision.',
+    'North Dakota public schools enrolled 116,762 students in kindergarten through grade 12 in 2024-25 (National Center for Education Statistics). About 11,600 students attend schools that already serve every meal free under the federal community eligibility provision, according to 2025-26 data from the Food Research & Action Center, an advocacy organization; PolicyEngine uses this figure. The Department of Public Instruction’s 2026 community eligibility report lists 10,742 students at such schools.',
     'Families above 130% of the poverty line who buy school meals would no longer pay for them. The savings depend on how often a student eats breakfast and lunch at school.',
+  ],
+  whoIsAffectedSources: [
+    {
+      label: 'NCES Common Core of Data, 2024-25 state membership file (ZIP)',
+      url: 'https://nces.ed.gov/ccd/Data/zip/ccd_sea_052_2425_l_1a_073025.zip',
+    },
+    {
+      label: 'Food Research & Action Center, community eligibility report (2026), page 16',
+      url: 'https://frac.org/wp-content/uploads/CEP-Report-2026.pdf#page=16',
+    },
+    {
+      label: 'Department of Public Instruction, 2026 community eligibility report by district, page 2',
+      url: 'https://www.nd.gov/dpi/sites/default/files/documents/ChildNutrition/SNP/2026CEPLEAwideNotificationReport2.pdf#page=2',
+    },
   ],
   effectiveDate:
     'The 2027-28 school year. The measure takes effect 30 days after the election; its requirements start with the first full school year at least 90 days later. PolicyEngine scores 2028, the first full calendar year.',
@@ -65,6 +83,7 @@ const content: MeasureContent = {
     },
   ],
   notModeled: [
+    'How the state would pay for the meals. The measure requires the Legislature to identify a source of funds and, if it cannot, to appropriate reimbursement from the legacy earnings fund.',
     'Pre-kindergarten students.',
     'Nonpublic, Bureau of Indian Education and tribal schools that choose to participate.',
     'Changes in federal reimbursement that schools could claim by maximizing federal funding.',

@@ -29,6 +29,14 @@ export interface Comparison {
 export interface ContentSection {
   title: string;
   body: string[];
+  /** Sources for the figures and quotations in the body. */
+  sources?: Reference[];
+}
+
+/** The share of the vote a measure needs, with the official source that states it. */
+export interface VoteRequirement {
+  text: string;
+  sources: Reference[];
 }
 
 export interface SimpleTable {
@@ -54,6 +62,8 @@ export interface MeasureContent {
   description: string;
   /** How the measure reaches the ballot, e.g. "Citizen-initiated constitutional amendment". */
   measureType: string;
+  /** The vote it needs to pass, cited to an official source. */
+  voteRequirement: VoteRequirement;
   /** The official ballot wording, verbatim. */
   ballotText: BallotText;
   /** Plain-language summary, one to three short paragraphs. */
@@ -64,6 +74,8 @@ export interface MeasureContent {
   comparisons: Comparison[];
   /** Who the change reaches. */
   whoIsAffected: string[];
+  /** Sources for the figures in whoIsAffected. */
+  whoIsAffectedSources?: Reference[];
   /** When the change would take effect. */
   effectiveDate: string;
   /** Interactions with other measures or laws. */

@@ -131,7 +131,7 @@ export default function StateTileMap({ highlighted, onSelect, selected = null }:
                 dominantBaseline="central"
                 fontSize={13}
                 fontWeight={700}
-                style={{ fill: '#FFFFFF', fontFamily: 'var(--font-sans)', pointerEvents: 'none' }}
+                style={{ fill: 'var(--background)', fontFamily: 'var(--font-sans)', pointerEvents: 'none' }}
               >
                 {code}
               </text>
@@ -141,7 +141,7 @@ export default function StateTileMap({ highlighted, onSelect, selected = null }:
                     cx={x + TILE - 8}
                     cy={y + 8}
                     r={7}
-                    style={{ fill: '#FFFFFF', stroke: 'var(--chart-3)', strokeWidth: 1 }}
+                    style={{ fill: 'var(--background)', stroke: 'var(--chart-3)', strokeWidth: 1 }}
                   />
                   <text
                     x={x + TILE - 8}

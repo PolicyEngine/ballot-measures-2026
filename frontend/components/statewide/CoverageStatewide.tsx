@@ -8,7 +8,7 @@
  * model's values before calibration.
  */
 
-import { formatCount, formatShare } from '@/lib/format';
+import { formatCompactUSD, formatCount, formatShare } from '@/lib/format';
 import { MEDICAID_METRICS as MC } from '@/lib/metrics';
 import { metric, type StatewideResults } from '@/lib/results';
 import { Callout, MetricCard } from '../ui';
@@ -30,8 +30,11 @@ export default function CoverageStatewide({ data }: { data: StatewideResults }) 
   const share = (v: number | null) => (v !== null && losing ? formatShare(v / losing) : null);
   const withShare = (v: number | null, text: string) => {
     const s = share(v);
-    return s ? `${s} of those losing Medicaid; ${text}` : text;
+    return s ? `${s} of those losing Medicaid${text ? `; ${text}` : ''}` : text;
   };
+  // The same figure as the methodology tab: a tenth of expansion spending.
+  const total = metric(m, MC.medicaidCostChange);
+  const perTenPoints = total === null ? null : formatCompactUSD(Math.abs(total) * 0.1, { sig3: true });
 
   return (
     <div className="space-y-8">
@@ -57,9 +60,9 @@ export default function CoverageStatewide({ data }: { data: StatewideResults }) 
             detail={withShare(below, 'income below the poverty line, with no subsidized marketplace option')}
           />
           <MetricCard
-            label="Eligible for marketplace subsidies"
+            label="Income at or above the poverty line (may qualify for marketplace subsidies)"
             value={show(above, formatCount)}
-            detail={withShare(above, 'income at or above the poverty line')}
+            detail={withShare(above, '') || undefined}
           />
           <MetricCard
             label="Gaining a premium tax credit"
@@ -77,7 +80,11 @@ export default function CoverageStatewide({ data }: { data: StatewideResults }) 
           <MetricCard
             label="Change in state Medicaid spending"
             value={show(metric(m, MC.medicaidStateCostChange), signedMoney)}
-            detail="The state's share of expansion costs, 10% under current law"
+            detail={`The state's 10% share of expansion costs under current law.${
+              perTenPoints
+                ? ` Each 10-point drop in the federal share would shift about ${perTenPoints} a year to the state if expansion continued.`
+                : ''
+            }`}
           />
           <MetricCard
             label="Change in federal Medicaid spending"

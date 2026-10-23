@@ -258,7 +258,7 @@ CO_AMENDMENT_87 = Measure(
         OfficialEstimate(
             source="Colorado Legislative Council Staff, 2026 Blue Book",
             url="https://leg.colorado.gov/ballots/graduated-income-tax-2/files/blue-book",
-            period="FY 2027-28",
+            period="FY 2027-28, incl. C corporations",
             model_year=2027,
             metric="state_budget_impact",
             low=1_972_000_000,
@@ -427,7 +427,7 @@ WA_I_645 = Measure(
     slug="wa-i-645",
     state="WA",
     designation="Initiative 645",
-    short_title="Repeal the tax on income over $1 million",
+    short_title="Repeal the tax on income over $1 million and bar income taxes by statute",
     kind="income_tax",
     years=(2028, 2029),
     headline_year=2028,
@@ -486,18 +486,21 @@ WA_I_645 = Measure(
         ),
         OfficialEstimate(
             source="Washington Office of Financial Management",
-            url="https://www.sos.wa.gov/sites/default/files/2026-07/FIS%20-%20Initiative%20645%20-%20FINAL.pdf",
-            period="Taxpayers owing the tax",
+            url="https://www.sos.wa.gov/sites/default/files/2026-07/FIS%20-%20Initiative%20645%20-%20FINAL.pdf#page=4",
+            period="Taxpayers in the tax administration estimate",
             model_year=2028,
             metric="tax_units_paying_less",
             low=30_000,
             high=30_000,
             unit="people",
+            # Quoted verbatim from the fiscal impact statement, page 4 (under
+            # "State Agency Implementation Cost Assumptions"); the content
+            # file (wa-i-645.ts) quotes the same sentence.
             note=(
-                "The fiscal impact statement's planning assumption, from the "
-                "Department of Revenue, that about 30,000 taxpayers would owe "
-                "the tax; an administrative assumption rather than a count of "
-                "filers."
+                "In its implementation cost assumptions for the Department of "
+                "Revenue, the fiscal impact statement says: “Savings are "
+                "assumed for tax administration duties for approximately "
+                "30,000 taxpayers that will no longer be required.”"
             ),
         ),
     ),
@@ -619,7 +622,7 @@ SD_AMENDMENT_I = Measure(
     slug="sd-amendment-i",
     state="SD",
     designation="Constitutional Amendment I",
-    short_title="Medicaid expansion conditioned on 90% federal funding",
+    short_title="Tie the constitutional Medicaid expansion requirement to a 90% federal share",
     kind="medicaid",
     years=(2028,),
     headline_year=2028,

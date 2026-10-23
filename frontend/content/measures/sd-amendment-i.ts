@@ -8,8 +8,12 @@ const DSS_URL = 'https://dss.sd.gov/docs/medicaid/reports/2025_Medicaid_Report.p
 const content: MeasureContent = {
   slug: 'sd-amendment-i',
   description:
-    "South Dakota Amendment I concerns Medicaid expansion if the federal government's share of its cost falls below 90%. Officials disagree on whether expansion would then end automatically; PolicyEngine models a scenario in which the share falls and expansion ends on July 1, 2027.",
-  measureType: 'Constitutional amendment referred by the Legislature (House Joint Resolution 5001); passes with a majority vote',
+    "South Dakota Amendment I concerns Medicaid expansion if the federal government's share of its cost falls below 90%. The Attorney General's explanation and the sponsors' statement disagree on whether expansion would then end automatically; PolicyEngine models a scenario in which the share falls and expansion ends on July 1, 2027.",
+  measureType: 'Constitutional amendment referred by the Legislature (House Joint Resolution 5001)',
+  voteRequirement: {
+    text: 'A majority of the votes cast. The ballot question pamphlet says a proposed constitutional amendment currently “becomes part of the Constitution if approved by a majority of the votes cast.”',
+    sources: [{ label: '2026 ballot question pamphlet, page 5', url: `${PAMPHLET_URL}#page=5` }],
+  },
   ballotText: {
     label: 'Title and Attorney General explanation',
     paragraphs: [
@@ -59,7 +63,7 @@ const content: MeasureContent = {
     title: 'A conditional scenario, not a forecast',
     body: [
       'Under current federal law, the federal government pays 90% of the cost of the expansion group, so Amendment I would have no immediate effect. The figures on this page show what would happen if the federal share fell below 90% and expansion ended on July 1, 2027.',
-      "The ballot title and the Attorney General's explanation say the amendment “ends the expanded Medicaid coverage” if the federal share drops below 90%. The sponsors' statement in the ballot pamphlet says it “would NOT automatically end Medicaid expansion,” only the constitutional requirement to provide it. PolicyEngine takes no position on this question. The scenario follows the Attorney General's reading; under the sponsors' reading, these figures would apply only if the Legislature or voters later ended expansion.",
+      "The ballot title and the Attorney General's explanation say the amendment “ends the expanded Medicaid coverage” if the federal share drops below 90%. The sponsors' statement in the ballot pamphlet says it “would NOT automatically end Medicaid expansion,” only the constitutional requirement to provide it. PolicyEngine takes no position on this question. The scenario follows the Attorney General's reading because under the sponsors' reading the effect would depend on a later decision by the Legislature or voters, which the model cannot predict; under that reading, these figures would apply only if the Legislature or voters later ended expansion.",
     ],
   },
   notModeled: [

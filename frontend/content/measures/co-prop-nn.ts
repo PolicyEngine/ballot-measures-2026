@@ -19,8 +19,12 @@ const tierTable = (year: number, tiers: [string, number][]): Comparison => ({
 const content: MeasureContent = {
   slug: 'co-prop-nn',
   description:
-    'Colorado Proposition NN would raise the state’s TABOR revenue limit by its K-12 education spending, letting the state keep revenue it would otherwise refund, including the sales tax refunds projected for tax years 2027 and 2028.',
-  measureType: 'Referred by the Legislature (Senate Bill 26-135) as a statute; passes with a majority vote',
+    'Colorado Proposition NN would permanently raise the state’s TABOR revenue limit by its K-12 education spending, letting the state keep revenue it would otherwise refund; PolicyEngine scores the sales tax refunds projected for tax years 2027 and 2028.',
+  measureType: 'Referred by the Legislature (Senate Bill 26-135) as a statute',
+  voteRequirement: {
+    text: 'A majority vote.',
+    sources: [{ label: '2026 Blue Book, page 41 (Proposition NN)', url: `${BLUE_BOOK_URL}#page=41` }],
+  },
   ballotText: {
     label: 'Ballot title',
     paragraphs: [
@@ -68,11 +72,20 @@ const content: MeasureContent = {
       body: [
         'Proposition 137, also on the ballot, would let the state keep part of its sales tax on sporting goods for conservation, outside the TABOR limit: an estimated $175.0 million in 2027-28. The Blue Book says it would reduce the six-tier refunds and that “if the measure passes, the amount of money the state will actually keep and spend under Proposition NN may be reduced or eliminated.” This dashboard models Proposition NN against current law, without Proposition 137.',
       ],
+      sources: [
+        { label: '2026 Blue Book, page 67 (Proposition 137: $175.0 million)', url: `${BLUE_BOOK_URL}#page=67` },
+        { label: '2026 Blue Book, page 45 (interaction with Proposition NN)', url: `${BLUE_BOOK_URL}#page=45` },
+      ],
     },
     {
       title: 'Later years',
       body: [
-        'The higher limit continues indefinitely. This dashboard scores tax years 2027 and 2028, the forecast years the Blue Book quantifies. Whether the measure changes refunds after that depends on future revenue: the Blue Book expects revenue to stay below the higher limit for at least five to ten years, and the September 2026 forecast projects current-law refunds for tax year 2029, including a temporary income tax rate cut from 4.40% to 4.36%.',
+        'The higher limit has no end date. Under Proposition NN, TABOR refunds are paid only in years when state revenue exceeds the higher limit. The Blue Book expects revenue not to exceed it “for at least the next five to ten years,” so no TABOR refunds would be paid in those years, and it says long-term projections beyond that period are uncertain.',
+        'PolicyEngine scores tax years 2027 and 2028, the forecast years the Blue Book quantifies, and does not score later years. Under current law, the September 2026 forecast projects refunds for tax year 2029 as well, including a temporary income tax rate cut from 4.40% to 4.36%.',
+      ],
+      sources: [
+        { label: '2026 Blue Book, page 43 (the Proposition NN limit and TABOR refunds)', url: `${BLUE_BOOK_URL}#page=43` },
+        { label: 'Legislative Council Staff, September 2026 forecast, page 34', url: `${FORECAST_URL}#page=34` },
       ],
     },
   ],

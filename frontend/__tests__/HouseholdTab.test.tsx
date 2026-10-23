@@ -97,6 +97,18 @@ describe('HouseholdResults', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sales tax refund' }));
     expect(screen.getByText('Sales tax refund by employment income')).toBeInTheDocument();
   });
+
+  it('describes the earnings chart for screen readers', () => {
+    const response = fixtureResponse('co-prop-nn', 0, 2027);
+    renderWithQuery(<HouseholdResults measure={getMeasure('co-prop-nn')} result={response} />);
+    const figure = screen.getByRole('figure', { name: 'Change in net income by employment income' });
+    expect(figure).toHaveTextContent(/Line chart: Change in net income by employment income, for employment income from \$0 to/);
+    expect(figure).toHaveTextContent(/At your employment income of \$40,000: change in net income -\$43\./);
+    const table = within(figure).getByRole('table', { name: 'Change in net income by employment income, selected incomes' });
+    // About ten sampled incomes plus the household's own.
+    expect(within(table).getAllByRole('row').length).toBeGreaterThan(8);
+    expect(within(table).getByRole('rowheader', { name: '$40,000' })).toBeInTheDocument();
+  });
 });
 
 describe('Medicaid scenario household results', () => {

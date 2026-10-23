@@ -85,12 +85,12 @@ export default function CoverageBands({
                     left: `${pct(s.first)}%`,
                     width: `${Math.max(pct(s.end) - pct(s.first), 0.5)}%`,
                     backgroundColor: COVERAGE_COLORS[s.kind],
-                    borderLeft: i === 0 ? undefined : '2px solid var(--background, #fff)',
+                    borderLeft: i === 0 ? undefined : '2px solid var(--background)',
                   }}
                 >
                   <span
                     className="truncate px-1 text-[11px] font-medium"
-                    style={{ color: DARK_COVERAGE.has(s.kind) ? '#fff' : 'var(--gray-800)' }}
+                    style={{ color: DARK_COVERAGE.has(s.kind) ? 'var(--background)' : 'var(--gray-800)' }}
                   >
                     {s.shortLabel}
                   </span>

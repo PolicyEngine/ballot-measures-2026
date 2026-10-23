@@ -3,6 +3,7 @@
 /** Shared Recharts styling and helpers (CSS-variable colors throughout). */
 
 import { Text } from 'recharts';
+import { formatUSD } from '@/lib/format';
 import ChartWatermark from './ChartWatermark';
 
 export const CHART_MARGIN = { top: 20, right: 20, bottom: 30, left: 20 };
@@ -237,22 +238,26 @@ export function SignedBarLabel({
 }
 
 /** Chart block: heading, optional controls, chart, legend, watermark, and a
- *  one-line caption. */
+ *  one-line caption. `description` is visually hidden text for screen
+ *  readers (e.g. SweepChartDescription). */
 export function ChartFigure({
   title,
   actions,
   legend,
   caption,
+  description,
   children,
 }: {
   title: string;
   actions?: React.ReactNode;
   legend?: LegendItem[];
   caption?: React.ReactNode;
+  description?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
-    <figure className="space-y-3">
+    <figure className="space-y-3" aria-label={title}>
+      {description && <div className="sr-only">{description}</div>}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
         {actions}
@@ -295,5 +300,83 @@ export function PillToggle<T extends string>({
         </button>
       ))}
     </div>
+  );
+}
+
+export interface DescribedSeries {
+  label: string;
+  values: number[];
+  format: (value: number) => string;
+}
+
+/** About `count` evenly spaced indices, always with the first, the last and `include`. */
+export function sampleIndices(length: number, count = 10, include: number | null = null): number[] {
+  if (length <= 0) return [];
+  const step = Math.max(1, Math.ceil((length - 1) / Math.max(1, count)));
+  const picked = new Set<number>([length - 1]);
+  for (let i = 0; i < length; i += step) picked.add(i);
+  if (include !== null && include >= 0 && include < length) picked.add(include);
+  return Array.from(picked).sort((a, b) => a - b);
+}
+
+/**
+ * Screen-reader text for a chart over the calculator's earnings sweep: what
+ * it plots and over what range, the values at the household's income, and a
+ * table of incomes sampled across the sweep.
+ */
+export function SweepChartDescription({
+  title,
+  incomes,
+  series,
+  entered,
+  atIncome,
+}: {
+  title: string;
+  incomes: number[];
+  series: DescribedSeries[];
+  /** The household's employment income, when known. */
+  entered: number | null;
+  /** Values at the household's income, already formatted. */
+  atIncome?: { label: string; value: string }[];
+}) {
+  if (incomes.length === 0) return null;
+  const enteredIndex = entered === null ? null : incomes.indexOf(entered);
+  const rows = sampleIndices(incomes.length, 10, enteredIndex);
+  return (
+    <>
+      <p>
+        {`Line chart: ${title}, for employment income from ${formatUSD(incomes[0])} to ${formatUSD(
+          incomes[incomes.length - 1],
+        )}. Lines: ${series.map((s) => s.label).join('; ')}.`}
+        {entered !== null && atIncome?.length
+          ? ` At your employment income of ${formatUSD(entered)}: ${atIncome
+              .map((a) => `${a.label} ${a.value}`)
+              .join('; ')}.`
+          : ''}
+      </p>
+      <table>
+        <caption>{`${title}, selected incomes`}</caption>
+        <thead>
+          <tr>
+            <th scope="col">Employment income</th>
+            {series.map((s) => (
+              <th key={s.label} scope="col">
+                {s.label}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((i) => (
+            <tr key={incomes[i]}>
+              <th scope="row">{formatUSD(incomes[i])}</th>
+              {series.map((s) => (
+                <td key={s.label}>{s.format(s.values[i] ?? 0)}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </>
   );
 }

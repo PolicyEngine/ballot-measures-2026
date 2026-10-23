@@ -1,11 +1,27 @@
 'use client';
 
-import { getContent, type Comparison, type SimpleTable } from '@/content/measures';
+import { getContent, type Comparison, type Reference, type SimpleTable } from '@/content/measures';
 import { formatLongDate } from '@/lib/format';
 import { ELECTION_DATE, useMetrics, type Measure } from '@/lib/measures';
 import { headlineFor } from '@/lib/metrics';
 import { yearsLabel } from './MeasureCard';
 import { ExternalLink } from './ui';
+
+/** "Sources: Blue Book, page 4; Blue Book, page 33" under a statement. */
+export function SourceLinks({ sources, className = '' }: { sources?: Reference[]; className?: string }) {
+  if (!sources?.length) return null;
+  return (
+    <p className={`text-xs text-gray-500 ${className}`}>
+      {sources.length === 1 ? 'Source: ' : 'Sources: '}
+      {sources.map((s, i) => (
+        <span key={s.url}>
+          {i > 0 && '; '}
+          <ExternalLink href={s.url}>{s.label}</ExternalLink>
+        </span>
+      ))}
+    </p>
+  );
+}
 
 function SectionHeading({ children, id }: { children: React.ReactNode; id?: string }) {
   return (
@@ -128,11 +144,16 @@ interface Props {
 /** Overview tab: what the measure does, current law vs. if it passes, who is affected. */
 export default function PolicyOverview({ measure }: Props) {
   const content = getContent(measure.slug);
-  const facts: [string, string][] = [
-    ['Election', formatLongDate(ELECTION_DATE)],
-    ['How it reached the ballot', content.measureType],
-    ['When it would take effect', content.effectiveDate],
-    ['Years modeled', yearsLabel(measure.years)],
+  const facts: { label: string; value: string; sources?: Reference[] }[] = [
+    { label: 'Election', value: formatLongDate(ELECTION_DATE) },
+    { label: 'How it reached the ballot', value: content.measureType },
+    {
+      label: 'Vote needed to pass',
+      value: content.voteRequirement.text,
+      sources: content.voteRequirement.sources,
+    },
+    { label: 'When it would take effect', value: content.effectiveDate },
+    { label: 'Years modeled', value: yearsLabel(measure.years) },
   ];
 
   return (
@@ -194,15 +215,19 @@ export default function PolicyOverview({ measure }: Props) {
             <p key={p}>{p}</p>
           ))}
         </div>
+        <SourceLinks sources={content.whoIsAffectedSources} className="mt-2" />
       </section>
 
       <section aria-labelledby="facts-heading">
         <SectionHeading id="facts-heading">Key facts</SectionHeading>
         <dl className="grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-2">
-          {facts.map(([label, value]) => (
+          {facts.map(({ label, value, sources }) => (
             <div key={label} className="rounded-lg border border-gray-200 p-3">
               <dt className="text-xs text-gray-500">{label}</dt>
-              <dd className="text-sm text-gray-800 mt-0.5">{value}</dd>
+              <dd className="text-sm text-gray-800 mt-0.5">
+                {value}
+                <SourceLinks sources={sources} className="mt-1" />
+              </dd>
             </div>
           ))}
         </dl>
@@ -216,6 +241,7 @@ export default function PolicyOverview({ measure }: Props) {
               <p key={p}>{p}</p>
             ))}
           </div>
+          <SourceLinks sources={section.sources} className="mt-2" />
         </section>
       ))}
 

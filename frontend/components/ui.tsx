@@ -2,6 +2,54 @@
 
 export type Tone = 'positive' | 'negative' | 'neutral';
 
+/**
+ * Keyboard handler for a tablist or radiogroup with a roving tabindex (only
+ * the selected option is in the tab order). Left/Right move to the previous
+ * or next option, wrapping; Home/End go to the first or last. Radio groups
+ * also take Up/Down. The new option is selected and focused. Attach it to the
+ * container whose `role="tab"` / `role="radio"` children follow `values`.
+ */
+export function rovingKeyDown<T>(
+  event: React.KeyboardEvent<HTMLElement>,
+  values: readonly T[],
+  current: T,
+  select: (value: T) => void,
+): void {
+  const n = values.length;
+  if (n === 0) return;
+  const radio = event.currentTarget.getAttribute('role') === 'radiogroup';
+  const i = Math.max(0, values.indexOf(current));
+  let next: number;
+  switch (event.key) {
+    case 'ArrowRight':
+      next = (i + 1) % n;
+      break;
+    case 'ArrowLeft':
+      next = (i - 1 + n) % n;
+      break;
+    case 'ArrowDown':
+      if (!radio) return;
+      next = (i + 1) % n;
+      break;
+    case 'ArrowUp':
+      if (!radio) return;
+      next = (i - 1 + n) % n;
+      break;
+    case 'Home':
+      next = 0;
+      break;
+    case 'End':
+      next = n - 1;
+      break;
+    default:
+      return;
+  }
+  event.preventDefault();
+  if (next !== i) select(values[next]);
+  const options = event.currentTarget.querySelectorAll<HTMLElement>('[role="tab"], [role="radio"]');
+  options[next]?.focus();
+}
+
 /** Tone for a dollar change: rounds to whole dollars first. */
 export const toneOf = (value: number | null): Tone =>
   value === null || Math.round(value) === 0 ? 'neutral' : value > 0 ? 'positive' : 'negative';
@@ -165,6 +213,14 @@ export function Segmented<T extends string | number>({
         role="radiogroup"
         aria-labelledby={id}
         className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-1"
+        onKeyDown={(e) =>
+          rovingKeyDown(
+            e,
+            options.map((o) => o.value),
+            value,
+            onChange,
+          )
+        }
       >
         {options.map((o) => {
           const selected = value === o.value;
@@ -174,6 +230,7 @@ export function Segmented<T extends string | number>({
               type="button"
               role="radio"
               aria-checked={selected}
+              tabIndex={selected ? 0 : -1}
               onClick={() => onChange(o.value)}
               className={`px-3 sm:px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${
                 selected

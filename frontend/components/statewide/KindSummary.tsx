@@ -229,7 +229,7 @@ export function kindDetailRows(measure: Measure, metrics: Metrics): DetailRow[] 
           value: show(metric(m, SM.participationBreakfast), (v) => formatPercent(asPercent(v))),
         },
         {
-          label: 'Model children per enrolled student (enrollment scaling)',
+          label: 'Public students outside schools that serve every meal free, per model K-12 child (enrollment scaling)',
           value: show(metric(m, SM.enrollmentScale), (v) => v.toFixed(2)),
         },
       ];

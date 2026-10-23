@@ -114,7 +114,7 @@
         {
           "source": "Colorado Legislative Council Staff, 2026 Blue Book",
           "url": "https://leg.colorado.gov/ballots/graduated-income-tax-2/files/blue-book",
-          "period": "FY 2027-28",
+          "period": "FY 2027-28, incl. C corporations",
           "model_year": 2027,
           "metric": "state_budget_impact",
           "low": 1972000000,
@@ -463,7 +463,7 @@
       "slug": "wa-i-645",
       "state": "WA",
       "designation": "Initiative 645",
-      "short_title": "Repeal the tax on income over $1 million",
+      "short_title": "Repeal the tax on income over $1 million and bar income taxes by statute",
       "kind": "income_tax",
       "years": [
         2028,
@@ -584,14 +584,14 @@
         },
         {
           "source": "Washington Office of Financial Management",
-          "url": "https://www.sos.wa.gov/sites/default/files/2026-07/FIS%20-%20Initiative%20645%20-%20FINAL.pdf",
-          "period": "Taxpayers owing the tax",
+          "url": "https://www.sos.wa.gov/sites/default/files/2026-07/FIS%20-%20Initiative%20645%20-%20FINAL.pdf#page=4",
+          "period": "Taxpayers in the tax administration estimate",
           "model_year": 2028,
           "metric": "tax_units_paying_less",
           "low": 30000,
           "high": 30000,
           "unit": "people",
-          "note": "The fiscal impact statement's planning assumption, from the Department of Revenue, that about 30,000 taxpayers would owe the tax; an administrative assumption rather than a count of filers."
+          "note": "In its implementation cost assumptions for the Department of Revenue, the fiscal impact statement says: \u201cSavings are assumed for tax administration duties for approximately 30,000 taxpayers that will no longer be required.\u201d"
         }
       ],
       "kind_params": {
@@ -747,7 +747,7 @@
       "slug": "sd-amendment-i",
       "state": "SD",
       "designation": "Constitutional Amendment I",
-      "short_title": "Medicaid expansion conditioned on 90% federal funding",
+      "short_title": "Tie the constitutional Medicaid expansion requirement to a 90% federal share",
       "kind": "medicaid",
       "years": [
         2028

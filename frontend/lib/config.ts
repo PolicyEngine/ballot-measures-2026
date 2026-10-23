@@ -28,6 +28,33 @@ export const DATA_DIR = (process.env.NEXT_PUBLIC_DATA_DIR || 'data').replace(/^\
 /** True when the dashboard reads anything other than the pipeline's results. */
 export const USING_PLACEHOLDER_DATA = DATA_DIR !== 'data';
 
+/**
+ * Vercel's deployment environment: "production", "preview" or
+ * "development"; undefined off Vercel (local builds). Builds read
+ * VERCEL_ENV; the browser can only see NEXT_PUBLIC_VERCEL_ENV.
+ */
+export const VERCEL_ENV: string | undefined = process.env.VERCEL_ENV ?? process.env.NEXT_PUBLIC_VERCEL_ENV;
+
+/** A production deployment on Vercel (policyengine.org serves this one). */
+export const IS_PRODUCTION_DEPLOYMENT = VERCEL_ENV === 'production';
+
+/**
+ * Fixture data must never reach production: throws for a production
+ * deployment whose data folder is not the pipeline's `data`. Previews may
+ * use `data-fixtures` (they show the "Placeholder data" banner).
+ */
+export function assertProductionData(vercelEnv: string | undefined, dataDir: string): void {
+  if (vercelEnv === 'production' && dataDir !== 'data') {
+    throw new Error(
+      `NEXT_PUBLIC_DATA_DIR is "${dataDir}" in a production deployment; production must read the pipeline's results from public/data. Unset NEXT_PUBLIC_DATA_DIR for production.`,
+    );
+  }
+}
+
+// Every page imports this module, so a production build with fixture data
+// fails while prerendering.
+assertProductionData(VERCEL_ENV, DATA_DIR);
+
 /** URL of a results file (frontend/public/<DATA_DIR>/<filename>). */
 export const dataUrl = (filename: string): string => `${BASE_PATH}/${DATA_DIR}/${filename}`;
 

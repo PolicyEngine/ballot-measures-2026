@@ -20,7 +20,7 @@ import CongressionalDistrictImpact from './CongressionalDistrictImpact';
 import HouseholdTab, { type HouseholdTabState } from './HouseholdTab';
 import PolicyOverview from './PolicyOverview';
 import ValidationMethodology from './ValidationMethodology';
-import { Segmented } from './ui';
+import { Segmented, rovingKeyDown } from './ui';
 
 export const TAB_LABELS: Record<TabId, string> = {
   overview: 'Overview',
@@ -132,7 +132,12 @@ export default function MeasureDashboard({ slug }: Props) {
       </div>
 
       <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="flex flex-wrap gap-1 mb-4" role="tablist" aria-label="Measure sections">
+        <div
+          className="flex flex-wrap gap-1 mb-4"
+          role="tablist"
+          aria-label="Measure sections"
+          onKeyDown={(e) => rovingKeyDown(e, tabs, tab, selectTab)}
+        >
           {tabs.map((t) => (
             <button
               key={t}
@@ -141,6 +146,7 @@ export default function MeasureDashboard({ slug }: Props) {
               role="tab"
               aria-selected={tab === t}
               aria-controls={`tabpanel-${t}`}
+              tabIndex={tab === t ? 0 : -1}
               onClick={() => selectTab(t)}
               className={`px-4 sm:px-5 py-3 rounded-t-lg font-semibold transition-colors ${
                 tab === t

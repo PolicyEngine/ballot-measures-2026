@@ -9,8 +9,14 @@ const content: MeasureContent = {
   slug: 'co-amendment-87',
   description:
     'Colorado Amendment 87 would replace the 4.4% flat income tax with six rates from 3.7% to 8.4%, starting in tax year 2027.',
-  measureType:
-    'Citizen initiative (Initiative 195) amending the state constitution and statutes; passes with a majority vote',
+  measureType: 'Citizen initiative (Initiative 195) amending the state constitution and statutes',
+  voteRequirement: {
+    text: 'A majority vote. A Colorado constitutional amendment needs at least 55% of the votes cast unless it is limited to a repeal, which needs a simple majority; the Blue Book lists Amendment 87, whose constitutional change removes the single-rate requirement, as passing with a majority vote.',
+    sources: [
+      { label: '2026 Blue Book, page 4 (vote requirements)', url: `${BLUE_BOOK_URL}#page=4` },
+      { label: '2026 Blue Book, page 33 (Amendment 87)', url: `${BLUE_BOOK_URL}#page=33` },
+    ],
+  },
   ballotText: {
     label: 'Ballot title',
     paragraphs: [
@@ -74,6 +80,10 @@ const content: MeasureContent = {
       body: [
         "Proposition 136, also on Colorado's ballot, would cap the state income tax rate at 4.4% starting January 1, 2027. The Blue Book says that if both measures pass, “the exact outcome is unclear. The state legislature or a court will need to determine how to resolve any conflicts.” This dashboard models Amendment 87 on its own.",
       ],
+      sources: [
+        { label: '2026 Blue Book, page 62 (Proposition 136: the 4.4% limit)', url: `${BLUE_BOOK_URL}#page=62` },
+        { label: '2026 Blue Book, page 36 (if both measures pass)', url: `${BLUE_BOOK_URL}#page=36` },
+      ],
     },
   ],
   notModeled: [
@@ -87,7 +97,7 @@ const content: MeasureContent = {
     'The official estimates cover state budget years and include corporations; the model covers individual income tax liability for tax year 2027.',
   ],
   officialEstimateProse: [
-    "Colorado's nonpartisan Legislative Council Staff estimate in the 2026 Blue Book that the measure raises $958.4 million in the 2026-27 budget year, a half-year of tax year 2027, and $1.972 billion in 2027-28. The Blue Book describes the $2.7 billion in the ballot title as the maximum estimate for 2027-28, based on possible forecast error.",
+    "Colorado's Legislative Council Staff estimate in the 2026 Blue Book that the measure raises $958.4 million in the 2026-27 budget year, a half-year of tax year 2027, and $1.972 billion in 2027-28. The Blue Book describes the $2.7 billion in the ballot title as the maximum estimate for 2027-28, based on possible forecast error.",
     'The Blue Book figures include corporate income tax and are stated by budget year (July through June). PolicyEngine estimates individual income tax for tax year 2027.',
   ],
   householdNote:

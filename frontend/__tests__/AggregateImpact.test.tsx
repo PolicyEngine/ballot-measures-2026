@@ -40,7 +40,13 @@ describe('AggregateImpact', () => {
     expect(screen.getByText('28,017')).toBeInTheDocument();
     expect(screen.queryByText('54,000')).toBeNull();
     expect(screen.getByText('In the coverage gap')).toBeInTheDocument();
-    expect(screen.getByText('Eligible for marketplace subsidies')).toBeInTheDocument();
+    expect(
+      screen.getByText('Income at or above the poverty line (may qualify for marketplace subsidies)'),
+    ).toBeInTheDocument();
+    // The state card carries the methodology tab's federal-share sensitivity.
+    expect(
+      screen.getByText(/Each 10-point drop in the federal share would shift about \$33\.2M a year to the state/),
+    ).toBeInTheDocument();
     expect(screen.getByText('Gaining a premium tax credit')).toBeInTheDocument();
     expect(screen.getByText('Change in state Medicaid spending')).toBeInTheDocument();
     expect(screen.getByText('Change in federal Medicaid spending')).toBeInTheDocument();

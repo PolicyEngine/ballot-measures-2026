@@ -16,7 +16,7 @@ import { filingStatusLabel } from '@/lib/householdForm';
 import type { HouseholdResponse, NumericPointKey, PolicySweep } from '@/lib/householdApi';
 import type { Measure } from '@/lib/registry';
 import { formatCount, formatIncomeTick, formatUSD, formatUSDWithSign } from '@/lib/format';
-import { CHART_MARGIN, ChartFigure, PillToggle, TICK_STYLE, niceStep } from './chartUtils';
+import { CHART_MARGIN, ChartFigure, PillToggle, SweepChartDescription, TICK_STYLE, niceStep } from './chartUtils';
 import CoverageBands, { coverageLegend } from './CoverageBands';
 import { MetricCard, toneOf } from './ui';
 
@@ -267,6 +267,33 @@ export default function CoverageResults({
 
       <ChartFigure
         title={current.title}
+        description={
+          view === 'coverage' ? undefined : (
+            <SweepChartDescription
+              title={current.title}
+              incomes={result.income_range}
+              series={[
+                { label: 'Current law', values: base, format: lineView === 'enrolled' ? formatCount : formatUSD },
+                { label: SCENARIO, values: reform, format: lineView === 'enrolled' ? formatCount : formatUSD },
+              ]}
+              entered={entered}
+              atIncome={[
+                {
+                  label: 'Current law',
+                  value: (lineView === 'enrolled' ? formatCount : formatUSD)(
+                    result.at_income.baseline[LINE_KEYS[lineView]] ?? 0,
+                  ),
+                },
+                {
+                  label: SCENARIO,
+                  value: (lineView === 'enrolled' ? formatCount : formatUSD)(
+                    result.at_income.reform[LINE_KEYS[lineView]] ?? 0,
+                  ),
+                },
+              ]}
+            />
+          )
+        }
         actions={
           <PillToggle
             label="Chart"

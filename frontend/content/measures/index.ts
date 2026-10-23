@@ -20,6 +20,7 @@ export type {
   MeasureContent,
   Reference,
   SimpleTable,
+  VoteRequirement,
 } from './types';
 
 /** Registry order (ballot_calc/measures.py). */

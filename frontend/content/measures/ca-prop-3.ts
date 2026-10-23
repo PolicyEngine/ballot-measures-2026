@@ -1,15 +1,25 @@
-import type { MeasureContent } from './types';
+import type { MeasureContent, VoteRequirement } from './types';
 
 const GUIDE_URL = 'https://vig.cdn.sos.ca.gov/2026/general/pdf/prop3.pdf';
 const TEXT_URL = 'https://vig.cdn.sos.ca.gov/2026/general/pdf/prop3-text-proposed-laws.pdf';
 const LAO_URL = 'https://lao.ca.gov/ballot/2026/prop3-110326.pdf';
 const LABEL_URL = 'https://elections.cdn.sos.ca.gov/ccrov/2026/august/26211jj.pdf';
 
+const CONSTITUTION_URL =
+  'https://leginfo.legislature.ca.gov/faces/codes_displaySection.xhtml?lawCode=CONS&sectionNum=SEC.%204.&article=XVIII';
+
+/** The voter guide does not state the threshold; the constitution does. */
+const VOTE_REQUIREMENT: VoteRequirement = {
+  text: 'A majority of the votes cast on it. The state constitution says a proposed amendment takes effect “if approved by a majority of votes cast thereon.”',
+  sources: [{ label: 'California Constitution, article XVIII, section 4', url: CONSTITUTION_URL }],
+};
+
 const content: MeasureContent = {
   slug: 'ca-prop-3',
   description:
     'California Proposition 3 would keep the 10.3%, 11.3% and 12.3% income tax rates on high incomes after 2030, when current law ends them.',
-  measureType: 'Citizen-initiated constitutional amendment (Initiative 25-0016); passes with a majority vote',
+  measureType: 'Citizen-initiated constitutional amendment (Initiative 25-0016)',
+  voteRequirement: VOTE_REQUIREMENT,
   ballotText: {
     label: 'Ballot label',
     paragraphs: [
@@ -69,7 +79,7 @@ const content: MeasureContent = {
     'Survey-based microdata hold few very high-income households, who pay most of the tax at these rates; the comparisons on this tab show how the model’s figures line up with the official estimate and IRS data.',
   ],
   officialEstimateProse: [
-    "California's nonpartisan Legislative Analyst's Office estimates that the measure brings in $5 billion to $15 billion a year: about $5 billion in a weak year and $15 billion in a strong one, because much of the revenue comes from income tied to the stock market.",
+    "California's Legislative Analyst's Office estimates that the measure brings in $5 billion to $15 billion a year: about $5 billion in a weak year and $15 billion in a strong one, because much of the revenue comes from income tied to the stock market.",
   ],
   householdNote:
     'Enter your household to compare your 2031 California and federal income taxes under current law and if Proposition 3 passes. Only high incomes are affected.',

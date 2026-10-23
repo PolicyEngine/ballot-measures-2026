@@ -31,7 +31,9 @@ describe('MeasureDashboard tabs', () => {
   it('shows the measure name, title and overview first', () => {
     renderWithQuery(<MeasureDashboard slug="wa-i-645" />);
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Washington Initiative 645');
-    expect(screen.getByText('Repeal the tax on income over $1 million')).toBeInTheDocument();
+    expect(
+      screen.getByText('Repeal the tax on income over $1 million and bar income taxes by statute'),
+    ).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
     // Washington has districts, but few sample households carry the change.
     expect(tabNames()).not.toContain('Districts');
@@ -40,6 +42,27 @@ describe('MeasureDashboard tabs', () => {
   it('marks South Dakota as a conditional scenario', () => {
     renderWithQuery(<MeasureDashboard slug="sd-amendment-i" />);
     expect(screen.getByText(/Conditional scenario: no effect unless/)).toBeInTheDocument();
+  });
+
+  it('moves between tabs with the arrow, Home and End keys', () => {
+    renderWithQuery(<MeasureDashboard slug="ca-prop-3" />);
+    const tablist = screen.getByRole('tablist', { name: 'Measure sections' });
+    const tab = (name: string) => screen.getByRole('tab', { name });
+    // Only the selected tab is in the tab order.
+    expect(tab('Overview')).toHaveAttribute('tabindex', '0');
+    expect(tab('Household')).toHaveAttribute('tabindex', '-1');
+    fireEvent.keyDown(tablist, { key: 'ArrowRight' });
+    expect(tab('Household')).toHaveAttribute('aria-selected', 'true');
+    expect(tab('Household')).toHaveFocus();
+    fireEvent.keyDown(tablist, { key: 'End' });
+    expect(tab('Methodology & validation')).toHaveAttribute('aria-selected', 'true');
+    fireEvent.keyDown(tablist, { key: 'ArrowRight' });
+    expect(tab('Overview')).toHaveAttribute('aria-selected', 'true');
+    fireEvent.keyDown(tablist, { key: 'ArrowLeft' });
+    expect(tab('Methodology & validation')).toHaveAttribute('aria-selected', 'true');
+    fireEvent.keyDown(tablist, { key: 'Home' });
+    expect(tab('Overview')).toHaveAttribute('aria-selected', 'true');
+    expect(tab('Overview')).toHaveFocus();
   });
 });
 
@@ -51,6 +74,20 @@ describe('year selector and hash', () => {
     const years = screen.getByRole('radiogroup', { name: 'Tax year' });
     expect(within(years).getAllByRole('radio').map((r) => r.textContent)).toEqual(['2028', '2029']);
     expect(within(years).getByRole('radio', { name: '2028' })).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('changes the year with the arrow keys', () => {
+    renderWithQuery(<MeasureDashboard slug="wa-i-645" />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Statewide' }));
+    const years = screen.getByRole('radiogroup', { name: 'Tax year' });
+    const radio = (name: string) => within(years).getByRole('radio', { name });
+    expect(radio('2028')).toHaveAttribute('tabindex', '0');
+    expect(radio('2029')).toHaveAttribute('tabindex', '-1');
+    fireEvent.keyDown(years, { key: 'ArrowRight' });
+    expect(radio('2029')).toHaveAttribute('aria-checked', 'true');
+    expect(radio('2029')).toHaveFocus();
+    fireEvent.keyDown(years, { key: 'ArrowUp' });
+    expect(radio('2028')).toHaveAttribute('aria-checked', 'true');
   });
 
   it('is absent for single-year measures', () => {

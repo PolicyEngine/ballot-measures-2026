@@ -74,8 +74,8 @@ export default function LandingPage() {
           </h1>
           <p className="text-lg opacity-90">
             How {numberWord(MEASURES.length)} measures on the {formatLongDate(ELECTION_DATE)} ballot
-            in {numberWord(groups.length)} states would change household taxes and benefits,
-            compared with current law.
+            in {numberWord(groups.length)} states would change household taxes and benefits
+            (South Dakota’s as a conditional scenario), compared with current law.
           </p>
         </div>
       </div>
@@ -96,9 +96,12 @@ export default function LandingPage() {
               its page shows a conditional scenario.
             </p>
             <p>
+              The figures cover households and state budgets. They do not show how governments
+              would spend added revenue or cover added costs.
+            </p>
+            <p>
               Official estimates from each state appear beside PolicyEngine&apos;s, with notes on
-              how they differ. PolicyEngine is nonpartisan and takes no position on any ballot
-              measure.
+              how they differ. PolicyEngine takes no position on any ballot measure.
             </p>
             <p className="text-sm text-gray-500">Select a highlighted state or a measure below.</p>
           </div>

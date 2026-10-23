@@ -6,7 +6,7 @@ import { useStatewideResults, type Measure } from '@/lib/measures';
 import { CORE_METRICS } from '@/lib/metrics';
 import { metric, type StatewideResults } from '@/lib/results';
 import DownloadResults from './DownloadResults';
-import { Callout, Loading, ResultsUnavailable } from './ui';
+import { Callout, Loading, ResultsUnavailable, rovingKeyDown } from './ui';
 import CoverageStatewide from './statewide/CoverageStatewide';
 import { KindHeadlineCards } from './statewide/KindSummary';
 import {
@@ -68,13 +68,26 @@ function NetIncomeStatewide({ measure, data }: { measure: Measure; data: Statewi
       <KindHeadlineCards measure={measure} metrics={data.metrics} />
       <PrecisionNote metrics={data.metrics} />
 
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Statewide sections">
+      <div
+        className="flex flex-wrap gap-2"
+        role="tablist"
+        aria-label="Statewide sections"
+        onKeyDown={(e) =>
+          rovingKeyDown(
+            e,
+            STATEWIDE_SECTIONS.map((s) => s.key),
+            section,
+            setSection,
+          )
+        }
+      >
         {STATEWIDE_SECTIONS.map((s) => (
           <button
             key={s.key}
             type="button"
             role="tab"
             aria-selected={section === s.key}
+            tabIndex={section === s.key ? 0 : -1}
             onClick={() => setSection(s.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
               section === s.key

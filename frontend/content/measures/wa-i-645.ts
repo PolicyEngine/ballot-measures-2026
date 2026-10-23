@@ -1,4 +1,4 @@
-import type { MeasureContent } from './types';
+import type { MeasureContent, VoteRequirement } from './types';
 
 const FISCAL_URL =
   'https://www.sos.wa.gov/sites/default/files/2026-07/FIS%20-%20Initiative%20645%20-%20FINAL.pdf';
@@ -7,11 +7,24 @@ const EXPLANATORY_URL = 'https://www.sos.wa.gov/sites/default/files/2026-07/ExSt
 const ESSB_URL =
   'https://lawfilesext.leg.wa.gov/biennium/2025-26/Pdf/Bills/Senate%20Passed%20Legislature/6346-S.PL.pdf';
 
+const VOTERS_PAMPHLET_URL =
+  'https://www.sos.wa.gov/sites/default/files/2026-10/Voters%20Pamphlet%202026%20-%20Edition%2009%20-%20Pierce.pdf';
+const CONSTITUTION_URL = 'https://leg.wa.gov/media/o3fg0ey1/washington-state-constitution.pdf';
+
+const VOTE_REQUIREMENT: VoteRequirement = {
+  text: 'More than 50% of the votes cast on it. The voters’ pamphlet says “Initiatives and referenda become law with more than 50% of the vote.” The state constitution also requires the votes cast on a measure to equal at least one-third of the total votes cast in the election.',
+  sources: [
+    { label: '2026 voters’ pamphlet (Pierce County edition), page 8', url: `${VOTERS_PAMPHLET_URL}#page=8` },
+    { label: 'Washington State Constitution, article II, section 1(d)', url: `${CONSTITUTION_URL}#page=18` },
+  ],
+};
+
 const content: MeasureContent = {
   slug: 'wa-i-645',
   description:
     'Washington Initiative 645 would repeal the 9.9% tax on individual income over $1 million that the Legislature enacted in 2026, before it starts in 2028, and prohibit taxes on individual income by statute.',
-  measureType: 'Initiative to the people (statute); passes with a majority vote',
+  measureType: 'Initiative to the people (statute)',
+  voteRequirement: VOTE_REQUIREMENT,
   ballotText: {
     label: 'Ballot title',
     paragraphs: [
@@ -50,13 +63,14 @@ const content: MeasureContent = {
     },
   ],
   whoIsAffected: [
-    'Only households with income above the $1 million deduction owe the tax under current law, so only they see a change. The fiscal impact statement assumes the Department of Revenue would administer the tax for about 30,000 taxpayers; that is the department’s administrative assumption, not an estimate of how many would owe it.',
+    'Only households with income above the $1 million deduction owe the tax under current law, so only they see a change. In its implementation cost assumptions for the Department of Revenue, the fiscal impact statement says: “Savings are assumed for tax administration duties for approximately 30,000 taxpayers that will no longer be required.”',
     'A household whose income subject to the tax is $2 million owes 9.9% of the $1 million above the deduction, or $99,000, under current law in 2028, and nothing if Initiative 645 passes.',
   ],
   effectiveDate:
     'December 3, 2026, before the tax’s first year (2028). PolicyEngine scores tax years 2028 and 2029.',
   context: [],
   notModeled: [
+    'How the state would adjust spending. The ballot title says the measure “would decrease funding for public K-12 education, higher education (including universities and community colleges), and human services (primarily healthcare).”',
     'The statutory prohibition on state and local income taxes; the model covers only the tax the measure repeals.',
     'Behavioral responses, such as changes in when people realize income, or moves into or out of the state.',
   ],
@@ -69,6 +83,7 @@ const content: MeasureContent = {
   ],
   householdNote:
     'Enter your household to compare your Washington tax and net income under current law and if Initiative 645 passes. Only income above $1 million is affected.',
+  whoIsAffectedSources: [{ label: 'Fiscal impact statement, page 4', url: `${FISCAL_URL}#page=4` }],
   references: [
     { label: 'Office of Financial Management fiscal impact statement', url: FISCAL_URL },
     { label: 'Explanatory statement (Washington Secretary of State)', url: EXPLANATORY_URL },
