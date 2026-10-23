@@ -40,7 +40,15 @@ export const KIND_OUTPUT_KEYS = {
   income_tax: [],
   tabor_refund: ['refund'],
   school_meals: ['meal_value', 'free_meals', 'reduced_price_meals'],
-  medicaid: ['medicaid', 'ptc', 'medicaid_enrolled', 'marketplace_premium'],
+  medicaid: [
+    'medicaid',
+    'ptc',
+    'medicaid_enrolled',
+    'marketplace_premium',
+    'cash_net_income',
+    'coverage_status',
+    'no_option_reason',
+  ],
 } as const;
 
 /** One policy's values at the entered income, summed over the household. */
@@ -70,10 +78,26 @@ export interface PolicyPoint {
   medicaid_enrolled?: number;
   /** Marketplace premium after the credit. */
   marketplace_premium?: number;
+  /** Net income without the value of health coverage (medicaid kind). */
+  cash_net_income?: number;
+  /** Coverage of the household's adults: medicaid, medicare, subsidized_marketplace or
+   *  no_subsidized_option (medicaid kind). */
+  coverage_status?: string | null;
+  /** Why there is no subsidized option: work_requirement, below_poverty_line,
+   *  above_subsidy_limit or other; null otherwise (medicaid kind). */
+  no_option_reason?: string | null;
 }
 
+/** Text outputs (the rest are dollars or counts). */
+export type TextPointKey = 'coverage_status' | 'no_option_reason';
+
+/** Numeric outputs. */
+export type NumericPointKey = Exclude<keyof PolicyPoint, TextPointKey>;
+
 /** One policy's values across the earnings sweep (same keys, arrays). */
-export type PolicySweep = { [K in keyof PolicyPoint]: number[] };
+export type PolicySweep = { [K in NumericPointKey]: number[] } & {
+  [K in TextPointKey]?: (string | null)[];
+};
 
 export type PolicyName = 'baseline' | 'reform';
 

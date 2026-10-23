@@ -47,11 +47,49 @@ describe('ValidationMethodology', () => {
     expect(screen.getByText(/Scaling the change in each income band/)).toHaveTextContent('+$2.24B');
   });
 
+  it('shows South Dakota’s model and calibrated values', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('sd-amendment-i')} year={2028} />);
+    const calibration = await screen.findByRole('table', { name: 'Model and calibrated values' });
+    const losing = within(calibration).getByText('People losing Medicaid').closest('tr')!;
+    expect(losing).toHaveTextContent('54,000');
+    expect(losing).toHaveTextContent('28,017');
+    expect(screen.getByText(/calibration factor of 0\.519/)).toBeInTheDocument();
+    expect(screen.getByText(/enrollment \(29,055 people\)/)).toBeInTheDocument();
+    // Enrollment pairs the model's own count with the administrative one.
+    const enrolled = within(calibration).getByText('Enrolled through expansion under current law').closest('tr')!;
+    expect(enrolled).toHaveTextContent('56,000');
+    expect(enrolled).toHaveTextContent('29,055');
+    expect(screen.getByText(/The model counts 56,000 people enrolled through expansion/)).toBeInTheDocument();
+    // The validation table compares the department's figure with the model's own count.
+    const validation = screen.getByRole('table', { name: 'PolicyEngine and official estimates' });
+    const dss = within(validation).getByRole('link', { name: /Department of Social Services/ }).closest('tr')!;
+    expect(dss).toHaveTextContent('29,055');
+    expect(dss).toHaveTextContent('56,000');
+    expect(dss).toHaveTextContent('Model before calibration; the dashboard scales');
+    const pamphlet = within(validation).getByRole('link', { name: /ballot question pamphlet/ }).closest('tr')!;
+    expect(pamphlet).toHaveTextContent('Model before calibration to the Department');
+  });
+
   it('has no IRS comparison for other kinds', async () => {
     mockDataFiles(fixtureFiles());
     renderWithQuery(<ValidationMethodology measure={getMeasure('sd-amendment-i')} year={2028} />);
     await screen.findByText('synthetic');
     expect(screen.queryByRole('heading', { name: 'Top incomes compared with IRS data' })).toBeNull();
+    // South Dakota shows no poverty figures, so no note on SPM resources.
+    expect(screen.queryByText(/to SPM resources/)).toBeNull();
+  });
+
+  it('notes the income added to SPM resources', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('ca-prop-3')} year={2031} />);
+    expect(
+      await screen.findByText(/PolicyEngine adds partnership and S corporation income, farm rental income/),
+    ).toHaveTextContent(/Alaska Permanent Fund dividend to SPM resources, which the released model omits \(policyengine-us#9919\)\./);
+    expect(screen.getByRole('link', { name: 'policyengine-us#9919' })).toHaveAttribute(
+      'href',
+      'https://github.com/PolicyEngine/policyengine-us/issues/9919',
+    );
   });
 
   it('marks the model figure pending when results are missing', async () => {

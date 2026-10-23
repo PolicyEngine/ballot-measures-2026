@@ -30,6 +30,7 @@ import {
 import type { Measure } from '@/lib/registry';
 import { formatCount, formatIncomeTick, formatUSD, formatUSDWithSign } from '@/lib/format';
 import { CHART_MARGIN, ChartFigure, PillToggle, TICK_STYLE, niceStep } from './chartUtils';
+import CoverageResults from './CoverageResults';
 import { MetricCard, toneOf, type Tone } from './ui';
 
 interface Props {
@@ -438,6 +439,10 @@ export default function ImpactAnalysis({ measure, request, precomputed, exampleL
   if (!precomputed && live.error) return <ErrorPanel error={live.error} />;
   if (!data) return null;
 
+  // The Medicaid scenario is reported as coverage and premiums, not net income.
+  if (measure.kind === 'medicaid') {
+    return <CoverageResults measure={measure} result={data} exampleLabel={precomputed ? exampleLabel : null} />;
+  }
   return (
     <HouseholdResults measure={measure} result={data} exampleLabel={precomputed ? exampleLabel : null} />
   );

@@ -50,7 +50,7 @@ const content: MeasureContent = {
     },
   ],
   whoIsAffected: [
-    'Only households with income above the $1 million deduction owe the tax under current law, so only they see a change. The fiscal impact statement assumes the Department of Revenue would administer the tax for about 30,000 taxpayers.',
+    'Only households with income above the $1 million deduction owe the tax under current law, so only they see a change. The fiscal impact statement assumes the Department of Revenue would administer the tax for about 30,000 taxpayers; that is the department’s administrative assumption, not an estimate of how many would owe it.',
     'A household whose income subject to the tax is $2 million owes 9.9% of the $1 million above the deduction, or $99,000, under current law in 2028, and nothing if Initiative 645 passes.',
   ],
   effectiveDate:

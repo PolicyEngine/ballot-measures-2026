@@ -72,6 +72,9 @@ const DECILE_SHAPES = {
 
 /** Household-side total change: minus the state budget change (taxes and
  *  refunds), the meal value (ND) or coverage lost (SD). */
+/** Current law's Medicaid work requirement: 80 hours a month at $7.25 (from 2027). */
+const WORK_REQUIREMENT_EARNINGS = 6_960;
+
 function householdTotal(slug, budget) {
   if (slug === 'nd-measure-2') return 5.9e7;
   if (slug === 'sd-amendment-i') return -1.94e8;
@@ -138,6 +141,7 @@ for (const m of REGISTRY.measures) {
     metrics.people_lifted_out_of_poverty = direction > 0 ? Math.round(st.people * Math.abs(povertyShift) / 100) : 0;
     metrics.people_pushed_into_poverty = direction < 0 ? Math.round(st.people * Math.abs(povertyShift) / 100) : 0;
     metrics.children_lifted_out_of_poverty = Math.round(metrics.people_lifted_out_of_poverty * 0.45);
+    metrics.children_pushed_into_poverty = Math.round(metrics.people_pushed_into_poverty * 0.3);
 
     // Budget block (government's side).
     let stateRevenue = 0;
@@ -168,6 +172,10 @@ for (const m of REGISTRY.measures) {
       metrics.avg_tax_change_paying_less = less ? (m.slug === 'wa-i-645' ? p.budget / less : -325 * 0.62) : 0;
       metrics.revenue_share_agi_1m_plus = m.slug === 'co-amendment-87' ? 0.79 : m.slug === 'ca-prop-3' ? 0.84 : 1;
       metrics.baseline_state_income_tax = { CO: 1.32e10, CA: 1.71e11, WA: 3.5e9 }[m.state] * (1 + (year - 2027) * 0.04);
+      // Methodology tab only: revenue scaled to IRS top-income coverage.
+      metrics.revenue_coverage_scaled = p.budget * 1.24;
+      metrics.soi_coverage_returns_1m_plus = 2.2;
+      metrics.soi_coverage_agi_above_1m = 0.6;
     }
     if (m.kind === 'tabor_refund') {
       metrics.refund_total_baseline = p.budget;
@@ -191,17 +199,34 @@ for (const m of REGISTRY.measures) {
       });
     }
     if (m.kind === 'medicaid') {
-      Object.assign(metrics, {
-        people_losing_medicaid: 27_400,
-        losing_below_100fpl: 11_200,
-        losing_100_plus_fpl: 16_200,
-        gaining_ptc: 12_900,
-        medicaid_cost_change: -2.9e8,
-        medicaid_state_cost_change: -2.9e7,
-        medicaid_federal_cost_change: -2.61e8,
-        ptc_change: 9.5e7,
-        baseline_expansion_enrollees: 29_800,
-      });
+      // scripts/DATA_SCHEMA.md: the coverage and budget keys are calibrated
+      // to administrative enrollment (unsuffixed) and keep the model's value
+      // as `<key>_model`; baseline_expansion_enrollees stays the model's.
+      const enrolledModel = 56_000;
+      const factor = 29_055 / enrolledModel;
+      const model = {
+        people_losing_medicaid: 54_000,
+        losing_below_100fpl: 39_000,
+        losing_100_plus_fpl: 15_000,
+        gaining_ptc: 3_400,
+        medicaid_cost_change: -6.4e8,
+        medicaid_state_cost_change: -6.4e7,
+        medicaid_federal_cost_change: -5.76e8,
+        ptc_change: 3.0e7,
+        state_revenue_impact: metrics.state_revenue_impact,
+        state_spending_impact: metrics.state_spending_impact,
+        state_budget_impact: metrics.state_budget_impact,
+        federal_revenue_impact: metrics.federal_revenue_impact,
+        federal_spending_impact: metrics.federal_spending_impact,
+        federal_budget_impact: metrics.federal_budget_impact,
+      };
+      for (const [k, v] of Object.entries(model)) {
+        metrics[`${k}_model`] = v;
+        metrics[k] = v * factor;
+      }
+      metrics.baseline_expansion_enrollees = enrolledModel;
+      metrics.admin_expansion_enrollees = 29_055;
+      metrics.enrollment_calibration_factor = factor;
     }
     for (const [metric, value] of Object.entries(metrics)) {
       metricsRows.push([m.slug, year, metric, round(value, 4)]);
@@ -273,8 +298,10 @@ for (const m of REGISTRY.measures) {
       ]);
     });
 
-    // Districts.
-    if (m.has_districts) {
+    // Districts: only the measures the registry shows them for (Colorado's).
+    const showDistricts =
+      typeof m.show_districts === 'boolean' ? m.show_districts && m.has_districts : m.has_districts && m.state === 'CO';
+    if (showDistricts) {
       const n = m.district_count;
       const weights = Array.from({ length: n }, () => 0.6 + rand() * 0.8);
       const wsum = weights.reduce((a, b) => a + b, 0);
@@ -375,8 +402,10 @@ function exampleResponse(m, year, profile) {
     } else if (m.slug === 'sd-amendment-i') {
       const ratio = total / fpl;
       const eligible = ratio <= 1.38 && kids.length === 0;
-      base.medicaid = eligible ? 7_400 * adults : 0;
-      base.medicaid_enrolled = eligible ? adults : 0;
+      // Current law's work requirement (from 2027): 80 hours a month at the federal minimum wage.
+      const working = income >= WORK_REQUIREMENT_EARNINGS;
+      base.medicaid = eligible && working ? 7_400 * adults : 0;
+      base.medicaid_enrolled = eligible && working ? adults : 0;
       reform.ptc = eligible && ratio >= 1 ? 5_900 * adults : ratio > 1.38 && ratio < 4 ? Math.max(0, 5_900 - (ratio - 1.38) * 1_800) * adults : 0;
       base.ptc = ratio > 1.38 && ratio < 4 ? Math.max(0, 5_900 - (ratio - 1.38) * 1_800) * adults : 0;
       reform.marketplace_premium = reform.ptc > 0 ? Math.round(0.03 * total) : 0;
@@ -393,8 +422,31 @@ function exampleResponse(m, year, profile) {
       reform: { net_income: round(netReform, 2), state_tax: round(stateReform, 2), federal_tax: round(federal, 2), ...pick(reform) },
     };
   };
+  // Coverage text and cash income (Medicaid kind), as the household API reports them.
+  const status = (values) =>
+    values.medicaid_enrolled > 0 ? 'medicaid' : values.ptc > 0 ? 'subsidized_marketplace' : 'no_subsidized_option';
+  const reasonFor = (policy, income, values) => {
+    if (status(values) !== 'no_subsidized_option') return null;
+    const ratio = (income + (married ? profile.spouse_income ?? 0 : 0)) / fpl;
+    if (policy === 'baseline' && ratio <= 1.38 && kids.length === 0 && income < WORK_REQUIREMENT_EARNINGS) {
+      return 'work_requirement';
+    }
+    if (ratio < 1) return 'below_poverty_line';
+    return ratio >= 4 ? 'above_subsidy_limit' : 'other';
+  };
+  const withCoverage = (policy, income, values) => ({
+    ...values,
+    cash_net_income: round(values.net_income - (values.medicaid ?? 0) - (values.ptc ?? 0), 2),
+    coverage_status: status(values),
+    no_option_reason: reasonFor(policy, income, values),
+  });
+  const pointWithStatus = (income) => {
+    const pt = point(income);
+    if (m.kind !== 'medicaid') return pt;
+    return { baseline: withCoverage('baseline', income, pt.baseline), reform: withCoverage('reform', income, pt.reform) };
+  };
 
-  const points = xs.map(point);
+  const points = xs.map(pointWithStatus);
   const series = (policy) => {
     const keys = Object.keys(points[0][policy]);
     return Object.fromEntries(keys.map((k) => [k, points.map((pt) => pt[policy][k])]));
@@ -411,7 +463,7 @@ function exampleResponse(m, year, profile) {
     income_range: xs,
     income_index: index,
     sweep: { baseline: series('baseline'), reform: series('reform') },
-    at_income: point(at),
+    at_income: pointWithStatus(at),
   };
 }
 
@@ -463,6 +515,7 @@ const examples = {
 
 /** Synthetic IRS top-income comparison in the shape of scripts/diagnostics/top_tail.json. */
 function topTailFixture() {
+  // Same layout as the pipeline's manifest: per state code.
   const states = {};
   for (const [code, scale] of [['CO', 1], ['CA', 7.5], ['WA', 1.4]]) {
     const soi = {
@@ -476,16 +529,9 @@ function topTailFixture() {
     };
     const ratio = { returns: 0.93, agi: 1.05, returns_500k_1m: 1.02, agi_500k_1m: 1.1, returns_1m_plus: 2.2, agi_1m_plus: 1.1, agi_above_1m: 0.6 };
     const model = Object.fromEntries(Object.entries(soi).map(([k, v]) => [k, v * ratio[k]]));
-    const measures = {};
-    for (const m of REGISTRY.measures.filter((x) => x.state === code && x.kind === 'income_tax')) {
-      for (const y of m.years) {
-        const change = PROFILES[m.slug][y].budget;
-        measures[`${m.slug}:${y}`] = { revenue_change: change, coverage_scaled_revenue_change: change * 1.24 };
-      }
-    }
-    states[code] = { state: code, model_year: 2024, soi_year: 2023, model_filers: model, soi, coverage: ratio, measures };
+    states[code] = { filer_year: 2024, soi_year: 2023, model_filers: model, soi, coverage: ratio, band_scale: {} };
   }
-  return { dataset_revision: 'synthetic', pin: 'synthetic fixture', states };
+  return states;
 }
 
 const manifest = {
@@ -501,6 +547,13 @@ const manifest = {
     ),
   ),
   top_tail: topTailFixture(),
+  // Same shape as the pipeline's manifest.
+  spm_resources_adjustment: {
+    applied: true,
+    added_to_spm_resources: ['partnership_s_corp_income', 'farm_rent_income', 'ak_permanent_fund_dividend'],
+    not_added: ['debt_relief'],
+    description: 'Synthetic fixture.',
+  },
 };
 
 // ── Write ───────────────────────────────────────────────────────────────

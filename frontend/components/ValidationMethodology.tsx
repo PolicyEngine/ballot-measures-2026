@@ -4,6 +4,7 @@ import { getContent } from '@/content/measures';
 import { formatCount, formatPercent, formatTimestamp } from '@/lib/format';
 import {
   REGISTRY,
+  topTailFor,
   useManifest,
   useResultsCsv,
   type Manifest,
@@ -13,8 +14,10 @@ import {
   CORE_METRICS as C,
   MEDICAID_METRICS as MC,
   SCHOOL_MEALS_METRICS as SM,
+  INCOME_TAX_METRICS as IT,
   compareEstimate,
   formatEstimateValue,
+  modelMetric,
   type EstimateComparison,
 } from '@/lib/metrics';
 import { STATEWIDE_FILES, metric, metricsFor } from '@/lib/results';
@@ -40,6 +43,95 @@ function differenceText(c: EstimateComparison): string {
   return `${formatPercent(c.ratioPercent, 0)} of the official figure`;
 }
 
+/** "Before calibration: 55,952" under a calibrated figure (SD publishes `<metric>_model`). */
+function ModelBeforeCalibration({
+  metrics,
+  name,
+  unit,
+}: {
+  metrics: Record<string, number> | null;
+  name: string;
+  unit: 'usd' | 'people';
+}) {
+  const raw = metric(metrics, modelMetric(name));
+  if (raw === null || metric(metrics, MC.enrollmentCalibrationFactor) === null) return null;
+  return (
+    <span className="block text-xs font-normal text-gray-500">
+      Before calibration: {formatEstimateValue({ low: raw, high: raw }, unit, { sign: raw < 0, model: true })}
+    </span>
+  );
+}
+
+/**
+ * Rows of the model-vs-calibrated table: the model value's key and the
+ * calibrated value's key (scripts/DATA_SCHEMA.md: calibrated keys keep their
+ * unscaled value under `<key>_model`; enrollment pairs the model's own count
+ * with the administrative one).
+ */
+const CALIBRATION_ROWS: { label: string; model: string; calibrated: string; unit: 'usd' | 'people' }[] = [
+  {
+    label: 'Enrolled through expansion under current law',
+    model: MC.baselineExpansionEnrollees,
+    calibrated: MC.adminExpansionEnrollees,
+    unit: 'people',
+  },
+  ...(
+    [
+      [MC.peopleLosingMedicaid, 'People losing Medicaid', 'people'],
+      [MC.losingBelow100fpl, 'In the coverage gap (income below the poverty line)', 'people'],
+      [MC.losing100PlusFpl, 'Income at or above the poverty line', 'people'],
+      [MC.gainingPtc, 'Gaining a premium tax credit', 'people'],
+      [MC.medicaidCostChange, 'Change in Medicaid spending', 'usd'],
+      [MC.medicaidStateCostChange, 'State share', 'usd'],
+      [MC.medicaidFederalCostChange, 'Federal share', 'usd'],
+      [MC.ptcChange, 'Change in premium tax credits', 'usd'],
+      [C.stateBudgetImpact, 'State budget impact', 'usd'],
+      [C.federalBudgetImpact, 'Federal budget impact', 'usd'],
+    ] as const
+  ).map(([key, label, unit]) => ({ label, model: modelMetric(key), calibrated: key, unit })),
+];
+
+/** Model vs calibrated values for the Medicaid scenario; null until the pipeline publishes them. */
+export function CalibrationTable({ metrics }: { metrics: Record<string, number> | null }) {
+  const factor = metric(metrics, MC.enrollmentCalibrationFactor);
+  if (factor === null) return null;
+  const admin = metric(metrics, MC.adminExpansionEnrollees);
+  const fmt = (v: number | null, unit: 'usd' | 'people') =>
+    v === null ? DASH : formatEstimateValue({ low: v, high: v }, unit, { sign: unit === 'usd' && v !== 0, model: true });
+  const rows = CALIBRATION_ROWS.filter(
+    (r) => metric(metrics, r.model) !== null || metric(metrics, r.calibrated) !== null,
+  ).map((r) => ({
+    label: r.label,
+    values: [fmt(metric(metrics, r.model), r.unit), fmt(metric(metrics, r.calibrated), r.unit)],
+  }));
+  return (
+    <div className="space-y-2">
+      <p className="text-sm text-gray-700">
+        PolicyEngine&apos;s model counts more adults enrolled through expansion than the state
+        reports, so the coverage and budget figures on these pages are scaled to the Department of
+        Social Services&apos; enrollment
+        {admin !== null ? ` (${formatCount(admin)} people)` : ''}: a calibration factor of{' '}
+        {factor.toFixed(3)}. Household-level figures are not scaled.
+      </p>
+      <CompareTable
+        caption="Model and calibrated values"
+        firstColumn="Measure"
+        columns={['Model', 'Calibrated to enrollment']}
+        rows={rows}
+      />
+    </div>
+  );
+}
+
+/**
+ * Official figures the model is calibrated to: compare them with the
+ * model's own value instead (enrollment calibrated to administrative data
+ * matches it by construction).
+ */
+const CALIBRATION_TARGETS: Record<string, string> = {
+  [MC.adminExpansionEnrollees]: MC.baselineExpansionEnrollees,
+};
+
 /** Model vs official estimates, one row per official estimate. */
 export function ValidationTable({
   measure,
@@ -48,9 +140,19 @@ export function ValidationTable({
   measure: Measure;
   metricsByYear: Record<number, Record<string, number> | null>;
 }) {
-  const rows = measure.official_estimates.map((e) =>
-    compareEstimate(e, metricsByYear[e.model_year] ?? null),
-  );
+  const rows = measure.official_estimates.map((e) => {
+    const target = CALIBRATION_TARGETS[e.metric];
+    const metrics = metricsByYear[e.model_year] ?? null;
+    const comparison = compareEstimate(target ? { ...e, metric: target } : e, metrics);
+    // Enrollment rows compare the model's own count, before calibration.
+    const calibrated = metric(metrics, MC.enrollmentCalibrationFactor) !== null;
+    const calibrationNote = target
+      ? 'Model before calibration; the dashboard scales its counts and costs to this figure'
+      : calibrated && e.metric === MC.baselineExpansionEnrollees
+        ? 'Model before calibration to the Department of Social Services’ enrollment'
+        : null;
+    return { ...comparison, estimate: e, calibrationNote };
+  });
   if (rows.length === 0) {
     return <p className="text-sm text-gray-600">No official estimate has been published for this measure.</p>;
   }
@@ -86,8 +188,18 @@ export function ValidationTable({
                   ? formatEstimateValue(c.model, c.estimate.unit, { sign: c.model.low < 0, model: true })
                   : 'Pending'}
                 <span className="block text-xs font-normal text-gray-500">{c.estimate.model_year}</span>
+                <ModelBeforeCalibration
+                  metrics={metricsByYear[c.estimate.model_year] ?? null}
+                  name={c.estimate.metric}
+                  unit={c.estimate.unit}
+                />
               </td>
-              <td className="py-3 px-3 text-gray-700">{differenceText(c)}</td>
+              <td className="py-3 px-3 text-gray-700">
+                {differenceText(c)}
+                {c.calibrationNote && (
+                  <span className="block text-xs text-gray-500 mt-0.5">{c.calibrationNote}</span>
+                )}
+              </td>
             </tr>
           ))}
         </tbody>
@@ -149,9 +261,10 @@ function KindMethodology({
       return (
         <div className="space-y-3 text-sm text-gray-700">
           <p>
-            <strong>Participation adjustment.</strong> PolicyEngine values each meal a student would
-            newly receive free and, by default, assumes every child aged 5 to 17 eats breakfast and
-            lunch on each of 180 school days. Not every student does, so the statewide figures scale
+            <strong>Participation adjustment.</strong>{' '}
+            PolicyEngine values each meal a student would newly receive free and, by default,
+            assumes every child aged 5 to 17 eats breakfast and lunch on each of 180 school days.
+            Not every student does, so the statewide figures scale
             the model to public school enrollment (excluding schools that already serve every meal
             free) and to the meals served per enrolled student on a typical day, from federal
             average daily participation data. The low case keeps today&apos;s participation; the
@@ -174,30 +287,36 @@ function KindMethodology({
       );
     }
     case 'medicaid': {
-      const enrolled = metric(metrics, MC.baselineExpansionEnrollees);
+      const enrolledModel =
+        metric(metrics, modelMetric(MC.baselineExpansionEnrollees)) ??
+        metric(metrics, MC.baselineExpansionEnrollees);
       const total = metric(metrics, MC.medicaidCostChange);
       const state = metric(metrics, MC.medicaidStateCostChange);
       const usd = (v: number) => formatEstimateValue({ low: v, high: v }, 'usd', { model: true });
       return (
         <div className="space-y-3 text-sm text-gray-700">
           <p>
-            <strong>Health benefits in net income.</strong> Both current law and the scenario count
-            Medicaid at its average cost per enrollee and marketplace premium tax credits at their
-            dollar value in household net income, so the household and distributional figures show
-            the value of coverage lost and credits gained. They do not reflect differences in
-            premiums paid, cost sharing or access to care.
+            <strong>People rather than net income.</strong> PolicyEngine values Medicaid at its
+            average cost per enrollee, the same for every adult, while marketplace premium tax
+            credits rise with age. A net-income comparison would therefore show some adults gaining
+            when they move from Medicaid to marketplace coverage, so this scenario is reported in
+            people, premiums and government spending. None of these figures reflect differences in
+            cost sharing or access to care.
           </p>
           <p>
-            <strong>Expansion enrollment.</strong> The model counts{' '}
-            {enrolled === null ? 'a pending number of' : formatCount(enrolled)} people enrolled
-            through expansion under current law. The Department of Social Services reports an
-            average of 29,055 a month in state fiscal year 2025, and the ballot pamphlet&apos;s
-            statements cite about 30,000.
+            <strong>Expansion enrollment.</strong>{' '}
+            {`The model counts ${enrolledModel === null ? 'a pending number of' : formatCount(enrolledModel)} people enrolled through expansion under current law.`}{' '}
+            The Department of Social Services reports an average of 29,055 a month in state fiscal
+            year 2025, and the ballot pamphlet&apos;s statements cite about 30,000.
           </p>
+          <CalibrationTable metrics={metrics} />
           {total !== null && (
             <p>
-              <strong>Expansion costs.</strong> In the model, Medicaid spending on the expansion
-              group is {usd(Math.abs(total))} a year
+              <strong>Expansion costs.</strong>{' '}
+              {metric(metrics, MC.enrollmentCalibrationFactor) !== null
+                ? 'After calibration to enrollment, Medicaid'
+                : 'Medicaid'}{' '}
+              spending on the expansion group is {usd(Math.abs(total))} a year
               {state !== null ? `, of which the state pays ${usd(Math.abs(state))} at today's 10% share` : ''}.
               The state spending change on the statewide tab compares the scenario with current
               law at that 10% share. Each 10-percentage-point drop in the federal share would shift
@@ -220,10 +339,10 @@ function KindMethodology({
     case 'income_tax':
       return (
         <p className="text-sm text-gray-700">
-          <strong>Top incomes.</strong> Changes in tax on high incomes drive this measure&apos;s
-          revenue. The few sampled households at the top carry large weights, so the effective
-          sample sizes above, and the comparison with IRS data below, are the best guides to the
-          estimate&apos;s precision.
+          <strong>Top incomes.</strong>{' '}
+          Changes in tax on high incomes drive this measure&apos;s revenue. The few sampled
+          households at the top carry large weights, so the comparison with IRS data and the
+          effective sample sizes above are the best guides to the estimate&apos;s precision.
         </p>
       );
   }
@@ -242,57 +361,77 @@ export function TopTailComparison({
   measure,
   year,
   manifest,
+  metrics,
 }: {
   measure: Measure;
   year: number;
   manifest: Manifest | null | undefined;
+  /** The measure-year's metrics.csv values (revenue_coverage_scaled, soi_coverage_*). */
+  metrics?: Record<string, number> | null;
 }) {
-  const state = manifest?.top_tail?.states?.[measure.state];
-  if (measure.kind !== 'income_tax' || !state) return null;
-  const entry = state.measures?.[`${measure.slug}:${year}`];
+  if (measure.kind !== 'income_tax') return null;
+  const state = topTailFor(manifest?.top_tail, measure.state);
+  // Revenue: the model's change and the coverage-scaled one, from metrics.csv
+  // (older manifests carried them per measure-year under top_tail).
+  const fromManifest = state?.measures?.[`${measure.slug}:${year}`];
+  const scaled = metric(metrics, IT.revenueCoverageScaled) ?? fromManifest?.coverage_scaled_revenue_change ?? null;
+  const revenue =
+    metric(metrics, C.stateRevenueImpact) ?? metric(metrics, C.stateBudgetImpact) ?? fromManifest?.revenue_change ?? null;
+  const returnsRatio = metric(metrics, 'soi_coverage_returns_1m_plus') ?? state?.coverage?.returns_1m_plus ?? null;
+  const incomeRatio = metric(metrics, 'soi_coverage_agi_above_1m') ?? state?.coverage?.agi_above_1m ?? null;
+  if (!state && scaled === null && returnsRatio === null) return null;
+
   const fmt = (v: number | undefined, money: boolean) =>
     v === undefined || !Number.isFinite(v)
       ? DASH
       : money
         ? formatEstimateValue({ low: v, high: v }, 'usd')
         : formatCount(v);
+  const usd = (v: number) => formatEstimateValue({ low: v, high: v }, 'usd', { sign: true, model: true });
+  const filerYear = state?.filer_year ?? state?.model_year;
   return (
     <section aria-labelledby="top-tail-heading" className="space-y-3">
       <h3 id="top-tail-heading" className="text-lg font-semibold text-gray-900">
         Top incomes compared with IRS data
       </h3>
-      <CompareTable
-        caption={`${measure.state_name} filers: model (${state.model_year} data) and IRS Statistics of Income (${state.soi_year})`}
-        firstColumn="Filers"
-        columns={['Model', 'IRS', 'Model ÷ IRS']}
-        rows={SOI_ROWS.map((r) => ({
-          label: r.label,
-          values: [
-            fmt(state.model_filers?.[r.key], r.money),
-            fmt(state.soi?.[r.key], r.money),
-            state.coverage?.[r.key] === undefined ? DASH : formatPercent(state.coverage[r.key] * 100, 0),
-          ],
-        }))}
-      />
-      {entry && (
+      {state ? (
+        <CompareTable
+          caption={`${measure.state_name} filers: model (${filerYear ?? 'model'} data) and IRS Statistics of Income (${state.soi_year})`}
+          firstColumn="Filers"
+          columns={['Model', 'IRS', 'Model ÷ IRS']}
+          rows={SOI_ROWS.map((r) => ({
+            label: r.label,
+            values: [
+              fmt(state.model_filers?.[r.key], r.money),
+              fmt(state.soi?.[r.key], r.money),
+              state.coverage?.[r.key] === undefined ? DASH : formatPercent(state.coverage[r.key] * 100, 0),
+            ],
+          }))}
+        />
+      ) : (
+        <CompareTable
+          caption={`${measure.state_name} filers: model ÷ IRS Statistics of Income`}
+          firstColumn="Filers"
+          columns={['Model ÷ IRS']}
+          rows={[
+            {
+              label: 'Returns with income of $1 million or more',
+              values: [returnsRatio === null ? DASH : formatPercent(returnsRatio * 100, 0)],
+            },
+            {
+              label: 'Income above $1 million',
+              values: [incomeRatio === null ? DASH : formatPercent(incomeRatio * 100, 0)],
+            },
+          ]}
+        />
+      )}
+      {scaled !== null && revenue !== null && (
         <p className="text-sm text-gray-700">
-          The model&apos;s revenue change for {year} is{' '}
-          <strong>
-            {formatEstimateValue({ low: entry.revenue_change, high: entry.revenue_change }, 'usd', {
-              sign: true,
-              model: true,
-            })}
-          </strong>
-          . Scaling the change in each income band so the model&apos;s top-income returns and income
-          match the IRS figures gives{' '}
-          <strong>
-            {formatEstimateValue(
-              { low: entry.coverage_scaled_revenue_change, high: entry.coverage_scaled_revenue_change },
-              'usd',
-              { sign: true, model: true },
-            )}
-          </strong>
-          . The scaled figure is an adjustment for comparison, not a separate simulation.
+          The model&apos;s revenue change for {year} is <strong>{usd(revenue)}</strong>. Scaling the
+          change in each income band so the model&apos;s top-income returns and income match the IRS
+          figures gives <strong>{usd(scaled)}</strong>. The scaled figure is an adjustment for
+          comparison, not a separate simulation; the dashboard&apos;s headline figures are the
+          model&apos;s own.
         </p>
       )}
     </section>
@@ -355,6 +494,17 @@ function ModelAndData({ measure, manifest }: { measure: Measure; manifest: Manif
           ].join('\n')}
         </pre>
       </div>
+      {manifest?.spm_resources_adjustment?.applied && measure.kind !== 'medicaid' && (
+        <p>
+          <span className="font-semibold text-gray-900">Poverty measures.</span> PolicyEngine adds
+          partnership and S corporation income, farm rental income and the Alaska Permanent Fund
+          dividend to SPM resources, which the released model omits (
+          <ExternalLink href="https://github.com/PolicyEngine/policyengine-us/issues/9919">
+            policyengine-us#9919
+          </ExternalLink>
+          ).
+        </p>
+      )}
     </div>
   );
 }
@@ -389,7 +539,7 @@ export default function ValidationMethodology({ measure, year }: Props) {
         ))}
       </section>
 
-      <TopTailComparison measure={measure} year={year} manifest={manifest} />
+      <TopTailComparison measure={measure} year={year} manifest={manifest} metrics={metricsByYear[year] ?? null} />
 
       <section aria-labelledby="sample-heading" className="space-y-3">
         <h3 id="sample-heading" className="text-lg font-semibold text-gray-900">

@@ -1,9 +1,28 @@
 'use client';
 
 import { useExampleHouseholds, type ExampleHousehold, type Measure } from '@/lib/measures';
+import { coverageOutcome, coverageSummary } from '@/lib/coverage';
 import { netIncomeChange } from '@/lib/householdForm';
-import { formatUSDWithSign } from '@/lib/format';
+import { formatUSD, formatUSDWithSign } from '@/lib/format';
 import { toneOf, toneText } from './ui';
+
+/** Card body for the Medicaid scenario: the coverage outcome, not a net-income change. */
+function CoverageCardBody({ example }: { example: ExampleHousehold }) {
+  const outcome = coverageOutcome(example.response);
+  return (
+    <>
+      <span className="mt-2 text-sm font-semibold text-gray-900 leading-5">{coverageSummary(outcome)}</span>
+      {outcome.reform === 'marketplace' && outcome.baseline !== 'marketplace' && (
+        <span className="mt-1 text-xs text-gray-600">
+          Premium after the credit: {formatUSD(outcome.premiumReform)}/year
+        </span>
+      )}
+      {outcome.reformReason && outcome.baseline !== 'no_subsidy' && (
+        <span className="mt-1 text-xs text-gray-600">{outcome.reformReason}</span>
+      )}
+    </>
+  );
+}
 
 interface Props {
   measure: Measure;
@@ -16,10 +35,21 @@ interface Props {
   selectedId?: string | null;
 }
 
+function NetIncomeCardBody({ example }: { example: ExampleHousehold }) {
+  const change = netIncomeChange(example.response);
+  return (
+    <span className={`mt-2 text-xl font-bold tabular-nums ${toneText(toneOf(change))}`}>
+      {formatUSDWithSign(change)}
+      <span className="text-sm font-medium text-gray-500">/year</span>
+    </span>
+  );
+}
+
 /** Precomputed example households for one measure (example_households.json). */
 export default function ExampleHouseholds({ measure, year: selectedYear, onSelect, selectedId }: Props) {
   const { households, year, isLoading } = useExampleHouseholds(measure.slug, selectedYear);
   const conditional = measure.kind_params?.conditional === true;
+  const coverage = measure.kind === 'medicaid';
 
   if (isLoading) return null;
 
@@ -37,13 +67,14 @@ export default function ExampleHouseholds({ measure, year: selectedYear, onSelec
         Example households
       </h3>
       <p className="text-sm text-gray-600 mb-3">
-        Change in annual net income {conditional ? 'in the scenario' : `if ${measure.designation} passes`},{' '}
-        {year}. Select one to see its full results.
+        {coverage
+          ? `Health coverage under current law and in the scenario, ${year}.`
+          : `Change in annual net income ${conditional ? 'in the scenario' : `if ${measure.designation} passes`}, ${year}.`}{' '}
+        Select one to see its full results.
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {households.map((h) => {
           const isSelected = selectedId === h.id;
-          const change = netIncomeChange(h.response);
           return (
             <button
               key={h.id}
@@ -58,10 +89,7 @@ export default function ExampleHouseholds({ measure, year: selectedYear, onSelec
               }`}
             >
               <span className="text-sm font-semibold text-gray-800 leading-5">{h.label}</span>
-              <span className={`mt-2 text-xl font-bold tabular-nums ${toneText(toneOf(change))}`}>
-                {formatUSDWithSign(change)}
-                <span className="text-sm font-medium text-gray-500">/year</span>
-              </span>
+              {coverage ? <CoverageCardBody example={h} /> : <NetIncomeCardBody example={h} />}
             </button>
           );
         })}

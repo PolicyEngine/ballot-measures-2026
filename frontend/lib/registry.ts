@@ -55,8 +55,16 @@ export interface Measure {
   years: number[];
   headline_year: number;
   headline_metric: string;
+  /** The state has more than one congressional district. */
   has_districts: boolean;
   district_count: number;
+  /**
+   * The dashboard shows a district breakdown for this measure (only the two
+   * Colorado measures: elsewhere few sample households carry the change).
+   * Normalized from measures.json's `show_districts`; registries without it
+   * fall back to Colorado measures in states with districts.
+   */
+  show_districts: boolean;
   official_estimates: OfficialEstimate[];
   income_bands: IncomeBand[];
   sweep_max: number;
@@ -84,9 +92,20 @@ const toNumber = (value: unknown): number => {
   return Number.isNaN(n) ? 0 : n;
 };
 
-type RawMeasure = Omit<Measure, 'income_bands'> & {
+type RawMeasure = Omit<Measure, 'income_bands' | 'show_districts'> & {
   income_bands: [number | string, number | string, string][];
+  show_districts?: boolean;
 };
+
+/** Whether to show a measure's district breakdown (see Measure.show_districts). */
+export function showsDistricts(m: {
+  show_districts?: boolean | null;
+  has_districts: boolean;
+  state: string;
+}): boolean {
+  if (typeof m.show_districts === 'boolean') return m.show_districts && m.has_districts;
+  return m.has_districts && m.state === 'CO';
+}
 
 export function normalizeRegistry(raw: unknown): MeasuresRegistry {
   const r = raw as Omit<MeasuresRegistry, 'measures'> & { measures: RawMeasure[] };
@@ -96,6 +115,7 @@ export function normalizeRegistry(raw: unknown): MeasuresRegistry {
     registry_hash: r.registry_hash,
     measures: r.measures.map((m) => ({
       ...m,
+      show_districts: showsDistricts(m),
       years: m.years.map(Number),
       income_bands: m.income_bands.map(([low, high, label]) => ({
         low: toNumber(low),

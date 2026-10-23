@@ -82,7 +82,7 @@ describe('CongressionalDistrictImpact', () => {
 
   it('says results are not yet available without district rows', async () => {
     mockDataFiles({});
-    renderWithQuery(<CongressionalDistrictImpact measure={getMeasure('wa-i-645')} year={2028} />);
+    renderWithQuery(<CongressionalDistrictImpact measure={getMeasure('co-prop-nn')} year={2028} />);
     expect(await screen.findByText('District results not yet available')).toBeInTheDocument();
   });
 });

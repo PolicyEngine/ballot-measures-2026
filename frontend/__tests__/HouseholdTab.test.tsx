@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import HouseholdTab, { type HouseholdTabState } from '../components/HouseholdTab';
-import { HouseholdResults } from '../components/ImpactAnalysis';
+import ImpactAnalysis, { HouseholdResults } from '../components/ImpactAnalysis';
 import { defaultForm } from '../lib/householdForm';
 import { getMeasure } from '../lib/registry';
 import { fixtureFiles, fixtureResponse, mockDataFiles, renderWithQuery } from './testUtils';
@@ -87,15 +87,72 @@ describe('HouseholdTab', () => {
 
 describe('HouseholdResults', () => {
   it('shows the change at the entered income and kind-specific rows', () => {
-    const response = fixtureResponse('sd-amendment-i', 0);
-    renderWithQuery(<HouseholdResults measure={getMeasure('sd-amendment-i')} result={response} />);
+    const response = fixtureResponse('co-prop-nn', 0, 2027);
+    renderWithQuery(<HouseholdResults measure={getMeasure('co-prop-nn')} result={response} />);
     expect(screen.getByText('Change in household net income')).toBeInTheDocument();
-    expect(screen.getByText('In the scenario, compared with current law')).toBeInTheDocument();
+    expect(screen.getByText('If it passes, compared with current law')).toBeInTheDocument();
     const table = screen.getByRole('table', { name: 'At your employment income' });
-    expect(within(table).getByText('Medicaid (value of coverage)')).toBeInTheDocument();
-    expect(within(table).getByText('Scenario: expansion ends')).toBeInTheDocument();
+    expect(within(table).getByText('Sales tax refund')).toBeInTheDocument();
     expect(screen.getByRole('group', { name: 'Chart' })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Medicaid and premium tax credit' }));
-    expect(screen.getByText('Medicaid and premium tax credit by employment income')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Sales tax refund' }));
+    expect(screen.getByText('Sales tax refund by employment income')).toBeInTheDocument();
+  });
+});
+
+describe('Medicaid scenario household results', () => {
+  it('shows coverage and premiums instead of a net-income change', () => {
+    // Married couple, $28k: both lose Medicaid and gain a premium tax credit.
+    const response = fixtureResponse('sd-amendment-i', 2);
+    renderWithQuery(
+      <ImpactAnalysis measure={getMeasure('sd-amendment-i')} request={null} precomputed={response} exampleLabel="Couple" />,
+    );
+    expect(screen.queryByText('Change in household net income')).toBeNull();
+    expect(screen.getByText('Coverage under current law')).toBeInTheDocument();
+    expect(screen.getAllByText('Medicaid').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('Subsidized marketplace coverage').length).toBeGreaterThan(0);
+    expect(screen.getByText('Coverage in the scenario')).toBeInTheDocument();
+    // The cash change is the change in cash_net_income: the $840 premium the couple now pays.
+    expect(screen.getByText('Change in cash income').parentElement).toHaveTextContent('-$840/year');
+    const table = screen.getByRole('table', { name: 'At your employment income' });
+    expect(within(table).getByText('People enrolled in Medicaid')).toBeInTheDocument();
+    expect(within(table).getByText('Premium tax credit')).toBeInTheDocument();
+    expect(within(table).queryByText('Household net income')).toBeNull();
+    expect(within(table).getByText(/^Cash income/).closest('tr')).toHaveTextContent('$28,000$27,160-$840');
+    // The chart shows coverage bands by income, then enrollment, the credit and premiums.
+    expect(screen.getByText('Health coverage by employment income')).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', {
+        name: 'Current law: No subsidized coverage option (work requirement), up to $6,000; Medicaid, $7,500 to $28,500; Subsidized marketplace coverage, $30,000 to $60,000',
+      }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole('img', {
+        name: 'Scenario: expansion ends: No subsidized coverage option (income below the poverty line), up to $21,000; Subsidized marketplace coverage, $22,500 to $60,000',
+      }),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Coverage gap')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Medicaid enrollment' }));
+    expect(screen.getByText('People enrolled in Medicaid by employment income')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Premium you pay' }));
+    expect(screen.getByText('Marketplace premium after the credit by employment income')).toBeInTheDocument();
+  });
+
+  it('labels the coverage gap when no credit replaces Medicaid', () => {
+    const response = fixtureResponse('sd-amendment-i', 0);
+    renderWithQuery(<ImpactAnalysis measure={getMeasure('sd-amendment-i')} request={null} precomputed={response} />);
+    expect(screen.getAllByText('No subsidized coverage option').length).toBeGreaterThan(0);
+    // The API's no_option_reason explains why.
+    expect(screen.getByText('Income below the poverty line, too low for a premium tax credit')).toBeInTheDocument();
+  });
+
+  it('describes example households by coverage outcome', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<Harness slug="sd-amendment-i" year={2028} />);
+    const card = await screen.findByRole('button', { name: /Single adult, \$14k wages/ });
+    expect(card).toHaveTextContent('Medicaid → No subsidized coverage option');
+    expect(screen.getByRole('button', { name: /Married couple, \$28k/ })).toHaveTextContent(
+      /Medicaid → Subsidized marketplace coverage.*Premium after the credit/,
+    );
+    expect(screen.getByText(/Health coverage under current law and in the scenario, 2028/)).toBeInTheDocument();
   });
 });

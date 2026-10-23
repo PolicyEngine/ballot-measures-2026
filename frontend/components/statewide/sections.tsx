@@ -18,15 +18,9 @@ import {
   formatCount,
   formatPercent,
   formatPercentagePoints,
-  formatShare,
   formatUSDWithSign,
 } from '@/lib/format';
-import {
-  CORE_METRICS as C,
-  MEDICAID_METRICS as MC,
-  POVERTY_MEASURES,
-  povertyMetric,
-} from '@/lib/metrics';
+import { CORE_METRICS as C, POVERTY_MEASURES, povertyMetric } from '@/lib/metrics';
 import type { Measure } from '@/lib/registry';
 import { metric, type StatewideResults } from '@/lib/results';
 import {
@@ -41,8 +35,8 @@ import {
   WrappedTick,
   niceDomain,
 } from '../chartUtils';
-import { Callout, CompareTable, toneOf, toneText } from '../ui';
-import { DASH, kindDetailRows, show, signedMoney } from './KindSummary';
+import { CompareTable, toneOf, toneText } from '../ui';
+import { kindDetailRows, show, signedMoney } from './KindSummary';
 
 function MissingSection({ file }: { file: string }) {
   return (
@@ -415,7 +409,7 @@ export function PovertySection({ data }: { data: StatewideResults }) {
   const pushed = metric(m, C.peoplePushedIntoPoverty);
   // Children are shown only when both directions are reported.
   const childrenOut = metric(m, C.childrenLiftedOutOfPoverty);
-  const childrenIn = metric(m, 'children_pushed_into_poverty');
+  const childrenIn = metric(m, C.childrenPushedIntoPoverty);
   const movementRows = [
     { label: 'Moved out of poverty', values: [show(lifted, formatCount)] },
     { label: 'Moved into poverty', values: [show(pushed, formatCount)] },
@@ -489,63 +483,6 @@ export function PovertySection({ data }: { data: StatewideResults }) {
         Poverty estimates rest on survey households, so small changes can reflect a handful of
         sampled households; the methodology tab reports effective sample sizes.
       </p>
-    </div>
-  );
-}
-
-// ── Coverage (Medicaid measures) ────────────────────────────────────────
-
-export function CoverageSection({ data }: { data: StatewideResults }) {
-  const m = data.metrics;
-  const losing = metric(m, MC.peopleLosingMedicaid);
-  const below = metric(m, MC.losingBelow100fpl);
-  const above = metric(m, MC.losing100PlusFpl);
-  const gainingPtc = metric(m, MC.gainingPtc);
-  const enrolled = metric(m, MC.baselineExpansionEnrollees);
-  const share = (v: number | null) =>
-    v !== null && losing ? ` (${formatShare(v / losing)})` : '';
-
-  return (
-    <div className="space-y-8">
-      <div className="grid gap-8 lg:grid-cols-2">
-        <CompareTable
-          caption={`Coverage in the scenario, ${data.year}`}
-          firstColumn="Group"
-          columns={['People']}
-          rows={[
-            { label: 'Enrolled through expansion under current law', values: [show(enrolled, formatCount)] },
-            { label: 'Losing Medicaid', values: [show(losing, formatCount)] },
-            {
-              label: 'Income below the poverty line (no marketplace subsidy)',
-              values: [losing === null ? DASH : `${show(below, formatCount)}${share(below)}`],
-            },
-            {
-              label: 'Income at or above the poverty line',
-              values: [losing === null ? DASH : `${show(above, formatCount)}${share(above)}`],
-            },
-            {
-              label: 'Losing Medicaid and gaining a premium tax credit',
-              values: [show(gainingPtc, formatCount)],
-            },
-          ]}
-        />
-        <CompareTable
-          caption="Spending changes"
-          firstColumn="Program"
-          columns={['Change']}
-          rows={[
-            { label: 'Medicaid, total', values: [show(metric(m, MC.medicaidCostChange), signedMoney)] },
-            { label: 'Medicaid, state share', values: [show(metric(m, MC.medicaidStateCostChange), signedMoney)] },
-            { label: 'Medicaid, federal share', values: [show(metric(m, MC.medicaidFederalCostChange), signedMoney)] },
-            { label: 'Premium tax credits (federal)', values: [show(metric(m, MC.ptcChange), signedMoney)] },
-          ]}
-        />
-      </div>
-      <Callout>
-        Adults with income below the poverty line do not qualify for marketplace premium tax credits,
-        so in this scenario they lose Medicaid without a subsidized alternative. Adults at or above
-        the poverty line may qualify for premium tax credits to buy marketplace coverage.
-      </Callout>
     </div>
   );
 }

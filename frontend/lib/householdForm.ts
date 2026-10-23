@@ -11,8 +11,8 @@ import type { HashParams } from './embedding';
 import type {
   HouseholdRequest,
   HouseholdResponse,
+  NumericPointKey,
   PolicyName,
-  PolicyPoint,
   PolicySweep,
 } from './householdApi';
 import type { ExampleProfile, Measure, MeasureKind } from './registry';
@@ -212,7 +212,7 @@ export function filingStatusLabel(status: string | null | undefined): string | n
 }
 
 /** reform − baseline for one key at the entered income (0 when absent). */
-export function changeAt(result: HouseholdResponse, key: keyof PolicyPoint): number {
+export function changeAt(result: HouseholdResponse, key: NumericPointKey): number {
   const before = result.at_income.baseline[key] ?? 0;
   const after = result.at_income.reform[key] ?? 0;
   return after - before;
@@ -221,14 +221,14 @@ export function changeAt(result: HouseholdResponse, key: keyof PolicyPoint): num
 export const netIncomeChange = (result: HouseholdResponse): number => changeAt(result, 'net_income');
 
 /** The series the third chart view shows for a measure kind. */
-export const KIND_SERIES: Record<MeasureKind, { label: string; keys: (keyof PolicyPoint)[] }> = {
+export const KIND_SERIES: Record<MeasureKind, { label: string; keys: NumericPointKey[] }> = {
   income_tax: { label: 'State income tax', keys: ['state_tax'] },
   tabor_refund: { label: 'Sales tax refund', keys: ['refund'] },
   school_meals: { label: 'Value of school meals', keys: ['meal_value'] },
   medicaid: { label: 'Medicaid and premium tax credit', keys: ['medicaid', 'ptc'] },
 };
 
-const sumAt = (series: PolicySweep, keys: (keyof PolicyPoint)[], i: number) =>
+const sumAt = (series: PolicySweep, keys: NumericPointKey[], i: number) =>
   keys.reduce((total, key) => total + (series[key]?.[i] ?? 0), 0);
 
 export interface HouseholdChartRow {
@@ -259,7 +259,7 @@ export function buildChartRows(result: HouseholdResponse, kind: MeasureKind): Ho
 }
 
 export interface AtIncomeRow {
-  key: keyof PolicyPoint;
+  key: NumericPointKey;
   label: string;
   /** 'usd' values are dollars; 'count' values are people. */
   unit: 'usd' | 'count';
@@ -272,9 +272,9 @@ export interface AtIncomeRow {
 /** Rows for the at-income comparison table, by measure kind. Rows that are
  *  zero under both policies are dropped, except net income. */
 export function atIncomeRows(result: HouseholdResponse, measure: Measure): AtIncomeRow[] {
-  const point = (policy: PolicyName, key: keyof PolicyPoint) => result.at_income[policy][key] ?? 0;
+  const point = (policy: PolicyName, key: NumericPointKey) => result.at_income[policy][key] ?? 0;
   const row = (
-    key: keyof PolicyPoint,
+    key: NumericPointKey,
     label: string,
     higherIsBetter: boolean,
     unit: 'usd' | 'count' = 'usd',

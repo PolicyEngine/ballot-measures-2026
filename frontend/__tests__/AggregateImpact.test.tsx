@@ -32,15 +32,40 @@ describe('AggregateImpact', () => {
     expect(await screen.findByText(/uses state income tax withholding in the model/)).toBeInTheDocument();
   });
 
-  it('swaps poverty for health coverage for the Medicaid scenario', async () => {
+  it('shows people and spending, not net income, for the Medicaid scenario', async () => {
     mockDataFiles(fixtureFiles());
     renderWithQuery(<AggregateImpact measure={getMeasure('sd-amendment-i')} year={2028} />);
-    expect(await screen.findByText('People losing Medicaid in the scenario')).toBeInTheDocument();
-    expect(screen.getByText('27,400')).toBeInTheDocument();
+    expect(await screen.findByText('People losing Medicaid')).toBeInTheDocument();
+    // Calibrated (unsuffixed) counts, not the _model values.
+    expect(screen.getByText('28,017')).toBeInTheDocument();
+    expect(screen.queryByText('54,000')).toBeNull();
+    expect(screen.getByText('In the coverage gap')).toBeInTheDocument();
+    expect(screen.getByText('Eligible for marketplace subsidies')).toBeInTheDocument();
+    expect(screen.getByText('Gaining a premium tax credit')).toBeInTheDocument();
+    expect(screen.getByText('Change in state Medicaid spending')).toBeInTheDocument();
+    expect(screen.getByText('Change in federal Medicaid spending')).toBeInTheDocument();
+    expect(screen.getByText('Change in premium tax credits')).toBeInTheDocument();
+    expect(screen.getByText(/shown in people and government spending rather than household net income/)).toBeInTheDocument();
+    expect(screen.getByText(/calibrated to the Department of Social Services/)).toBeInTheDocument();
+    // No net-income sections.
+    expect(screen.queryByRole('tablist', { name: 'Statewide sections' })).toBeNull();
+    expect(screen.queryByText('Average change in household net income')).toBeNull();
     expect(screen.getByText(/The scenario in which expansion ends/)).toBeInTheDocument();
-    expect(screen.queryByRole('tab', { name: 'Poverty' })).toBeNull();
-    fireEvent.click(screen.getByRole('tab', { name: 'Health coverage' }));
-    expect(screen.getByText('Income below the poverty line (no marketplace subsidy)')).toBeInTheDocument();
+  });
+
+  it('explains why California and Washington have no district breakdown', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<AggregateImpact measure={getMeasure('ca-prop-3')} year={2031} />);
+    const note = await screen.findByTestId('no-districts-note');
+    expect(note).toHaveTextContent('does not break Proposition 3 down by congressional district');
+    expect(note).toHaveTextContent('district figures would be unreliable');
+  });
+
+  it('adds no district note for Colorado or at-large states', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<AggregateImpact measure={getMeasure('co-prop-nn')} year={2027} />);
+    await screen.findByText('Sales tax refunds not paid');
+    expect(screen.queryByTestId('no-districts-note')).toBeNull();
   });
 
   it('shows the school meal cost range', async () => {
@@ -73,6 +98,24 @@ describe('AggregateImpact', () => {
     // Without a children-moved-into-poverty count, children are not shown one way only.
     expect(table).not.toHaveTextContent('Children');
     expect(screen.getByText(/changes by less than 0\.1% of its current-law level/)).toBeInTheDocument();
+  });
+
+  it('shows children moving in both directions once both counts exist', () => {
+    const metrics = {
+      people_lifted_out_of_poverty: 414,
+      people_pushed_into_poverty: 0,
+      children_lifted_out_of_poverty: 95,
+      children_pushed_into_poverty: 0,
+    };
+    renderWithQuery(
+      <PovertySection
+        data={{ measure: 'wa-i-645', year: 2028, metrics, deciles: null, winnersLosers: null, incomeBrackets: null }}
+      />,
+    );
+    const table = screen.getByRole('table', { name: 'People moving across the poverty line' });
+    expect(table).toHaveTextContent('Children moved out of poverty');
+    expect(table).toHaveTextContent('Children moved into poverty');
+    expect(table).toHaveTextContent('95');
   });
 
   it('flags estimates that rest on a small effective sample', () => {

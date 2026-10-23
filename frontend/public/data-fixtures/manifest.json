@@ -1,7 +1,7 @@
 {
   "pin": "synthetic fixture",
   "dataset_revision": "synthetic",
-  "registry_hash": "68e29e92e1a68d14",
+  "registry_hash": "de8938a81d6a3992",
   "generated_at_utc": "2026-10-23T00:00:00Z",
   "synthetic": true,
   "complete": true,
@@ -32,127 +32,113 @@
     }
   },
   "top_tail": {
-    "dataset_revision": "synthetic",
-    "pin": "synthetic fixture",
-    "states": {
-      "CO": {
-        "state": "CO",
-        "model_year": 2024,
-        "soi_year": 2023,
-        "model_filers": {
-          "returns": 2790000,
-          "agi": 325500000000,
-          "returns_500k_1m": 38760,
-          "agi_500k_1m": 27500000000.000004,
-          "returns_1m_plus": 34320,
-          "agi_1m_plus": 51700000000.00001,
-          "agi_above_1m": 19200000000
-        },
-        "soi": {
-          "returns": 3000000,
-          "agi": 310000000000,
-          "returns_500k_1m": 38000,
-          "agi_500k_1m": 25000000000,
-          "returns_1m_plus": 15600,
-          "agi_1m_plus": 47000000000,
-          "agi_above_1m": 32000000000
-        },
-        "coverage": {
-          "returns": 0.93,
-          "agi": 1.05,
-          "returns_500k_1m": 1.02,
-          "agi_500k_1m": 1.1,
-          "returns_1m_plus": 2.2,
-          "agi_1m_plus": 1.1,
-          "agi_above_1m": 0.6
-        },
-        "measures": {
-          "co-amendment-87:2027": {
-            "revenue_change": 1810000000,
-            "coverage_scaled_revenue_change": 2244400000
-          }
-        }
+    "CO": {
+      "filer_year": 2024,
+      "soi_year": 2023,
+      "model_filers": {
+        "returns": 2790000,
+        "agi": 325500000000,
+        "returns_500k_1m": 38760,
+        "agi_500k_1m": 27500000000.000004,
+        "returns_1m_plus": 34320,
+        "agi_1m_plus": 51700000000.00001,
+        "agi_above_1m": 19200000000
       },
-      "CA": {
-        "state": "CA",
-        "model_year": 2024,
-        "soi_year": 2023,
-        "model_filers": {
-          "returns": 20925000,
-          "agi": 2441250000000,
-          "returns_500k_1m": 290700,
-          "agi_500k_1m": 206250000000.00003,
-          "returns_1m_plus": 257400.00000000003,
-          "agi_1m_plus": 387750000000.00006,
-          "agi_above_1m": 144000000000
-        },
-        "soi": {
-          "returns": 22500000,
-          "agi": 2325000000000,
-          "returns_500k_1m": 285000,
-          "agi_500k_1m": 187500000000,
-          "returns_1m_plus": 117000,
-          "agi_1m_plus": 352500000000,
-          "agi_above_1m": 240000000000
-        },
-        "coverage": {
-          "returns": 0.93,
-          "agi": 1.05,
-          "returns_500k_1m": 1.02,
-          "agi_500k_1m": 1.1,
-          "returns_1m_plus": 2.2,
-          "agi_1m_plus": 1.1,
-          "agi_above_1m": 0.6
-        },
-        "measures": {
-          "ca-prop-3:2031": {
-            "revenue_change": 9600000000,
-            "coverage_scaled_revenue_change": 11904000000
-          }
-        }
+      "soi": {
+        "returns": 3000000,
+        "agi": 310000000000,
+        "returns_500k_1m": 38000,
+        "agi_500k_1m": 25000000000,
+        "returns_1m_plus": 15600,
+        "agi_1m_plus": 47000000000,
+        "agi_above_1m": 32000000000
       },
-      "WA": {
-        "state": "WA",
-        "model_year": 2024,
-        "soi_year": 2023,
-        "model_filers": {
-          "returns": 3906000,
-          "agi": 455700000000,
-          "returns_500k_1m": 54264,
-          "agi_500k_1m": 38500000000,
-          "returns_1m_plus": 48048.00000000001,
-          "agi_1m_plus": 72380000000,
-          "agi_above_1m": 26880000000
-        },
-        "soi": {
-          "returns": 4200000,
-          "agi": 434000000000,
-          "returns_500k_1m": 53200,
-          "agi_500k_1m": 35000000000,
-          "returns_1m_plus": 21840,
-          "agi_1m_plus": 65799999999.99999,
-          "agi_above_1m": 44800000000
-        },
-        "coverage": {
-          "returns": 0.93,
-          "agi": 1.05,
-          "returns_500k_1m": 1.02,
-          "agi_500k_1m": 1.1,
-          "returns_1m_plus": 2.2,
-          "agi_1m_plus": 1.1,
-          "agi_above_1m": 0.6
-        },
-        "measures": {
-          "wa-i-645:2028": {
-            "revenue_change": -3420000000,
-            "coverage_scaled_revenue_change": -4240800000
-          },
-          "wa-i-645:2029": {
-            "revenue_change": -3950000000,
-            "coverage_scaled_revenue_change": -4898000000
-          }
-        }
-      }
+      "coverage": {
+        "returns": 0.93,
+        "agi": 1.05,
+        "returns_500k_1m": 1.02,
+        "agi_500k_1m": 1.1,
+        "returns_1m_plus": 2.2,
+        "agi_1m_plus": 1.1,
+        "agi_above_1m": 0.6
+      },
+      "band_scale": {}
+    },
+    "CA": {
+      "filer_year": 2024,
+      "soi_year": 2023,
+      "model_filers": {
+        "returns": 20925000,
+        "agi": 2441250000000,
+        "returns_500k_1m": 290700,
+        "agi_500k_1m": 206250000000.00003,
+        "returns_1m_plus": 257400.00000000003,
+        "agi_1m_plus": 387750000000.00006,
+        "agi_above_1m": 144000000000
+      },
+      "soi": {
+        "returns": 22500000,
+        "agi": 2325000000000,
+        "returns_500k_1m": 285000,
+        "agi_500k_1m": 187500000000,
+        "returns_1m_plus": 117000,
+        "agi_1m_plus": 352500000000,
+        "agi_above_1m": 240000000000
+      },
+      "coverage": {
+        "returns": 0.93,
+        "agi": 1.05,
+        "returns_500k_1m": 1.02,
+        "agi_500k_1m": 1.1,
+        "returns_1m_plus": 2.2,
+        "agi_1m_plus": 1.1,
+        "agi_above_1m": 0.6
+      },
+      "band_scale": {}
+    },
+    "WA": {
+      "filer_year": 2024,
+      "soi_year": 2023,
+      "model_filers": {
+        "returns": 3906000,
+        "agi": 455700000000,
+        "returns_500k_1m": 54264,
+        "agi_500k_1m": 38500000000,
+        "returns_1m_plus": 48048.00000000001,
+        "agi_1m_plus": 72380000000,
+        "agi_above_1m": 26880000000
+      },
+      "soi": {
+        "returns": 4200000,
+        "agi": 434000000000,
+        "returns_500k_1m": 53200,
+        "agi_500k_1m": 35000000000,
+        "returns_1m_plus": 21840,
+        "agi_1m_plus": 65799999999.99999,
+        "agi_above_1m": 44800000000
+      },
+      "coverage": {
+        "returns": 0.93,
+        "agi": 1.05,
+        "returns_500k_1m": 1.02,
+        "agi_500k_1m": 1.1,
+        "returns_1m_plus": 2.2,
+        "agi_1m_plus": 1.1,
+        "agi_above_1m": 0.6
+      },
+      "band_scale": {}
     }
+  },
+  "spm_resources_adjustment": {
+    "applied": true,
+    "added_to_spm_resources": [
+      "partnership_s_corp_income",
+      "farm_rent_income",
+      "ak_permanent_fund_dividend"
+    ],
+    "not_added": [
+      "debt_relief"
+    ],
+    "description": "Synthetic fixture."
   }
 }

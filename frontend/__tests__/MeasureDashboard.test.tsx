@@ -12,7 +12,7 @@ beforeEach(() => {
 });
 
 describe('MeasureDashboard tabs', () => {
-  it.each(['nd-measure-2', 'sd-amendment-i'])('%s has no Districts tab', (slug) => {
+  it.each(['ca-prop-3', 'wa-i-645', 'nd-measure-2', 'sd-amendment-i'])('%s has no Districts tab', (slug) => {
     renderWithQuery(<MeasureDashboard slug={slug} />);
     const tablist = screen.getByRole('tablist', { name: 'Measure sections' });
     expect(within(tablist).getAllByRole('tab').map((t) => t.textContent)).toEqual([
@@ -23,7 +23,7 @@ describe('MeasureDashboard tabs', () => {
     ]);
   });
 
-  it.each(['co-amendment-87', 'co-prop-nn', 'ca-prop-3', 'wa-i-645'])('%s has a Districts tab', (slug) => {
+  it.each(['co-amendment-87', 'co-prop-nn'])('%s has a Districts tab', (slug) => {
     renderWithQuery(<MeasureDashboard slug={slug} />);
     expect(screen.getByRole('tab', { name: 'Districts' })).toBeInTheDocument();
   });
@@ -33,7 +33,8 @@ describe('MeasureDashboard tabs', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Washington Initiative 645');
     expect(screen.getByText('Repeal the tax on income over $1 million')).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
-    expect(tabNames()).toContain('Districts');
+    // Washington has districts, but few sample households carry the change.
+    expect(tabNames()).not.toContain('Districts');
   });
 
   it('marks South Dakota as a conditional scenario', () => {

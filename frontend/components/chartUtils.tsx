@@ -278,7 +278,7 @@ export function PillToggle<T extends string>({
   onChange: (value: T) => void;
 }) {
   return (
-    <div className="flex gap-1" role="group" aria-label={label}>
+    <div className="flex flex-wrap gap-1" role="group" aria-label={label}>
       {options.map((o) => (
         <button
           key={o.value}

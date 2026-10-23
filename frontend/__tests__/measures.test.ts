@@ -12,6 +12,7 @@ import {
   measuresByState,
   normalizeRegistry,
   resolveYear,
+  showsDistricts,
 } from '../lib/registry';
 import { measureTabs } from '../components/MeasureDashboard';
 import { examplesFor, type ExampleHousehold, type ExampleHouseholdsPayload } from '../lib/measures';
@@ -51,7 +52,7 @@ describe('measure registry (measures.json)', () => {
     expect(r.measures[0].official_estimates[0].unit).toBe('people');
   });
 
-  it('gives only Colorado, California and Washington district views', () => {
+  it('knows which states have congressional districts', () => {
     const withDistricts = MEASURES.filter((m) => m.has_districts).map((m) => m.state);
     expect(new Set(withDistricts)).toEqual(new Set(['CO', 'CA', 'WA']));
     expect(getMeasure('co-amendment-87').district_count).toBe(8);
@@ -59,12 +60,26 @@ describe('measure registry (measures.json)', () => {
     expect(getMeasure('wa-i-645').district_count).toBe(10);
   });
 
-  it('shows no Districts tab for North Dakota or South Dakota', () => {
-    expect(measureTabs('nd-measure-2')).not.toContain('districts');
-    expect(measureTabs('sd-amendment-i')).not.toContain('districts');
-    for (const slug of ['co-amendment-87', 'co-prop-nn', 'ca-prop-3', 'wa-i-645']) {
+  it('shows districts only for the two Colorado measures', () => {
+    expect(MEASURES.filter((m) => m.show_districts).map((m) => m.slug)).toEqual([
+      'co-amendment-87',
+      'co-prop-nn',
+    ]);
+    for (const slug of ['co-amendment-87', 'co-prop-nn']) {
       expect(measureTabs(slug)).toEqual(['overview', 'household', 'statewide', 'districts', 'methodology']);
     }
+    for (const slug of ['ca-prop-3', 'wa-i-645', 'nd-measure-2', 'sd-amendment-i']) {
+      expect(measureTabs(slug)).toEqual(['overview', 'household', 'statewide', 'methodology']);
+    }
+  });
+
+  it('follows show_districts when measures.json has it, else Colorado', () => {
+    expect(showsDistricts({ show_districts: true, has_districts: true, state: 'WA' })).toBe(true);
+    expect(showsDistricts({ show_districts: false, has_districts: true, state: 'CO' })).toBe(false);
+    // An at-large state never gets a district view.
+    expect(showsDistricts({ show_districts: true, has_districts: false, state: 'ND' })).toBe(false);
+    expect(showsDistricts({ has_districts: true, state: 'CO' })).toBe(true);
+    expect(showsDistricts({ has_districts: true, state: 'CA' })).toBe(false);
   });
 
   it('resolves years to scored ones', () => {

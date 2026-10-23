@@ -50,7 +50,7 @@ const content: MeasureContent = {
   whoIsAffected: [
     "Both ballot pamphlet statements put expansion enrollment at about 30,000; the Department of Social Services reports an average of 29,055 a month in state fiscal year 2025.",
     'In the scenario, adults covered through expansion lose Medicaid. Those with income at or above the poverty line may qualify for premium tax credits to buy marketplace coverage; those below it generally qualify for neither.',
-    'PolicyEngine counts Medicaid at its average cost per enrollee and premium tax credits at their dollar value. Marketplace premiums rise with age, so for some older adults the credit is worth more than that average cost, and their measured net income rises in the scenario. Net income does not reflect differences in premiums paid, cost sharing or access to care between Medicaid and marketplace coverage.',
+    'This dashboard reports the scenario in people, premiums and government spending rather than household net income. PolicyEngine values Medicaid at its average cost per enrollee, the same for every adult, while premium tax credits rise with age, so a net-income comparison would show some adults gaining when they move from Medicaid to marketplace coverage.',
   ],
   effectiveDate:
     'If approved, July 1, 2027. It has an effect only if the federal share falls below 90%; the scenario assumes expansion ends on July 1, 2027, and the model scores 2028, the first full year.',
@@ -68,14 +68,14 @@ const content: MeasureContent = {
     "Effects on hospitals, providers and the state's other health spending.",
   ],
   caveats: [
-    "PolicyEngine's microdata predate South Dakota's expansion, so the model's count of expansion enrollees may differ from administrative counts; measure-specific methods compares them.",
-    'Health coverage counts toward net income at its cost: Medicaid at its average cost per enrollee and premium tax credits at their dollar value. Losing Medicaid therefore lowers measured net income, and gaining a larger premium tax credit can raise it, whatever happens to out-of-pocket spending or access to care.',
+    "PolicyEngine's model counts more adults enrolled through expansion than the state reports, so counts and costs are calibrated to the Department of Social Services' enrollment; measure-specific methods shows the model's values before calibration.",
+    'The figures cover coverage, premiums and government spending. They do not capture differences in cost sharing, provider networks or access to care between Medicaid and marketplace coverage.',
   ],
   officialEstimateProse: [
-    "No official fiscal note estimates the measure's cost. The Department of Social Services reports an average of 29,055 people a month enrolled through expansion in state fiscal year 2025, and both statements in the ballot pamphlet cite about 30,000. Measure-specific methods, below, compares these with the model's expansion enrollment and shows the model's expansion costs.",
+    "No official fiscal note estimates the measure's cost. The Department of Social Services reports an average of 29,055 people a month enrolled through expansion in state fiscal year 2025, and both statements in the ballot pamphlet cite about 30,000. The dashboard's counts and costs are calibrated to the Department of Social Services figure; measure-specific methods, below, shows the model's values before calibration and its expansion costs.",
   ],
   householdNote:
-    'Enter your household to compare your 2028 Medicaid, marketplace premium tax credit and net income under current law and in the scenario where expansion ends. Net income counts Medicaid at its average cost per enrollee and premium tax credits at their dollar value, so a household that moves from Medicaid to a larger credit can show a gain.',
+    'Enter your household to see its 2028 health coverage under current law and in the scenario where expansion ends: whether adults would move from Medicaid to subsidized marketplace coverage or have no subsidized option, and what premiums they would pay.',
   references: [
     { label: 'South Dakota Secretary of State, 2026 ballot question pamphlet', url: PAMPHLET_URL },
     { label: 'Attorney General statement and amendment text', url: AG_URL },

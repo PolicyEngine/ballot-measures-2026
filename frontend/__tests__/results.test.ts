@@ -77,8 +77,9 @@ describe('buildDistricts', () => {
       'CO-07',
       'CO-08',
     ]);
-    expect(buildDistricts(rows, 'ca-prop-3', 2031, 'CA')).toHaveLength(52);
-    expect(buildDistricts(rows, 'wa-i-645', 2029, 'WA')).toHaveLength(10);
+    expect(buildDistricts(rows, 'co-prop-nn', 2028, 'CO')).toHaveLength(8);
+    // District rows exist only for the Colorado measures.
+    expect(buildDistricts(rows, 'ca-prop-3', 2031, 'CA')).toEqual([]);
     expect(buildDistricts(rows, 'nd-measure-2', 2028, 'ND')).toEqual([]);
   });
 

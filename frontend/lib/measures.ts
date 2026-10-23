@@ -33,32 +33,38 @@ export * from './registry';
 
 // ── Results files ───────────────────────────────────────────────────────
 
-/** IRS Statistics of Income comparison for one state (scripts/diagnostics/tail_analysis.py). */
+/** IRS Statistics of Income comparison for one state (ballot_calc/metrics/top_tail.py). */
 export interface TopTailState {
-  state: string;
-  /** Data year of the model's filers. */
-  model_year: number;
+  /** Tax year of the model's filers (older manifests call it model_year). */
+  filer_year?: number;
+  model_year?: number;
   /** Tax year of the IRS figures. */
   soi_year: number;
   model_filers: Record<string, number>;
   soi: Record<string, number>;
   /** model ÷ IRS for each key. */
   coverage: Record<string, number>;
-  /** Per "slug:year": the modeled revenue change and the coverage-scaled one. */
-  measures: Record<
+  band_scale?: Record<string, number>;
+  /** Older manifests: per "slug:year", the modeled and coverage-scaled revenue change. */
+  measures?: Record<
     string,
     {
       revenue_change: number;
       coverage_scaled_revenue_change: number;
-      revenue_change_by_agi_band?: Record<string, number>;
     }
   >;
 }
 
-export interface TopTail {
-  dataset_revision?: string;
-  pin?: string;
-  states: Record<string, TopTailState>;
+/** manifest.json `top_tail`: per state code, or (older manifests) under `states`. */
+export type TopTail = Record<string, TopTailState | unknown> & {
+  states?: Record<string, TopTailState>;
+};
+
+/** One state's IRS comparison from either manifest layout. */
+export function topTailFor(topTail: TopTail | null | undefined, state: string): TopTailState | null {
+  if (!topTail || typeof topTail !== 'object') return null;
+  const entry = (topTail.states?.[state] ?? topTail[state]) as TopTailState | undefined;
+  return entry && typeof entry === 'object' && entry.model_filers && entry.soi ? entry : null;
 }
 
 /** manifest.json: provenance of the committed results (scripts/DATA_SCHEMA.md). */
@@ -74,7 +80,17 @@ export interface Manifest {
   synthetic?: boolean;
   /** IRS top-income comparison for CO, CA and WA, or null. */
   top_tail?: TopTail | null;
+  /** Income the pipeline adds to SPM resources in both simulations (policyengine-us#9919). */
+  spm_resources_adjustment?: SpmResourcesAdjustment | null;
   [key: string]: unknown;
+}
+
+export interface SpmResourcesAdjustment {
+  applied?: boolean;
+  /** Variables added to each SPM unit's resources. */
+  added_to_spm_resources?: string[];
+  not_added?: string[];
+  description?: string;
 }
 
 export interface ExampleHousehold {

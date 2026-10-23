@@ -29,7 +29,7 @@ const DEPENDENTS_NOTES: Record<Measure['kind'], string | undefined> = {
   income_tax: undefined,
   tabor_refund: 'Refunds go to adult filers; dependents do not receive their own.',
   school_meals: 'School meals apply to children aged 5 to 17.',
-  medicaid: undefined,
+  medicaid: 'Children keep their coverage in the scenario; only adults covered through expansion lose Medicaid.',
 };
 
 interface Props {

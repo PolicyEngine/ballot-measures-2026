@@ -38,6 +38,14 @@ export default function LandingPage() {
     }
   }, [router]);
 
+  // "Colorado's two measures" (the measures with a district breakdown).
+  const withDistricts = MEASURES.filter((m) => m.show_districts);
+  const districtStates = Array.from(new Set(withDistricts.map((m) => m.state_name)));
+  const districtMeasures =
+    districtStates.length === 1
+      ? `${districtStates[0]}’s ${withDistricts.length === 1 ? 'measure' : `${numberWord(withDistricts.length)} measures`}`
+      : 'some measures';
+
   const highlighted: HighlightedState[] = groups.map((g) => ({
     code: g.state,
     name: g.stateName,
@@ -82,9 +90,9 @@ export default function LandingPage() {
           <div className="space-y-3 text-gray-700">
             <h2 className="text-xl font-bold text-gray-900">About this dashboard</h2>
             <p>
-              For each measure, PolicyEngine compares what happens if it passes with current law:
-              for a household you describe, statewide, and by congressional district in states
-              with more than one district. South Dakota&apos;s measure has no immediate effect, so
+              For each measure, PolicyEngine compares what happens if it passes with current law,
+              for a household you describe and statewide, and for {districtMeasures}{' '}
+              by congressional district. South Dakota&apos;s measure has no immediate effect, so
               its page shows a conditional scenario.
             </p>
             <p>

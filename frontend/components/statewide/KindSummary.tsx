@@ -162,32 +162,9 @@ export function KindHeadlineCards({ measure, metrics }: { measure: Measure; metr
         </div>
       );
     }
-    case 'medicaid': {
-      const below = metric(m, MC.losingBelow100fpl);
-      return (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <MetricCard
-            label="People losing Medicaid in the scenario"
-            value={show(metric(m, MC.peopleLosingMedicaid), formatCount)}
-            detail={
-              below === null
-                ? 'Adults covered through expansion'
-                : `${formatCount(below)} with income below the poverty line`
-            }
-          />
-          <MetricCard
-            label="Change in state Medicaid spending"
-            value={show(metric(m, MC.medicaidStateCostChange), signedMoney)}
-            detail="Compared with current law at today's 10% state share; negative means the state spends less"
-          />
-          <MetricCard
-            label="Change in federal spending"
-            value={show(metric(m, C.federalSpendingImpact), signedMoney)}
-            detail="Medicaid and marketplace premium tax credits"
-          />
-        </div>
-      );
-    }
+    case 'medicaid':
+      // The Medicaid scenario has its own coverage view (CoverageStatewide).
+      return null;
   }
 }
 

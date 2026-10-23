@@ -64,9 +64,12 @@ describe('headlineFor', () => {
 
   it('shows people losing Medicaid beside expansion enrollment for South Dakota', () => {
     const h = headlineFor(getMeasure('sd-amendment-i'), metricsOf('sd-amendment-i', 2028));
-    expect(h.model).toBe('27,400');
+    // The headline is the calibrated count (unsuffixed), not people_losing_medicaid_model.
+    expect(h.model).toBe('28,017');
     expect(h.officialLabel).toBe('Enrolled through expansion');
-    expect(h.official).toBe('30,000');
+    // The Department of Social Services' enrollment, which the counts are calibrated to.
+    expect(h.official).toBe('29,055');
+    expect(h.officialSource).toMatch(/^Department of Social Services/);
   });
 
   it('has no model figure before results exist', () => {

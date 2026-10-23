@@ -30,10 +30,10 @@ export const TAB_LABELS: Record<TabId, string> = {
   methodology: 'Methodology & validation',
 };
 
-/** Tabs a measure shows: Districts only for states with more than one district. */
+/** Tabs a measure shows: Districts only where the registry shows districts (Colorado). */
 export function measureTabs(slug: string): TabId[] {
   const measure = getMeasure(slug);
-  return TAB_IDS.filter((t) => t !== 'districts' || measure.has_districts);
+  return TAB_IDS.filter((t) => t !== 'districts' || measure.show_districts);
 }
 
 /** Keeps the year selector in view below the site header while scrolling. */

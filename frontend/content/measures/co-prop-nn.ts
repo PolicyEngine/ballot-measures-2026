@@ -61,7 +61,7 @@ const content: MeasureContent = {
     'If Proposition NN passes, those refunds are not paid for tax years 2027 and 2028. A single filer with income up to $57,000 receives $43 less in 2027; a joint return with income over $349,000 receives $274 less.',
   ],
   effectiveDate:
-    'Budget years beginning July 1, 2026, with no end date. PolicyEngine scores tax years 2027 and 2028, whose refunds the Blue Book expects the measure to eliminate.',
+    'Budget years beginning July 1, 2026, with no end date. PolicyEngine scores tax years 2027 and 2028, the forecast years the Blue Book quantifies; the effect in later years depends on future revenue.',
   context: [
     {
       title: 'Proposition 137',
@@ -70,9 +70,9 @@ const content: MeasureContent = {
       ],
     },
     {
-      title: 'After 2028',
+      title: 'Later years',
       body: [
-        'The higher limit continues indefinitely. The September 2026 forecast also projects refunds for tax year 2029, including a temporary income tax rate cut from 4.40% to 4.36%; the Blue Book does not estimate refunds beyond 2027-28, and this dashboard scores only 2027 and 2028.',
+        'The higher limit continues indefinitely. This dashboard scores tax years 2027 and 2028, the forecast years the Blue Book quantifies. Whether the measure changes refunds after that depends on future revenue: the Blue Book expects revenue to stay below the higher limit for at least five to ten years, and the September 2026 forecast projects current-law refunds for tax year 2029, including a temporary income tax rate cut from 4.40% to 4.36%.',
       ],
     },
   ],

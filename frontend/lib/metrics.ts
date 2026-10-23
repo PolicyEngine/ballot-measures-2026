@@ -31,6 +31,7 @@ export const CORE_METRICS = {
   peopleLiftedOutOfPoverty: 'people_lifted_out_of_poverty',
   peoplePushedIntoPoverty: 'people_pushed_into_poverty',
   childrenLiftedOutOfPoverty: 'children_lifted_out_of_poverty',
+  childrenPushedIntoPoverty: 'children_pushed_into_poverty',
   stateRevenueImpact: 'state_revenue_impact',
   stateSpendingImpact: 'state_spending_impact',
   stateBudgetImpact: 'state_budget_impact',
@@ -60,6 +61,8 @@ export const INCOME_TAX_METRICS = {
   avgTaxChangePayingLess: 'avg_tax_change_paying_less',
   revenueShareAgi1mPlus: 'revenue_share_agi_1m_plus',
   baselineStateIncomeTax: 'baseline_state_income_tax',
+  /** State revenue change scaled to IRS top-income coverage (methodology tab only). */
+  revenueCoverageScaled: 'revenue_coverage_scaled',
 } as const;
 
 export const TABOR_REFUND_METRICS = {
@@ -93,7 +96,14 @@ export const MEDICAID_METRICS = {
   medicaidFederalCostChange: 'medicaid_federal_cost_change',
   ptcChange: 'ptc_change',
   baselineExpansionEnrollees: 'baseline_expansion_enrollees',
+  /** Department of Social Services expansion enrollment the counts are calibrated to. */
+  adminExpansionEnrollees: 'admin_expansion_enrollees',
+  /** admin ÷ model expansion enrollment; multiplies every calibrated count and cost. */
+  enrollmentCalibrationFactor: 'enrollment_calibration_factor',
 } as const;
+
+/** The uncalibrated twin of a calibrated metric (SD publishes both). */
+export const modelMetric = (name: string): string => `${name}_model`;
 
 /** Every kind-specific key, for checks and downloads. */
 export const KIND_METRICS: Record<MeasureKind, readonly string[]> = {
@@ -205,7 +215,8 @@ export function shortSource(source: string): string {
     .replace(/^Washington Office of Financial Management$/, 'Office of Financial Management')
     .replace(/^California Legislative Analyst's Office$/, "Legislative Analyst's Office")
     .replace(/^North Dakota Secretary of State, /, 'Secretary of State, ')
-    .replace(/^South Dakota Secretary of State, /, 'Secretary of State, ');
+    .replace(/^South Dakota Secretary of State, /, 'Secretary of State, ')
+    .replace(/^South Dakota Department of Social Services, /, 'Department of Social Services, ');
 }
 
 /** The headline figure for a measure's headline year. */
@@ -257,10 +268,14 @@ export function headlineFor(m: Measure, metrics: Metrics): Headline {
     }
     case 'medicaid': {
       const v = metric(metrics, MEDICAID_METRICS.peopleLosingMedicaid);
+      // Prefer the administrative enrollment count over the pamphlet's figure.
+      const officialMetric = officialFor(m, MEDICAID_METRICS.adminExpansionEnrollees)
+        ? MEDICAID_METRICS.adminExpansionEnrollees
+        : MEDICAID_METRICS.baselineExpansionEnrollees;
       return withOfficial(
         `People losing Medicaid in the scenario, ${year}`,
         v === null ? null : formatCount(v),
-        MEDICAID_METRICS.baselineExpansionEnrollees,
+        officialMetric,
         'Enrolled through expansion',
       );
     }
