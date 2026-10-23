@@ -86,18 +86,26 @@ class Measure:
     example_profiles: tuple[dict, ...]
     official_estimates: tuple[OfficialEstimate, ...]
     kind_params: dict = field(default_factory=dict)
+    # Whether the dashboard shows a congressional district breakdown. Only
+    # for states with districts, and only where the measure reaches enough
+    # sample households for district figures to be stable.
+    show_districts: bool = False
 
     @property
     def reform_policy(self) -> Overrides:
         """Baseline overrides with the reform overrides merged over them."""
-        merged = {path: dict(periods) for path, periods in self.baseline_overrides.items()}
+        merged = {
+            path: dict(periods) for path, periods in self.baseline_overrides.items()
+        }
         for path, periods in self.reform_overrides.items():
             merged[path] = dict(periods)
         return merged
 
     @property
     def baseline_policy(self) -> Overrides:
-        return {path: dict(periods) for path, periods in self.baseline_overrides.items()}
+        return {
+            path: dict(periods) for path, periods in self.baseline_overrides.items()
+        }
 
 
 def _profile(label, income, age_head, married=False, spouse_income=0, dependents=()):
@@ -153,10 +161,26 @@ TOP_INCOME_BANDS: tuple[Band, ...] = (
 CO_SALES_TAX_REFUND_TIERS = {
     # year: [(lower AGI bound, amount per person), ...]; the first bound is
     # the scale's -inf bracket and is left unchanged.
-    2027: [(None, 43), (57_001, 58), (117_001, 67), (187_001, 79), (265_001, 85), (349_001, 137)],
-    2028: [(None, 47), (59_001, 62), (120_001, 71), (192_001, 85), (272_001, 91), (358_001, 147)],
+    2027: [
+        (None, 43),
+        (57_001, 58),
+        (117_001, 67),
+        (187_001, 79),
+        (265_001, 85),
+        (349_001, 137),
+    ],
+    2028: [
+        (None, 47),
+        (59_001, 62),
+        (120_001, 71),
+        (192_001, 85),
+        (272_001, 91),
+        (358_001, 147),
+    ],
 }
-CO_SALES_TAX_REFUND_SCALE = "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale"
+CO_SALES_TAX_REFUND_SCALE = (
+    "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale"
+)
 
 
 def _co_refund_tier_overrides() -> Overrides:
@@ -164,7 +188,9 @@ def _co_refund_tier_overrides() -> Overrides:
     for year, tiers in CO_SALES_TAX_REFUND_TIERS.items():
         period = f"{year}-01-01.{year}-12-31"
         for i, (threshold, amount) in enumerate(tiers):
-            overrides.setdefault(f"{CO_SALES_TAX_REFUND_SCALE}[{i}].amount", {})[period] = amount
+            overrides.setdefault(f"{CO_SALES_TAX_REFUND_SCALE}[{i}].amount", {})[
+                period
+            ] = amount
             if threshold is not None:
                 overrides.setdefault(f"{CO_SALES_TAX_REFUND_SCALE}[{i}].threshold", {})[
                     period
@@ -213,7 +239,9 @@ CO_AMENDMENT_87 = Measure(
     sweep_max=1_300_000,
     example_profiles=(
         _profile("Single filer, $45k wages", 45_000, 28),
-        _profile("Married couple, $95k, 2 kids", 95_000, 40, married=True, dependents=(6, 9)),
+        _profile(
+            "Married couple, $95k, 2 kids", 95_000, 40, married=True, dependents=(6, 9)
+        ),
         _profile(
             "Married couple, $1.2M wages, 2 kids",
             1_200_000,
@@ -222,6 +250,10 @@ CO_AMENDMENT_87 = Measure(
             dependents=(13, 16),
         ),
     ),
+    show_districts=True,
+    # Change in the top marginal rate on income above $1 million (8.4% vs
+    # 4.4%), for the IRS SOI coverage scaling in metrics/top_tail.py.
+    kind_params={"top_rate_change": 0.04},
     official_estimates=(
         OfficialEstimate(
             source="Colorado Legislative Council Staff, 2026 Blue Book",
@@ -243,11 +275,17 @@ CO_PROP_NN = Measure(
     slug="co-prop-nn",
     state="CO",
     designation="Proposition NN",
-    short_title="Keep TABOR surplus for education and children's programs",
+    short_title="Raise the state revenue limit and keep the surplus",
     kind="tabor_refund",
     years=(2027, 2028),
     headline_year=2027,
     headline_metric="state_budget_impact",
+    show_districts=True,
+    # The measure raises the TABOR revenue limit permanently. The dashboard
+    # scores tax years 2027 and 2028, the forecast years the Blue Book
+    # quantifies; whether refunds would be paid in later years depends on
+    # future revenue.
+    kind_params={"permanent_change": True, "scored_through": 2028},
     baseline_overrides=_co_refund_tier_overrides(),
     reform_overrides={
         # The state keeps the FY 2026-27 and FY 2027-28 surpluses, so the
@@ -276,7 +314,9 @@ CO_PROP_NN = Measure(
     sweep_max=400_000,
     example_profiles=(
         _profile("Single filer, $40k wages", 40_000, 30),
-        _profile("Married couple, $95k, 2 kids", 95_000, 40, married=True, dependents=(6, 9)),
+        _profile(
+            "Married couple, $95k, 2 kids", 95_000, 40, married=True, dependents=(6, 9)
+        ),
         _profile("Married couple, $400k wages", 400_000, 52, married=True),
     ),
     official_estimates=(
@@ -339,6 +379,9 @@ CA_PROP_3 = Measure(
     years=(2031,),
     headline_year=2031,
     headline_metric="state_budget_impact",
+    # 12.3% vs 9.3% on income above $1 million (both before the 1% mental
+    # health services tax), for the SOI coverage scaling.
+    kind_params={"top_rate_change": 0.03},
     baseline_overrides={},
     reform_overrides={
         # policyengine-us#9601: keeps the 10.3%, 11.3% and 12.3% brackets
@@ -357,7 +400,13 @@ CA_PROP_3 = Measure(
     sweep_max=3_000_000,
     example_profiles=(
         _profile("Single filer, $150k wages", 150_000, 35),
-        _profile("Married couple, $900k wages, 2 kids", 900_000, 48, married=True, dependents=(10, 14)),
+        _profile(
+            "Married couple, $900k wages, 2 kids",
+            900_000,
+            48,
+            married=True,
+            dependents=(10, 14),
+        ),
         _profile("Married couple, $3M wages", 3_000_000, 55, married=True),
     ),
     official_estimates=(
@@ -383,6 +432,10 @@ WA_I_645 = Measure(
     years=(2028, 2029),
     headline_year=2028,
     headline_metric="state_budget_impact",
+    # The 9.9% rate on income above $1 million ends, for the SOI coverage
+    # scaling (the tax base excludes long-term gains, which WA taxes
+    # separately; the scaling treats AGI above $1 million as the base).
+    kind_params={"top_rate_change": -0.099},
     baseline_overrides={},
     reform_overrides={
         # Repeals ESSB 6346's 9.9% tax on Washington taxable income above
@@ -400,7 +453,13 @@ WA_I_645 = Measure(
     income_bands=TOP_INCOME_BANDS,
     sweep_max=5_000_000,
     example_profiles=(
-        _profile("Married couple, $250k wages, 2 kids", 250_000, 42, married=True, dependents=(8, 11)),
+        _profile(
+            "Married couple, $250k wages, 2 kids",
+            250_000,
+            42,
+            married=True,
+            dependents=(8, 11),
+        ),
         _profile("Single filer, $1.5M wages", 1_500_000, 50),
         _profile("Married couple, $5M wages", 5_000_000, 58, married=True),
     ),
@@ -434,7 +493,12 @@ WA_I_645 = Measure(
             low=30_000,
             high=30_000,
             unit="people",
-            note="OFM's count of affected taxpayers (approximate).",
+            note=(
+                "The fiscal impact statement's planning assumption, from the "
+                "Department of Revenue, that about 30,000 taxpayers would owe "
+                "the tax; an administrative assumption rather than a count of "
+                "filers."
+            ),
         ),
     ),
 )
@@ -469,8 +533,16 @@ ND_MEASURE_2 = Measure(
     sweep_max=150_000,
     example_profiles=(
         _profile("Single parent, $30k, 1 child", 30_000, 32, dependents=(8,)),
-        _profile("Married couple, $55k, 2 kids", 55_000, 38, married=True, dependents=(7, 10)),
-        _profile("Married couple, $110k, 3 kids", 110_000, 41, married=True, dependents=(6, 9, 13)),
+        _profile(
+            "Married couple, $55k, 2 kids", 55_000, 38, married=True, dependents=(7, 10)
+        ),
+        _profile(
+            "Married couple, $110k, 3 kids",
+            110_000,
+            41,
+            married=True,
+            dependents=(6, 9, 13),
+        ),
     ),
     official_estimates=(
         OfficialEstimate(
@@ -592,11 +664,45 @@ SD_AMENDMENT_I = Measure(
             unit="people",
             note="Approximate enrollment cited in the pamphlet; no official fiscal note exists.",
         ),
+        OfficialEstimate(
+            source=(
+                "South Dakota Department of Social Services, South Dakota "
+                "Medicaid Report SFY25 (January 2026)"
+            ),
+            url="https://dss.sd.gov/docs/medicaid/reports/2025_Medicaid_Report.pdf#page=9",
+            period="Average monthly enrollment, July 2024 - June 2025",
+            model_year=2028,
+            metric="admin_expansion_enrollees",
+            low=29_055,
+            high=29_055,
+            unit="people",
+            note=(
+                "Average monthly enrollment in the Medicaid expansion group "
+                "(adults 19-64 with income up to 138% of the poverty line). The "
+                "dashboard scales the model's coverage and budget figures to it."
+            ),
+        ),
     ),
     kind_params={
         "conditional": True,
         "expansion_end_date": "2027-07-01",
         "federal_expansion_share": 0.9,
+        # Administrative enrollment the coverage and budget figures are
+        # scaled to (metrics/medicaid.py): DSS's average monthly Medicaid
+        # Expansion enrollment for state fiscal year 2025, Graph 1 of the
+        # SFY25 Medicaid Report. The DSS Medicaid dashboard
+        # (dss.sd.gov/keyresources/statistics.aspx) shows 31,573 in
+        # September 2026.
+        "admin_expansion_enrollees": 29_055,
+        "admin_expansion_enrollees_source": (
+            "South Dakota Department of Social Services, South Dakota Medicaid "
+            "Report SFY25 (January 2026), Graph 1: average monthly Medicaid "
+            "Expansion enrollment, July 2024 - June 2025"
+        ),
+        "admin_expansion_enrollees_url": (
+            "https://dss.sd.gov/docs/medicaid/reports/2025_Medicaid_Report.pdf#page=9"
+        ),
+        "admin_expansion_enrollees_date": "2026-01",
     },
 )
 

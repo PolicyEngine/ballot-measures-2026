@@ -62,6 +62,7 @@ CORE_METRICS: tuple[str, ...] = (
     "people_lifted_out_of_poverty",
     "people_pushed_into_poverty",
     "children_lifted_out_of_poverty",
+    "children_pushed_into_poverty",
     *BUDGET_METRICS,
     "target_change",
 )
@@ -199,6 +200,7 @@ def poverty_metrics(persons: PersonArrays) -> dict:
     out["people_lifted_out_of_poverty"] = float(w[lifted].sum())
     out["people_pushed_into_poverty"] = float(w[~base & reform].sum())
     out["children_lifted_out_of_poverty"] = float(w[lifted & is_child].sum())
+    out["children_pushed_into_poverty"] = float(w[~base & reform & is_child].sum())
     return out
 
 

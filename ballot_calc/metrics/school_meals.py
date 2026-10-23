@@ -70,7 +70,7 @@ def participation_rates(kind_params: dict, school_days: float) -> dict:
     }
 
 
-def adjust(measure, base: dict, reform: dict) -> dict:
+def adjust(measure, base: dict, reform: dict, extra_resources=0.0) -> dict:
     """Participation-adjusted household changes, poverty flags, state cost
     deltas and the school meal metrics."""
     params = measure.kind_params
@@ -127,7 +127,9 @@ def adjust(measure, base: dict, reform: dict) -> dict:
 
     threshold = np.asarray(base["spm_threshold"], dtype=float)
     deep_threshold = np.asarray(base["spm_deep_threshold"], dtype=float)
-    resources = np.asarray(base["spm_net_income"], dtype=float)
+    # ``extra_resources`` (per SPM unit) adds income the model's SPM
+    # resources leave out; see metrics/__init__.py.
+    resources = np.asarray(base["spm_net_income"], dtype=float) + extra_resources
     resources_reform = resources + central
 
     newly_free = (

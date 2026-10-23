@@ -1,5 +1,5 @@
 .PHONY: dev dev-frontend build test test-python test-slow lint format clean install
-.PHONY: export preflight subsets pipeline pipeline-status pipeline-fetch top-tail
+.PHONY: export preflight subsets pipeline pipeline-status pipeline-fetch top-tail poverty-flips
 .PHONY: household-api example-households
 
 # Python package: ballot_calc (registry, subsets, passes, reducers, outputs).
@@ -76,9 +76,13 @@ pipeline-status:
 pipeline-fetch:
 	$(MODAL) run scripts/modal_pipeline.py::fetch
 
-# IRS SOI top-tail check for CO, CA and WA (after the pipeline).
+# Print the IRS SOI top-income comparison the pipeline wrote (CO, CA, WA).
 top-tail:
-	$(MODAL) run scripts/diagnostics/tail_analysis.py
+	PYTHONIOENCODING=utf-8 PYTHONUTF8=1 $(PY) scripts/diagnostics/tail_analysis.py
+
+# Who crosses the poverty line in the top-income measures (Modal).
+poverty-flips:
+	$(MODAL) run scripts/diagnostics/poverty_flips.py
 
 # Preview household endpoint (the production app is deployed by hand after
 # the dashboard PR is approved; see scripts/modal_household_api.py).

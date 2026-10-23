@@ -125,7 +125,7 @@ def build_csv_rows(partials: dict) -> dict[str, list[dict]]:
                     "state_budget_impact": _r(band["state_budget_impact"]),
                 }
             )
-        if STATES[measure.state].has_districts:
+        if measure.show_districts and STATES[measure.state].has_districts:
             for district in sorted(partial["districts"], key=lambda d: d["district"]):
                 rows["congressional_districts.csv"].append(
                     {

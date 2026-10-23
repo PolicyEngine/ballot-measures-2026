@@ -33,8 +33,10 @@ estimates and the North Dakota participation inputs. Impact everywhere is
   contract the frontend codes against.
 - `scripts/modal_household_api.py`, `scripts/compute_example_households.py`
   — the household calculator endpoint and the precomputed examples.
-- `scripts/diagnostics/tail_analysis.py` — the IRS SOI top-income check for
-  CO, CA and WA (`scripts/diagnostics/top_tail.json`).
+- `scripts/diagnostics/` — `tail_analysis.py` prints the IRS SOI top-income
+  comparison the pipeline computes for CO, CA and WA (`top_tail.json`);
+  `poverty_flips.py` breaks down who crosses the poverty line in the
+  top-income measures (`poverty_flips.json`).
 - `frontend/` — Next.js dashboard (landing page plus one route per measure).
 
 ## How the numbers are made
@@ -56,6 +58,17 @@ estimates and the North Dakota participation inputs. Impact everywhere is
   overrides, pin and array schema.
 - **Guard**: a measure-year's results are written only if its target
   variable moves the expected way by more than 0.1% of its current-law total.
+- **Poverty**: SPM resources get back the partnership and S corporation
+  income, farm rent and Alaska dividend that policyengine-us 2.60.4 leaves
+  out of them while taxing (policyengine-us#9919); see
+  `scripts/DATA_SCHEMA.md`.
+- **South Dakota**: the model has about twice the administrative expansion
+  enrollment, so coverage and budget figures are scaled to DSS's 29,055
+  (unscaled values keep a `_model` suffix).
+- **Top incomes**: headlines are the model's own numbers; the IRS
+  SOI-coverage-scaled revenue (`revenue_coverage_scaled`) is for the
+  methodology tab. District breakdowns are shown only for the two Colorado
+  measures (`show_districts`).
 - **North Dakota**: the model values meals at 100% take-up for every child
   aged 5-17; the dashboard's figures are participation-adjusted (current
   participation for the low case, plus the rise seen in universal-meal
@@ -78,7 +91,8 @@ make preflight        # one household per measure through the pipeline's policie
 make pipeline         # spawn the full run (subsets, 16 passes, reduce); detach-safe
 make pipeline-status  # passes and partials on the Volume
 make pipeline-fetch   # verify pin, registry hash, completeness; download the files
-make top-tail         # IRS SOI top-income comparison for CO, CA and WA
+make top-tail         # print the IRS SOI top-income comparison (CO, CA, WA)
+make poverty-flips    # who crosses the poverty line in the top-income measures
 make test-slow        # slow household tests on Modal
 ```
 

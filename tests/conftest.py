@@ -15,6 +15,8 @@ import numpy as np
 import pytest
 
 from ballot_calc.measures import MEASURES
+from ballot_calc.metrics import compute_measure_year
+from ballot_calc.metrics.top_tail import SOI, tabulate
 from ballot_calc.passes import SCHOOL_MEAL_TIER_CODES
 from ballot_calc.states import STATES
 
@@ -62,8 +64,18 @@ def _population(state: str, n: int = 400, seed: int = 0) -> dict:
 
 
 def _finish(arrays: dict) -> dict:
-    """Derive the SPM and poverty arrays from household net income."""
-    arrays["spm_net_income"] = arrays["hh_net_income"].copy()
+    """Derive the SPM and poverty arrays from household net income.
+
+    SPM resources leave out partnership income, as policyengine-us 2.60.4
+    does: households above $2M of AGI hold all but $29,000 of their
+    current-law net income as partnership income, which the SPM arrays omit
+    (``spm_omitted_market_income``), so they look poor (threshold $30,000).
+    """
+    omitted = np.where(
+        arrays["hh_agi"] > 2_000_000, 0.8 * arrays["hh_agi"] - 29_000.0, 0.0
+    )
+    arrays["spm_omitted_market_income"] = omitted
+    arrays["spm_net_income"] = arrays["hh_net_income"] - omitted
     spm = arrays["p_spm_index"]
     arrays["p_in_poverty"] = (arrays["spm_net_income"] < arrays["spm_threshold"])[spm]
     arrays["p_in_deep_poverty"] = (
@@ -170,6 +182,31 @@ def synthetic_passes(slug: str, seed: int = 0) -> tuple[dict, dict]:
         lost = base["hh__medicaid_state_cost"] + base["hh__medicaid_federal_cost"]
         reform["hh_net_income"] = base["hh_net_income"] - lost + ptc
     return _finish(base), _finish(reform)
+
+
+def synthetic_filers(state: str) -> dict:
+    """A filer tabulation (``top_tail.tabulate``) with 2x SOI's $1M+ returns
+    and half its income above $1M, like the Populace build."""
+    soi = SOI[state]
+    returns = 2 * soi["returns_1m_plus"]
+    above = 0.5 * soi["agi_above_1m"]
+    agi = np.array([300_000.0, 750_000.0, 1_000_000 + above / returns])
+    weight = np.array(
+        [
+            soi["returns"] - soi["returns_500k_1m"] - returns,
+            soi["returns_500k_1m"],
+            returns,
+        ]
+    )
+    return tabulate(agi, weight)
+
+
+def reduce_synthetic(slug: str, year: int, seed: int = 0) -> dict:
+    """``compute_measure_year`` on synthetic passes (and filers)."""
+    measure = MEASURES[slug]
+    base, reform = synthetic_passes(slug, seed=seed)
+    filers = synthetic_filers(measure.state) if measure.kind == "income_tax" else None
+    return compute_measure_year(measure, year, base, reform, filers=filers)
 
 
 @pytest.fixture

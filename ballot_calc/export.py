@@ -20,7 +20,13 @@ from .config import POLICYENGINE_US_PIN
 from .measures import ELECTION_DATE, MEASURES
 from .states import STATES
 
-OUTPUT_PATH = Path(__file__).resolve().parent.parent / "frontend" / "public" / "data" / "measures.json"
+OUTPUT_PATH = (
+    Path(__file__).resolve().parent.parent
+    / "frontend"
+    / "public"
+    / "data"
+    / "measures.json"
+)
 
 # Fields that change the numbers. Display-only fields are left out so copy
 # edits don't invalidate committed results.
@@ -39,6 +45,7 @@ _COMPUTATIONAL_FIELDS = (
     "federal_spending_variables",
     "income_bands",
     "kind_params",
+    "show_districts",
 )
 
 

@@ -194,6 +194,53 @@ def test_prop_nn_baseline_tiers_match_the_forecast():
         assert thresholds == sorted(thresholds)
 
 
+def test_show_districts_only_for_colorado():
+    showing = {slug for slug, m in MEASURES.items() if m.show_districts}
+    assert showing == {"co-amendment-87", "co-prop-nn"}
+    for m in MEASURES.values():
+        if m.show_districts:
+            assert STATES[m.state].has_districts
+    exported = {r["slug"]: r for r in measures_json()["measures"]}
+    assert {s for s, r in exported.items() if r["show_districts"]} == showing
+    # has_districts stays the state's geography.
+    assert exported["ca-prop-3"]["has_districts"] is True
+    assert exported["ca-prop-3"]["show_districts"] is False
+
+
+def test_income_tax_measures_carry_the_top_rate_change():
+    expected = {"co-amendment-87": 0.04, "ca-prop-3": 0.03, "wa-i-645": -0.099}
+    for slug, change in expected.items():
+        assert MEASURES[slug].kind_params["top_rate_change"] == change
+        assert MEASURES[slug].target_sign == (1 if change > 0 else -1)
+
+
+def test_sd_admin_enrollment_is_cited():
+    m = MEASURES["sd-amendment-i"]
+    params = m.kind_params
+    assert params["admin_expansion_enrollees"] == 29_055
+    assert params["admin_expansion_enrollees_url"].startswith("https://dss.sd.gov/")
+    assert params["admin_expansion_enrollees_date"] == "2026-01"
+    estimates = [
+        e for e in m.official_estimates if e.metric == "admin_expansion_enrollees"
+    ]
+    assert len(estimates) == 1
+    assert estimates[0].unit == "people"
+    assert estimates[0].low == estimates[0].high == 29_055
+    assert estimates[0].url == params["admin_expansion_enrollees_url"]
+
+
+def test_copy_fixes():
+    nn = MEASURES["co-prop-nn"]
+    assert nn.short_title == "Raise the state revenue limit and keep the surplus"
+    assert nn.kind_params == {"permanent_change": True, "scored_through": 2028}
+    assert nn.kind_params["scored_through"] == max(nn.years)
+    wa_count = next(
+        e for e in MEASURES["wa-i-645"].official_estimates if e.unit == "people"
+    )
+    assert "assumption" in wa_count.note
+    assert "Department of Revenue" in wa_count.note
+
+
 def test_school_meals_start_july_2027():
     m = MEASURES["nd-measure-2"]
     assert m.reform_overrides == {
@@ -215,7 +262,7 @@ def test_pin_is_exact_and_consistent():
         SCRIPTS / "modal_pipeline.py",
         SCRIPTS / "modal_tests.py",
         SCRIPTS / "modal_household_api.py",
-        SCRIPTS / "diagnostics" / "tail_analysis.py",
+        SCRIPTS / "diagnostics" / "poverty_flips.py",
     ]
     for path in files:
         if not path.exists():

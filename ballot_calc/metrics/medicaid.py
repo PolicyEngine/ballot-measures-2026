@@ -2,6 +2,14 @@
 
 Person-level coverage counts and program cost changes. Costs are changes
 (passes - current law), so negative values are savings.
+
+Calibration: the model enrolls about twice as many expansion adults as
+South Dakota's administrative count (it treats every income-eligible adult
+flagged to take up Medicaid as enrolled, on annual survey income). The
+coverage and budget figures are therefore scaled by admin / model
+expansion enrollees (``calibrate``); the unscaled figures keep a ``_model``
+suffix. Household distribution metrics (deciles, winners and losers,
+income bands, poverty) are not scaled.
 """
 
 from __future__ import annotations
@@ -22,6 +30,47 @@ METRICS: tuple[str, ...] = (
     "ptc_change",
     "baseline_expansion_enrollees",
 )
+
+# Metrics scaled to administrative enrollment; each keeps a ``_model`` copy.
+CALIBRATED: tuple[str, ...] = (
+    "people_losing_medicaid",
+    "losing_below_100fpl",
+    "losing_100_plus_fpl",
+    "gaining_ptc",
+    "medicaid_cost_change",
+    "medicaid_state_cost_change",
+    "medicaid_federal_cost_change",
+    "ptc_change",
+    "state_revenue_impact",
+    "state_spending_impact",
+    "state_budget_impact",
+    "federal_revenue_impact",
+    "federal_spending_impact",
+    "federal_budget_impact",
+)
+
+METRICS = (
+    *METRICS,
+    *(f"{name}_model" for name in CALIBRATED),
+    "admin_expansion_enrollees",
+    "enrollment_calibration_factor",
+)
+
+
+def calibrate(metrics: dict, kind_params: dict) -> dict:
+    """Scale ``CALIBRATED`` metrics by admin / model expansion enrollees,
+    keeping the model values under ``<name>_model``; returns ``metrics``."""
+    admin = float(kind_params["admin_expansion_enrollees"])
+    model = metrics["baseline_expansion_enrollees"]
+    if model <= 0:
+        raise RuntimeError("No expansion enrollees in the model to calibrate.")
+    factor = admin / model
+    for name in CALIBRATED:
+        metrics[f"{name}_model"] = metrics[name]
+        metrics[name] = metrics[name] * factor
+    metrics["admin_expansion_enrollees"] = admin
+    metrics["enrollment_calibration_factor"] = factor
+    return metrics
 
 
 def medicaid_metrics(base: dict, reform: dict, threshold=CHANGE_THRESHOLD) -> dict:

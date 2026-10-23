@@ -33,8 +33,23 @@ from .measures import Measure
 
 # Bump when the set or meaning of the saved arrays changes, so cached passes
 # are recomputed.
-PASS_SCHEMA_VERSION = 1
+PASS_SCHEMA_VERSION = 2
 POLICIES = ("baseline", "reform")
+
+# Cash income that household net income counts but SPM resources leave out
+# in policyengine-us 2.60.4: spm_unit_market_income sums the person-level
+# market_income, whose component list omits these sources of
+# gov.household.market_income_sources, while the taxes on them are
+# subtracted in full. Census money income counts all three, so the
+# reducers add them back to SPM resources (metrics/__init__.py). The fourth
+# omitted source, debt_relief (cancelled debt), is not cash income and is
+# not added back; it is not in the Populace data (always 0), so passes
+# saved while this tuple still listed it hold the same sums.
+SPM_OMITTED_SOURCES = (
+    "partnership_s_corp_income",
+    "farm_rent_income",
+    "ak_permanent_fund_dividend",
+)
 
 SCHOOL_MEAL_TIER_CODES = {"FREE": 0, "REDUCED": 1, "PAID": 2}
 
@@ -103,6 +118,7 @@ CORE_VARIABLES = (
     "spm_unit_net_income",
     "spm_unit_spm_threshold",
     "deep_poverty_line",
+    *SPM_OMITTED_SOURCES,
 )
 KIND_VARIABLES = {
     "income_tax": ("tax_unit_weight",),
@@ -221,6 +237,10 @@ def run_pass(
     spm_hh_index = np.zeros(len(spm_ids), dtype=int)
     spm_hh_index[out["p_spm_index"]] = out["p_hh_index"]
     out["spm_hh_index"] = spm_hh_index
+    out["spm_omitted_market_income"] = sum(
+        calc(variable, map_to="spm_unit").astype(float)
+        for variable in SPM_OMITTED_SOURCES
+    )
 
     if measure.kind in ("income_tax", "tabor_refund", "medicaid"):
         tu_ids = calc("tax_unit_id")

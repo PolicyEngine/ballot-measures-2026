@@ -17,7 +17,7 @@ import pytest
 from ballot_calc.config import POLICYENGINE_US_PIN
 from ballot_calc.export import registry_hash
 from ballot_calc.measures import MEASURES, measure_years
-from ballot_calc.metrics import metric_names
+from ballot_calc.metrics import SPM_RESOURCES_ADJUSTMENT, metric_names
 from ballot_calc.outputs import COLUMNS, CSV_FILES
 from ballot_calc.states import STATES
 from tests.conftest import DATA_DIR
@@ -65,6 +65,7 @@ def metrics() -> dict:
 def test_manifest_matches_the_pin_and_is_complete():
     manifest = _manifest()
     assert manifest["pin"] == POLICYENGINE_US_PIN
+    assert manifest["spm_resources_adjustment"] == SPM_RESOURCES_ADJUSTMENT
     assert manifest["complete"]
     assert set(manifest["measure_years"]) == {f"{s}:{y}" for s, y in measure_years()}
 
@@ -134,7 +135,29 @@ def test_district_counts():
         assert 0 <= float(row["winners_share"]) <= 1
         assert 0 <= float(row["losers_share"]) <= 1
     for slug, year in measure_years():
-        geo = STATES[MEASURES[slug].state]
-        expected = len(geo.district_geoids) if geo.has_districts else 0
+        measure = MEASURES[slug]
+        geo = STATES[measure.state]
+        shown = measure.show_districts and geo.has_districts
+        expected = len(geo.district_geoids) if shown else 0
         assert counts.get((slug, year), 0) == expected, (slug, year)
-    assert set(counts.values()) == {8, 52, 10}
+    assert set(counts.values()) == {8}
+
+
+def test_sd_is_calibrated_to_admin_enrollment(metrics):
+    m = metrics[("sd-amendment-i", 2028)]
+    admin = MEASURES["sd-amendment-i"].kind_params["admin_expansion_enrollees"]
+    factor = admin / m["baseline_expansion_enrollees"]
+    assert m["admin_expansion_enrollees"] == admin
+    assert m["enrollment_calibration_factor"] == pytest.approx(factor, rel=1e-4)
+    for name in ("people_losing_medicaid", "state_budget_impact", "ptc_change"):
+        assert m[name] == pytest.approx(m[f"{name}_model"] * factor, rel=1e-4)
+
+
+def test_income_tax_soi_metrics(metrics):
+    for slug, year in measure_years():
+        if MEASURES[slug].kind != "income_tax":
+            continue
+        m = metrics[(slug, year)]
+        assert m["revenue_coverage_scaled"] * MEASURES[slug].target_sign > 0
+        assert m["soi_coverage_returns_1m_plus"] > 0
+        assert m["soi_coverage_agi_above_1m"] > 0

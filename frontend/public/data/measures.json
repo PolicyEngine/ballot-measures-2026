@@ -1,7 +1,7 @@
 {
   "election_date": "2026-11-03",
   "pin": "policyengine-us==2.60.4",
-  "registry_hash": "68e29e92e1a68d14",
+  "registry_hash": "de8938a81d6a3992",
   "measures": [
     {
       "slug": "co-amendment-87",
@@ -123,7 +123,10 @@
           "note": "Fiscal-year revenue that also includes C corporations; the model scores individual income tax liability for tax year 2027."
         }
       ],
-      "kind_params": {},
+      "kind_params": {
+        "top_rate_change": 0.04
+      },
+      "show_districts": true,
       "state_name": "Colorado",
       "state_fips": 8,
       "has_districts": true,
@@ -133,7 +136,7 @@
       "slug": "co-prop-nn",
       "state": "CO",
       "designation": "Proposition NN",
-      "short_title": "Keep TABOR surplus for education and children's programs",
+      "short_title": "Raise the state revenue limit and keep the surplus",
       "kind": "tabor_refund",
       "years": [
         2027,
@@ -325,7 +328,11 @@
           "note": "All TABOR refunds on the June forecast, including property tax reimbursements and a temporary 4.36% income tax rate the September forecast no longer projects."
         }
       ],
-      "kind_params": {},
+      "kind_params": {
+        "permanent_change": true,
+        "scored_through": 2028
+      },
+      "show_districts": true,
       "state_name": "Colorado",
       "state_fips": 8,
       "has_districts": true,
@@ -443,7 +450,10 @@
           "note": "A range reflecting how volatile high incomes are."
         }
       ],
-      "kind_params": {},
+      "kind_params": {
+        "top_rate_change": 0.03
+      },
+      "show_districts": false,
       "state_name": "California",
       "state_fips": 6,
       "has_districts": true,
@@ -581,10 +591,13 @@
           "low": 30000,
           "high": 30000,
           "unit": "people",
-          "note": "OFM's count of affected taxpayers (approximate)."
+          "note": "The fiscal impact statement's planning assumption, from the Department of Revenue, that about 30,000 taxpayers would owe the tax; an administrative assumption rather than a count of filers."
         }
       ],
-      "kind_params": {},
+      "kind_params": {
+        "top_rate_change": -0.099
+      },
+      "show_districts": false,
       "state_name": "Washington",
       "state_fips": 53,
       "has_districts": true,
@@ -724,6 +737,7 @@
         "uplift_lunch": 0.09,
         "uplift_breakfast": 0.12
       },
+      "show_districts": false,
       "state_name": "North Dakota",
       "state_fips": 38,
       "has_districts": false,
@@ -838,13 +852,29 @@
           "high": 30000,
           "unit": "people",
           "note": "Approximate enrollment cited in the pamphlet; no official fiscal note exists."
+        },
+        {
+          "source": "South Dakota Department of Social Services, South Dakota Medicaid Report SFY25 (January 2026)",
+          "url": "https://dss.sd.gov/docs/medicaid/reports/2025_Medicaid_Report.pdf#page=9",
+          "period": "Average monthly enrollment, July 2024 - June 2025",
+          "model_year": 2028,
+          "metric": "admin_expansion_enrollees",
+          "low": 29055,
+          "high": 29055,
+          "unit": "people",
+          "note": "Average monthly enrollment in the Medicaid expansion group (adults 19-64 with income up to 138% of the poverty line). The dashboard scales the model's coverage and budget figures to it."
         }
       ],
       "kind_params": {
         "conditional": true,
         "expansion_end_date": "2027-07-01",
-        "federal_expansion_share": 0.9
+        "federal_expansion_share": 0.9,
+        "admin_expansion_enrollees": 29055,
+        "admin_expansion_enrollees_source": "South Dakota Department of Social Services, South Dakota Medicaid Report SFY25 (January 2026), Graph 1: average monthly Medicaid Expansion enrollment, July 2024 - June 2025",
+        "admin_expansion_enrollees_url": "https://dss.sd.gov/docs/medicaid/reports/2025_Medicaid_Report.pdf#page=9",
+        "admin_expansion_enrollees_date": "2026-01"
       },
+      "show_districts": false,
       "state_name": "South Dakota",
       "state_fips": 46,
       "has_districts": false,

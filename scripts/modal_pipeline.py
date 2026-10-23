@@ -279,9 +279,10 @@ def run_pass_xl(slug: str, year: int, policy: str, dataset_path: str, run_dir: s
     timeout=3600,
     volumes={RESULTS_DIR: volume},
 )
-def reduce(slug: str, year: int, run_dir: str) -> dict:
+def reduce(slug: str, year: int, run_dir: str, filers: dict | None = None) -> dict:
     """Reduce one baseline/reform pair to a partial result (metrics,
-    deciles, winners and losers, income bands, districts)."""
+    deciles, winners and losers, income bands, districts). ``filers`` is
+    the state's SOI filer tabulation (income tax measures)."""
     import numpy as np
 
     from ballot_calc.measures import MEASURES
@@ -295,7 +296,7 @@ def reduce(slug: str, year: int, run_dir: str) -> dict:
             arrays[policy] = {name: data[name] for name in data.files}
         pass_keys[policy] = _read_json(meta_path)["key"]
     partial = compute_measure_year(
-        MEASURES[slug], year, arrays["baseline"], arrays["reform"]
+        MEASURES[slug], year, arrays["baseline"], arrays["reform"], filers=filers
     )
     partial["pass_keys"] = pass_keys
     path = os.path.join(RESULTS_DIR, run_dir, "partials", f"{slug}__{year}.json")
@@ -307,6 +308,52 @@ def reduce(slug: str, year: int, run_dir: str) -> dict:
         f"target change {metrics['target_change']:,.1f}"
     )
     return partial
+
+
+@app.function(
+    image=image,
+    memory=32768,
+    timeout=3600,
+    volumes={RESULTS_DIR: volume},
+)
+def filer_tail(state: str, revision: str, dataset_path: str) -> dict:
+    """Tabulate a state's filers by AGI in the dataset's own year, for the
+    IRS SOI comparison (ballot_calc/metrics/top_tail.py). Cached on the
+    Volume per pin and revision."""
+    import numpy as np
+    from policyengine_us import Microsimulation
+
+    from ballot_calc.metrics.top_tail import FILER_YEAR, tabulate
+
+    volume.reload()
+    path = os.path.join(
+        RESULTS_DIR, _run_dir(revision), "diagnostics", f"filers_{state}.json"
+    )
+    if os.path.exists(path):
+        cached = _read_json(path)
+        if cached.get("pin") == POLICYENGINE_US_PIN:
+            return cached["filers"]
+    sim = Microsimulation(dataset=dataset_path, dataset_end_year=FILER_YEAR)
+    agi = np.asarray(sim.calculate("adjusted_gross_income", FILER_YEAR))
+    weight = np.asarray(sim.calculate("tax_unit_weight", FILER_YEAR))
+    filer = np.asarray(sim.calculate("tax_unit_is_filer", FILER_YEAR)).astype(bool)
+    filers = tabulate(agi[filer], weight[filer])
+    record = {
+        "pin": POLICYENGINE_US_PIN,
+        "state": state,
+        "year": FILER_YEAR,
+        "filers": filers,
+    }
+    _write_json(path, record)
+    volume.commit()
+    return filers
+
+
+def _saved_pass_key(run_dir: str, slug: str, year: int, policy: str):
+    npz_path, meta_path = _pass_paths(run_dir, slug, year, policy)
+    if not (os.path.exists(npz_path) and os.path.exists(meta_path)):
+        return None
+    return _read_json(meta_path).get("key")
 
 
 # ---------------------------------------------------------------------------
@@ -340,22 +387,34 @@ def _parse_only(only: str) -> list:
     volumes={RESULTS_DIR: volume},
 )
 def run_all(revision: str = DEFAULT_REVISION, only: str = "") -> dict:
-    """Subsets, every pass in parallel, reduce, then write the CSVs,
-    measures.json and manifest.json under runs/<revision>/."""
+    """Subsets, the selected passes in parallel, then reduce EVERY
+    measure-year whose saved passes match the current registry, and write
+    the CSVs, measures.json and manifest.json under runs/<revision>/.
+    Measure-years with missing or stale passes are left out and listed in
+    the manifest."""
     from datetime import datetime
 
     import pandas as pd
 
     from ballot_calc.export import measures_json, registry_hash
     from ballot_calc.measures import MEASURES, measure_years
+    from ballot_calc.metrics import SPM_RESOURCES_ADJUSTMENT
+    from ballot_calc.metrics.top_tail import state_summary
     from ballot_calc.outputs import COLUMNS, CSV_FILES, build_csv_rows
+    from ballot_calc.passes import POLICIES, pass_key
 
     revision = resolve_revision(revision)
     run_dir = _run_dir(revision)
     out_dir = os.path.join(RESULTS_DIR, run_dir)
     selected = _parse_only(only)
-    states = sorted({MEASURES[slug].state for slug, _ in selected})
-    subsets = build_subsets.remote(revision, states)
+    subsets = build_subsets.remote(revision)
+    income_tax_states = sorted(
+        {m.state for m in MEASURES.values() if m.kind == "income_tax"}
+    )
+    filer_calls = {
+        state: filer_tail.spawn(state, revision, subsets[state]["path"])
+        for state in income_tax_states
+    }
 
     calls = {}
     for slug, year in selected:
@@ -372,38 +431,46 @@ def run_all(revision: str = DEFAULT_REVISION, only: str = "") -> dict:
         except Exception as err:  # noqa: BLE001 - report every failed pass
             failures[f"{slug}:{year}:{policy}"] = repr(err)
             print(f"PASS FAILED {slug} {year} {policy}: {err!r}")
-    reducible = [
-        (slug, year)
-        for slug, year in selected
-        if not any(k.startswith(f"{slug}:{year}:") for k in failures)
+    filers = {state: call.get() for state, call in filer_calls.items()}
+
+    # Reduce every measure-year whose saved passes match the registry, so
+    # all partials come from the current reducer.
+    volume.reload()
+    current, stale = [], []
+    for slug, year in measure_years():
+        measure = MEASURES[slug]
+        failed = any(k.startswith(f"{slug}:{year}:") for k in failures)
+        keys_match = all(
+            _saved_pass_key(run_dir, slug, year, policy)
+            == pass_key(measure, year, policy)
+            for policy in POLICIES
+        )
+        (current if keys_match and not failed else stale).append((slug, year))
+    for slug, year in stale:
+        print(f"STALE or missing passes: {slug} {year}")
+        path = os.path.join(out_dir, "partials", f"{slug}__{year}.json")
+        if os.path.exists(path):
+            os.remove(path)
+    args = [
+        (slug, year, run_dir, filers.get(MEASURES[slug].state))
+        for slug, year in current
     ]
+    partials = {}
     for (slug, year), partial in zip(
-        reducible,
-        reduce.starmap(
-            [(slug, year, run_dir) for slug, year in reducible],
-            return_exceptions=True,
-        ),
+        current, reduce.starmap(args, return_exceptions=True)
     ):
         if isinstance(partial, BaseException):
             failures[f"{slug}:{year}:reduce"] = repr(partial)
             print(f"REDUCE FAILED {slug} {year}: {partial!r}")
-            # Drop a stale partial so the CSVs never mix runs.
-            stale = os.path.join(out_dir, "partials", f"{slug}__{year}.json")
-            if os.path.exists(stale):
-                os.remove(stale)
+            path = os.path.join(out_dir, "partials", f"{slug}__{year}.json")
+            if os.path.exists(path):
+                os.remove(path)
         else:
+            partials[(slug, year)] = partial
             print(f"Reduced {slug} {year}")
 
-    # Rebuild the CSVs from every partial on the Volume, so an --only rerun
-    # keeps the other measures' results.
+    missing = [f"{s}:{y}" for s, y in measure_years() if (s, y) not in partials]
     volume.reload()
-    partials, missing = {}, []
-    for slug, year in measure_years():
-        path = os.path.join(out_dir, "partials", f"{slug}__{year}.json")
-        if os.path.exists(path):
-            partials[(slug, year)] = _read_json(path)
-        else:
-            missing.append(f"{slug}:{year}")
     csvs = build_csv_rows(partials)
     for filename, rows in csvs.items():
         frame = pd.DataFrame(rows, columns=list(COLUMNS[filename]))
@@ -415,9 +482,7 @@ def run_all(revision: str = DEFAULT_REVISION, only: str = "") -> dict:
     manifest_path = os.path.join(out_dir, MANIFEST_NAME)
     if os.path.exists(manifest_path):
         previous = _read_json(manifest_path)
-    # SOI top-tail check from scripts/diagnostics/tail_analysis.py, if run.
-    top_tail_path = os.path.join(out_dir, "diagnostics", "top_tail.json")
-    top_tail = _read_json(top_tail_path) if os.path.exists(top_tail_path) else None
+    top_tail = {state: state_summary(state, tab) for state, tab in filers.items()}
     pass_log = {**previous.get("passes", {}), **passes}
     manifest = {
         "generated_at_utc": datetime.now(UTC).isoformat(),
@@ -426,6 +491,8 @@ def run_all(revision: str = DEFAULT_REVISION, only: str = "") -> dict:
         "dataset_revision": revision,
         "dataset_filename": POPULACE_FILENAME,
         "registry_hash": registry_hash(),
+        # Income added to SPM resources for the poverty metrics, and why.
+        "spm_resources_adjustment": SPM_RESOURCES_ADJUSTMENT,
         "measure_years": [f"{slug}:{year}" for slug, year in partials],
         "missing_measure_years": missing,
         "complete": not missing and not failures,
@@ -458,6 +525,8 @@ def run_all(revision: str = DEFAULT_REVISION, only: str = "") -> dict:
             f"{slug}:{year}": partial.get("diagnostics")
             for (slug, year), partial in partials.items()
         },
+        # IRS SOI comparison per state; the per-measure coverage-scaled
+        # revenue is in metrics.csv (revenue_coverage_scaled).
         "top_tail": top_tail,
     }
     _write_json(manifest_path, manifest)
@@ -584,6 +653,7 @@ def fetch(
     frontend/public/data/)."""
     from ballot_calc.export import registry_hash
     from ballot_calc.measures import measure_years
+    from ballot_calc.metrics import SPM_RESOURCES_ADJUSTMENT
     from ballot_calc.outputs import CSV_FILES
 
     output_dir = output_dir or str(REPO_ROOT / "frontend" / "public" / "data")
@@ -609,6 +679,11 @@ def fetch(
         problems.append(
             f"registry hash {manifest['registry_hash']} != local {registry_hash()} "
             "(ballot_calc/measures.py changed since the run)"
+        )
+    if manifest.get("spm_resources_adjustment") != SPM_RESOURCES_ADJUSTMENT:
+        problems.append(
+            "the run's SPM resources adjustment differs from the local reducer "
+            "(ballot_calc/metrics/__init__.py)"
         )
     expected = {f"{slug}:{year}" for slug, year in measure_years()}
     missing = expected - set(manifest["measure_years"])
