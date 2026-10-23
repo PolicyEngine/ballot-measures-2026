@@ -30,11 +30,15 @@ Response::
 
 Each policy object has ``net_income`` (household_net_income), ``state_tax``
 (the state's income tax after refundable credits), ``federal_tax``
-(income_tax) and the measure kind's keys (``KIND_OUTPUTS``). Every value is
-summed over the household. ``income_index`` is the entered income's
-position in ``income_range``; when the income is off the grid it is
-``None`` and ``at_income`` comes from a copy of the household at that
-income, simulated alongside the sweep. ``filing_status`` is the
+(income_tax) and the measure kind's keys (``KIND_OUTPUTS`` and
+``DERIVED_OUTPUTS``). Numeric values are summed over the household. The
+Medicaid measure (South Dakota) also reports the coverage of the
+household's adults as text (``coverage_status`` and ``no_option_reason``;
+see ``person_coverage``) and ``cash_net_income``, net income without the
+value of health coverage (see ``CASH_NET_INCOME``). ``income_index`` is the
+entered income's position in ``income_range``; when the income is off the
+grid it is ``None`` and ``at_income`` comes from a copy of the household at
+that income, simulated alongside the sweep. ``filing_status`` is the
 household's federal filing status at the entered income. Levels are
 reported, not changes: impact = reform - baseline, as everywhere in this
 repository.
@@ -119,6 +123,54 @@ KIND_OUTPUTS: Dict[str, Tuple[Tuple[str, str], ...]] = {
     ),
 }
 
+# Response keys built from several variables, by measure kind (see
+# HouseholdCalculator._coverage_arrays). They follow KIND_OUTPUTS' keys.
+CASH_NET_INCOME = "cash_net_income"
+DERIVED_OUTPUTS: Dict[str, Tuple[str, ...]] = {
+    "income_tax": (),
+    "tabor_refund": (),
+    "school_meals": (),
+    # cash_net_income is net_income without the value of health coverage:
+    # household_net_income minus household_health_benefits (Medicaid, CHIP,
+    # the premium tax credit and state premium subsidies, which are paid to
+    # providers and insurers rather than to the household). It still
+    # subtracts the premiums the household pays itself (the marketplace
+    # premium after the credit, CHIP premiums) and counts every income, tax
+    # and other benefit, including near-cash benefits such as SNAP. Its
+    # reform - baseline change is the household's cash change: minus the
+    # change in marketplace_premium, plus any change in taxes or other
+    # benefits. coverage_status and no_option_reason are text (see
+    # person_coverage and household_coverage).
+    "medicaid": (CASH_NET_INCOME, "coverage_status", "no_option_reason"),
+}
+# Keys whose values are text (or null) rather than dollars or counts.
+TEXT_OUTPUTS = frozenset({"coverage_status", "no_option_reason"})
+
+# Coverage of the household's adults, in precedence order. "medicare" is
+# for adults 65 and older, whom the Medicaid measure does not affect.
+COVERAGE_STATUSES = (
+    "medicaid",
+    "medicare",
+    "subsidized_marketplace",
+    "no_subsidized_option",
+)
+# Why an adult with "no_subsidized_option" has neither Medicaid nor a
+# premium tax credit, in precedence order.
+NO_OPTION_REASONS = (
+    # Fails Medicaid's work requirement (from 2027), which also bars the
+    # credit: under current law, expansion adults earning less than 80 hours
+    # at the federal minimum wage (about $6,960 a year) with no exemption.
+    "work_requirement",
+    # Income below the credit's floor (100% of the poverty guideline) with
+    # no Medicaid group to join: the coverage gap.
+    "below_poverty_line",
+    # Income above the credit's ceiling (400% of the poverty guideline from
+    # 2026): marketplace coverage only at full price.
+    "above_subsidy_limit",
+    # Anything else, such as a $0 credit.
+    "other",
+)
+
 # Employment-income sweep: a uniform grid from $0 whose step is the
 # smallest of SWEEP_STEPS that keeps it within MAX_SWEEP_POINTS points, so
 # chart hover values are round.
@@ -164,7 +216,99 @@ def output_variables(measure: Measure) -> List[Tuple[str, str]]:
 
 def output_keys(measure: Measure) -> List[str]:
     """Keys of each policy object in a response for ``measure``."""
-    return [key for key, _ in output_variables(measure)]
+    return [key for key, _ in output_variables(measure)] + list(
+        DERIVED_OUTPUTS[measure.kind]
+    )
+
+
+# ---------------------------------------------------------------------------
+# Coverage (Medicaid measures)
+# ---------------------------------------------------------------------------
+
+
+def person_coverage(
+    medicaid,
+    medicare,
+    subsidized,
+    work_requirement,
+    below_poverty_line,
+    above_subsidy_limit,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Coverage status and no-option reason codes for each person.
+
+    Arguments are boolean arrays over people. The status is the first that
+    applies of: enrolled in Medicaid (``medicaid_enrolled``, so it already
+    reflects the work requirement and the take-up assumption); Medicare
+    (``is_medicare_eligible``: 65 or older); a subsidized marketplace plan
+    (``is_aca_ptc_eligible`` and a positive ``assigned_aca_ptc`` for the
+    tax unit); otherwise no subsidized option. The reason, for no
+    subsidized option only, is the first that applies of: failing
+    Medicaid's work requirement
+    (``is_medicaid_ineligible_due_to_work_requirement``, which also bars
+    the credit); income below the credit's floor (``aca_magi_fraction``
+    below 100% of the poverty guideline, the coverage gap); income above
+    its ceiling (400%); other.
+
+    Codes are 1-based positions in COVERAGE_STATUSES and NO_OPTION_REASONS;
+    reason 0 means none.
+    """
+    status = np.select(
+        [
+            np.asarray(medicaid, bool),
+            np.asarray(medicare, bool),
+            np.asarray(subsidized, bool),
+        ],
+        [1, 2, 3],
+        default=4,
+    )
+    reason = np.select(
+        [
+            np.asarray(work_requirement, bool),
+            np.asarray(below_poverty_line, bool),
+            np.asarray(above_subsidy_limit, bool),
+        ],
+        [1, 2, 3],
+        default=4,
+    )
+    return status, np.where(status == 4, reason, 0)
+
+
+def household_coverage(
+    head_status,
+    head_reason,
+    head_medicare,
+    spouse_status,
+    spouse_reason,
+    spouse_medicare,
+) -> Tuple[np.ndarray, np.ndarray]:
+    """Combine the head's and spouse's codes per household (spouse status 0
+    means no spouse; the medicare arguments are ``is_medicare_eligible``).
+
+    The household's status is the head's, unless the head is eligible for
+    Medicare (65 or older) and the spouse is not: then it is the spouse's,
+    since the measure can only affect adults under 65. That holds even when
+    the older head is also on Medicaid through the aged group. Two adults
+    under 65 share a status for every household the calculator accepts:
+    Medicaid and credit eligibility depend on the tax unit's income, and the
+    work requirement's income test and exemptions apply to both.
+    """
+    spouse_status = np.asarray(spouse_status)
+    use_spouse = (
+        np.asarray(head_medicare, bool)
+        & (spouse_status != 0)
+        & ~np.asarray(spouse_medicare, bool)
+    )
+    return (
+        np.where(use_spouse, spouse_status, head_status),
+        np.where(use_spouse, spouse_reason, head_reason),
+    )
+
+
+def decode_codes(codes, names: Tuple[str, ...]) -> np.ndarray:
+    """1-based codes to names; 0 becomes None."""
+    return np.array(
+        [names[c - 1] if c else None for c in np.asarray(codes, int)], dtype=object
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -260,7 +404,9 @@ class HouseholdInput:
         age_spouse_value = data.get("age_spouse")
         has_spouse_age = age_spouse_value not in (None, "")
         married_value = data.get("married")
-        married = has_spouse_age if married_value is None else _flag(married_value, "married")
+        married = (
+            has_spouse_age if married_value is None else _flag(married_value, "married")
+        )
         if married:
             age_spouse = (
                 _age(age_spouse_value, "age_spouse", MIN_ADULT_AGE)
@@ -318,7 +464,9 @@ def _plain_number(value: float):
     return int(value) if float(value).is_integer() else value
 
 
-def example_payload(measure: Measure, profile: Mapping[str, Any], year: int) -> Dict[str, Any]:
+def example_payload(
+    measure: Measure, profile: Mapping[str, Any], year: int
+) -> Dict[str, Any]:
     """Request payload for one of a measure's ``example_profiles``.
 
     A married profile's spouse is the head's age; profiles put all wages
@@ -331,7 +479,9 @@ def example_payload(measure: Measure, profile: Mapping[str, Any], year: int) -> 
             "year": year,
             "age_head": profile["age_head"],
             "married": married,
-            "age_spouse": profile.get("age_spouse", profile["age_head"]) if married else None,
+            "age_spouse": profile.get("age_spouse", profile["age_head"])
+            if married
+            else None,
             "spouse_income": profile.get("spouse_income", 0),
             "income": profile["income"],
             "dependents": list(profile.get("dependents", ())),
@@ -443,9 +593,13 @@ def build_situation(
     y = str(household.year)
     situation: Dict[str, Any] = {"people": {}, "marital_units": {}}
     situation.update({group: {} for group in GROUPS})
-    _add_household(situation, household, measure.state, None if axis else household.income)
+    _add_household(
+        situation, household, measure.state, None if axis else household.income
+    )
     if axis and with_point:
-        _add_household(situation, household, measure.state, household.income, POINT_PREFIX)
+        _add_household(
+            situation, household, measure.state, household.income, POINT_PREFIX
+        )
     if axis:
         step, count = axis
         situation["axes"] = [
@@ -472,11 +626,18 @@ def _round_list(values) -> List[float]:
     return [round(float(v), 2) for v in np.asarray(values, dtype=float)]
 
 
+def _json_value(key: str, value):
+    """A response value: text (or None) for TEXT_OUTPUTS, else cents."""
+    if key in TEXT_OUTPUTS:
+        return None if value is None else str(value)
+    return round(float(value), 2)
+
+
 def assemble_response(
     household: HouseholdInput,
     grid: Tuple[int, int, Optional[int]],
     sweep_arrays: Mapping[str, Mapping[str, Any]],
-    point_values: Mapping[str, Mapping[str, float]],
+    point_values: Mapping[str, Mapping[str, Any]],
     filing_status: Optional[str],
 ) -> Dict[str, Any]:
     """Lay out a response from per-policy sweep arrays and point values."""
@@ -487,9 +648,14 @@ def assemble_response(
     at_income = {}
     for policy in POLICIES:
         arrays = sweep_arrays[policy]
-        sweep[policy] = {key: _round_list(arrays[key]) for key in keys}
+        sweep[policy] = {
+            key: [_json_value(key, v) for v in arrays[key]]
+            if key in TEXT_OUTPUTS
+            else _round_list(arrays[key])
+            for key in keys
+        }
         at_income[policy] = {
-            key: round(float(point_values[policy][key]), 2) for key in keys
+            key: _json_value(key, point_values[policy][key]) for key in keys
         }
     for policy, series in sweep.items():
         for key, values in series.items():
@@ -590,7 +756,9 @@ class HouseholdCalculator:
     at the entered income when that income is off the sweep grid.
     """
 
-    def __init__(self, measures: Optional[Iterable[Measure]] = None, check_pin: bool = True):
+    def __init__(
+        self, measures: Optional[Iterable[Measure]] = None, check_pin: bool = True
+    ):
         from policyengine_us import CountryTaxBenefitSystem
         from policyengine_us.system import system as current_law
 
@@ -649,16 +817,75 @@ class HouseholdCalculator:
                 tax_benefit_system=self.system(slug, policy), situation=situation
             )
 
-    @staticmethod
-    def _arrays(sim, measure: Measure, year: int) -> Dict[str, np.ndarray]:
-        """Every output for ``measure``, summed to the household.
+    @classmethod
+    def _arrays(cls, sim, measure: Measure, year: int) -> Dict[str, np.ndarray]:
+        """Every output for ``measure``, one value per household.
 
         household_net_income comes first so every policy computes federal
         income tax on the same path (policyengine-us#9740).
         """
-        return {
-            key: np.asarray(sim.calculate(variable, year, map_to="household"), dtype=float)
+        arrays = {
+            key: np.asarray(
+                sim.calculate(variable, year, map_to="household"), dtype=float
+            )
             for key, variable in output_variables(measure)
+        }
+        if measure.kind == "medicaid":
+            arrays.update(cls._coverage_arrays(sim, year, arrays["net_income"]))
+        return arrays
+
+    @staticmethod
+    def _coverage_arrays(
+        sim, year: int, net_income: np.ndarray
+    ) -> Dict[str, np.ndarray]:
+        """cash_net_income, coverage_status and no_option_reason per household
+        (see DERIVED_OUTPUTS, person_coverage and household_coverage)."""
+
+        def person(variable: str, **kwargs) -> np.ndarray:
+            return np.asarray(sim.calculate(variable, year, **kwargs))
+
+        magi_fraction = person("aca_magi_fraction", map_to="person").astype(float)
+        # The credit's income test, read from the same scale the model uses.
+        eligibility = sim.tax_benefit_system.parameters(
+            f"{year}-01-01"
+        ).gov.aca.ptc_income_eligibility
+        below_floor = magi_fraction < eligibility.thresholds[1]
+        income_eligible = np.asarray(eligibility.calc(magi_fraction), dtype=bool)
+        medicare = person("is_medicare_eligible").astype(int)
+        status, reason = person_coverage(
+            medicaid=person("medicaid_enrolled"),
+            medicare=medicare,
+            subsidized=person("is_aca_ptc_eligible").astype(bool)
+            & (person("assigned_aca_ptc", map_to="person") > 0),
+            work_requirement=person("is_medicaid_ineligible_due_to_work_requirement"),
+            below_poverty_line=below_floor,
+            above_subsidy_limit=~below_floor & ~income_eligible,
+        )
+        head = person("is_tax_unit_head").astype(bool)
+        spouse = person("is_tax_unit_spouse").astype(bool)
+
+        def by_household(values: np.ndarray, mask: np.ndarray) -> np.ndarray:
+            """The value of the one person per household in ``mask`` (0 if none)."""
+            totals = sim.map_result(
+                np.where(mask, values, 0), "person", "household", how="sum"
+            )
+            return np.rint(np.asarray(totals, dtype=float)).astype(int)
+
+        household_status, household_reason = household_coverage(
+            by_household(status, head),
+            by_household(reason, head),
+            by_household(medicare, head),
+            by_household(status, spouse),
+            by_household(reason, spouse),
+            by_household(medicare, spouse),
+        )
+        health_benefits = np.asarray(
+            sim.calculate("household_health_benefits", year), dtype=float
+        )
+        return {
+            CASH_NET_INCOME: net_income - health_benefits,
+            "coverage_status": decode_codes(household_status, COVERAGE_STATUSES),
+            "no_option_reason": decode_codes(household_reason, NO_OPTION_REASONS),
         }
 
     @staticmethod
@@ -694,30 +921,39 @@ class HouseholdCalculator:
         # in the same simulation: household (and tax unit) results then
         # alternate sweep point, entered income.
         with_point = index is None
-        situation = build_situation(household, axis=(step, count), with_point=with_point)
+        situation = build_situation(
+            household, axis=(step, count), with_point=with_point
+        )
         stride = 2 if with_point else 1
 
         sweep_arrays: Dict[str, Dict[str, np.ndarray]] = {}
-        point_values: Dict[str, Dict[str, float]] = {}
+        point_values: Dict[str, Dict[str, Any]] = {}
         filing_status = None
         for policy in POLICIES:
             sim = self.simulation(measure.slug, policy, situation)
             arrays = self._arrays(sim, measure, year)
             sweep_arrays[policy] = {k: v[::stride] for k, v in arrays.items()}
             point = 1 if with_point else index
-            point_values[policy] = {k: float(v[point]) for k, v in arrays.items()}
+            point_values[policy] = {k: v[point] for k, v in arrays.items()}
             if policy == "baseline":
-                wages = np.asarray(
-                    sim.calculate("employment_income", year, map_to="household"),
-                    dtype=float,
-                ) - household.spouse_income
+                wages = (
+                    np.asarray(
+                        sim.calculate("employment_income", year, map_to="household"),
+                        dtype=float,
+                    )
+                    - household.spouse_income
+                )
                 if wages.shape != (count * stride,) or not (
                     np.allclose(wages[::stride], step * np.arange(count), atol=0.5)
                     and abs(wages[point] - household.income) < 0.5
                 ):
-                    raise RuntimeError("The sweep did not vary the head's wages as expected")
+                    raise RuntimeError(
+                        "The sweep did not vary the head's wages as expected"
+                    )
                 filing_status = self._filing_status(sim, year, point)
-        return assemble_response(household, grid, sweep_arrays, point_values, filing_status)
+        return assemble_response(
+            household, grid, sweep_arrays, point_values, filing_status
+        )
 
 
 _calculator: Optional[HouseholdCalculator] = None

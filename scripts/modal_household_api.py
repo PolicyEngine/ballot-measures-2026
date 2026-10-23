@@ -103,7 +103,9 @@ class HouseholdApi:
 
         start = time.time()
         self.calculator = HouseholdCalculator()
-        print(f"Built {len(self.calculator.systems)} systems in {time.time() - start:.0f}s")
+        print(
+            f"Built {len(self.calculator.systems)} systems in {time.time() - start:.0f}s"
+        )
         # Warm every system's parameter and formula caches for every scored
         # year before the snapshot is taken, then exempt the warm caches
         # from garbage collection along with the systems.

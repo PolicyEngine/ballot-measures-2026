@@ -18,8 +18,11 @@ import pytest
 
 from ballot_calc.config import POLICYENGINE_US_PIN
 from ballot_calc.household import (
+    COVERAGE_STATUSES,
     MAX_SWEEP_POINTS,
+    NO_OPTION_REASONS,
     POLICIES,
+    TEXT_OUTPUTS,
     example_id,
     example_payload,
     output_keys,
@@ -49,11 +52,15 @@ def _households(payload):
                 yield MEASURES[slug], int(year), household
 
 
-def _example(payload, slug, year, household_id):
+def _example_response(payload, slug, year, household_id):
     for household in payload["measures"][slug]["years"][str(year)]["households"]:
         if household["id"] == household_id:
-            return household["response"]["at_income"]
+            return household["response"]
     raise AssertionError(f"no example {household_id} for {slug} {year}")
+
+
+def _example(payload, slug, year, household_id):
+    return _example_response(payload, slug, year, household_id)["at_income"]
 
 
 def _change(at, key):
@@ -87,7 +94,9 @@ def test_examples_match_the_registry(payload):
             for household, profile in zip(households, measure.example_profiles):
                 assert set(household) == {"id", "label", "input", "response"}
                 assert household["label"] == profile["label"]
-                assert household["input"] == example_payload(measure, profile, int(year))
+                assert household["input"] == example_payload(
+                    measure, profile, int(year)
+                )
 
 
 def test_responses_have_the_api_shape(payload):
@@ -123,11 +132,44 @@ def test_responses_have_the_api_shape(payload):
             assert list(response["sweep"][policy]) == keys, name
             assert list(response["at_income"][policy]) == keys, name
             for key, series in response["sweep"][policy].items():
-                assert len(series) == n, f"{name} {policy}.{key}"
-                if index is not None:
-                    assert series[index] == pytest.approx(
-                        response["at_income"][policy][key], abs=0.01
-                    ), f"{name} {policy}.{key}"
+                label = f"{name} {policy}.{key}"
+                assert len(series) == n, label
+                point = response["at_income"][policy][key]
+                if key in TEXT_OUTPUTS:
+                    allowed = (
+                        set(COVERAGE_STATUSES)
+                        if key == "coverage_status"
+                        else {None, *NO_OPTION_REASONS}
+                    )
+                    assert set(series) <= allowed and point in allowed, label
+                    if index is not None:
+                        assert series[index] == point, label
+                else:
+                    assert all(isinstance(v, (int, float)) for v in series), label
+                    if index is not None:
+                        assert series[index] == pytest.approx(point, abs=0.01), label
+
+
+def test_no_option_reason_goes_with_no_subsidized_option(payload):
+    for measure, year, household in _households(payload):
+        if measure.kind != "medicaid":
+            continue
+        response = household["response"]
+        for policy in POLICIES:
+            points = list(
+                zip(
+                    response["sweep"][policy]["coverage_status"],
+                    response["sweep"][policy]["no_option_reason"],
+                )
+            )
+            at = response["at_income"][policy]
+            points.append((at["coverage_status"], at["no_option_reason"]))
+            for status, reason in points:
+                assert (reason is not None) == (status == "no_subsidized_option"), (
+                    measure.slug,
+                    household["id"],
+                    policy,
+                )
 
 
 def test_changes_add_up(payload):
@@ -144,11 +186,25 @@ def test_changes_add_up(payload):
             expected = _change(at, "meal_value")
             assert _change(at, "state_tax") == pytest.approx(0, abs=0.01), name
         else:
+            # Health benefits count in net income: the value of Medicaid and
+            # the credit, less the premium the household pays.
             expected = (
                 _change(at, "medicaid")
                 + _change(at, "ptc")
                 - _change(at, "marketplace_premium")
             )
+            # The cash change is the premium alone: taxes don't move.
+            assert _change(at, "state_tax") == pytest.approx(0, abs=0.01), name
+            assert _change(at, "federal_tax") == pytest.approx(0, abs=0.01), name
+            assert _change(at, "cash_net_income") == pytest.approx(
+                -_change(at, "marketplace_premium"), abs=0.02
+            ), name
+            assert _change(at, "cash_net_income") == pytest.approx(
+                _change(at, "net_income")
+                - _change(at, "medicaid")
+                - _change(at, "ptc"),
+                abs=0.02,
+            ), name
         assert _change(at, "net_income") == pytest.approx(expected, abs=1), name
 
 
@@ -206,16 +262,56 @@ def test_nd_measure_2(payload):
 
 
 @pytest.mark.parametrize(
-    "household_id, gets_ptc",
-    [("single-adult-20k-wages", True), ("single-adult-14k-wages", False)],
+    "household_id, reform_status, reform_reason",
+    [
+        # About 120% of the poverty guideline: a subsidized marketplace plan.
+        ("single-adult-20k-wages", "subsidized_marketplace", None),
+        ("married-couple-28k-no-children", "subsidized_marketplace", None),
+        # About 85%: the coverage gap.
+        ("single-adult-14k-wages", "no_subsidized_option", "below_poverty_line"),
+    ],
 )
-def test_sd_amendment_i(payload, household_id, gets_ptc):
+def test_sd_amendment_i(payload, household_id, reform_status, reform_reason):
+    """Every example adult has expansion Medicaid under current law and
+    loses it in the scenario. Their cash changes only by the marketplace
+    premium they then pay (none in the coverage gap)."""
     at = _example(payload, "sd-amendment-i", 2028, household_id)
-    assert at["baseline"]["medicaid_enrolled"] >= 1
-    assert at["reform"]["medicaid_enrolled"] == 0
-    assert (at["reform"]["ptc"] > at["baseline"]["ptc"]) is gets_ptc
-    if not gets_ptc:
-        assert at["reform"]["ptc"] == 0
+    base, reform = at["baseline"], at["reform"]
+    assert (base["coverage_status"], base["no_option_reason"]) == ("medicaid", None)
+    assert (reform["coverage_status"], reform["no_option_reason"]) == (
+        reform_status,
+        reform_reason,
+    )
+    assert base["medicaid_enrolled"] >= 1 and base["medicaid"] > 0
+    assert reform["medicaid_enrolled"] == 0 and reform["medicaid"] == 0
+    if reform_status == "subsidized_marketplace":
+        assert reform["ptc"] > 0
+        assert reform["marketplace_premium"] > 0
+        assert _change(at, "cash_net_income") == pytest.approx(
+            -reform["marketplace_premium"], abs=0.02
+        )
+        assert _change(at, "cash_net_income") < 0
+    else:
+        assert reform["ptc"] == 0 and reform["marketplace_premium"] == 0
+        assert _change(at, "cash_net_income") == pytest.approx(0, abs=0.02)
+
+
+def test_sd_amendment_i_sweep_shows_the_work_requirement(payload):
+    """Under current law, wages below about $6,960 fail Medicaid's work
+    requirement, which also bars the credit; in the scenario the same
+    adults are in the coverage gap."""
+    response = _example_response(
+        payload, "sd-amendment-i", 2028, "single-adult-14k-wages"
+    )
+    incomes = response["income_range"]
+    sweep = response["sweep"]
+    for income in (0, 6_500):
+        i = incomes.index(income)
+        assert sweep["baseline"]["coverage_status"][i] == "no_subsidized_option"
+        assert sweep["baseline"]["no_option_reason"][i] == "work_requirement"
+        assert sweep["reform"]["no_option_reason"][i] == "below_poverty_line"
+    i = incomes.index(7_500)
+    assert sweep["baseline"]["coverage_status"][i] == "medicaid"
 
 
 def test_file_stays_small(payload):

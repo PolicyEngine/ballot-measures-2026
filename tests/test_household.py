@@ -19,21 +19,27 @@ import pytest
 
 from ballot_calc.config import POLICYENGINE_US_PIN
 from ballot_calc.household import (
+    COVERAGE_STATUSES,
     KIND_OUTPUTS,
     MAX_DEPENDENTS,
     MAX_INCOME,
     MAX_SWEEP_POINTS,
+    NO_OPTION_REASONS,
     POLICIES,
     STATE_TAX_VARIABLES,
     SWEEP_STEPS,
+    TEXT_OUTPUTS,
     HouseholdInput,
     HouseholdInputError,
     assemble_response,
     build_situation,
+    decode_codes,
     example_id,
     example_payload,
+    household_coverage,
     output_keys,
     output_variables,
+    person_coverage,
     policy_key,
     sweep_grid,
 )
@@ -61,6 +67,9 @@ EXPECTED_KEYS = {
         "ptc",
         "medicaid_enrolled",
         "marketplace_premium",
+        "cash_net_income",
+        "coverage_status",
+        "no_option_reason",
     ],
 }
 
@@ -360,7 +369,9 @@ class TestBuildSituation:
                 ["you", "your partner", "dependent_1"],
                 ["point_you", "point_your partner", "point_dependent_1"],
             ]
-        assert situation["households"]["point_your household"]["state_code"] == {"2027": "CO"}
+        assert situation["households"]["point_your household"]["state_code"] == {
+            "2027": "CO"
+        }
         assert len(situation["marital_units"]) == 4
         assert situation["axes"][0][0]["count"] == 131
 
@@ -371,10 +382,14 @@ class TestBuildSituation:
     @pytest.mark.parametrize("slug", MEASURE_SLUGS)
     def test_each_measure_uses_its_state_and_year(self, slug):
         measure = MEASURES[slug]
-        household = HouseholdInput.from_dict({"measure": slug, "age_head": 40, "income": 0})
+        household = HouseholdInput.from_dict(
+            {"measure": slug, "age_head": 40, "income": 0}
+        )
         situation = build_situation(household, axis=(1_000, 3))
         y = str(measure.headline_year)
-        assert situation["households"]["your household"]["state_code"] == {y: measure.state}
+        assert situation["households"]["your household"]["state_code"] == {
+            y: measure.state
+        }
         assert situation["axes"][0][0]["period"] == y
 
 
@@ -393,7 +408,10 @@ class TestOutputs:
         """household_net_income first, so every policy computes federal
         income tax on the same path (policyengine-us#9740)."""
         for measure in MEASURES.values():
-            assert output_variables(measure)[0] == ("net_income", "household_net_income")
+            assert output_variables(measure)[0] == (
+                "net_income",
+                "household_net_income",
+            )
 
     def test_state_tax_variables(self):
         variables = {
@@ -460,25 +478,141 @@ class TestPolicies:
             for periods in sd.reform_policy.values()
             for v in periods.values()
         )
-        assert policy_key(sd.reform_policy) == policy_key(dict(reversed(sd.reform_policy.items())))
+        assert policy_key(sd.reform_policy) == policy_key(
+            dict(reversed(sd.reform_policy.items()))
+        )
         assert policy_key({}) != policy_key(sd.baseline_policy)
 
 
+class TestCoverage:
+    """Coverage of the household's adults for the Medicaid measure."""
+
+    def _person(self, **flags):
+        names = (
+            "medicaid",
+            "medicare",
+            "subsidized",
+            "work_requirement",
+            "below_poverty_line",
+            "above_subsidy_limit",
+        )
+        status, reason = person_coverage(**{n: [flags.get(n, False)] for n in names})
+        return (
+            decode_codes(status, COVERAGE_STATUSES)[0],
+            decode_codes(reason, NO_OPTION_REASONS)[0],
+        )
+
+    @pytest.mark.parametrize(
+        "flags, expected",
+        [
+            ({"medicaid": True}, ("medicaid", None)),
+            # Enrollment wins over everything else, including Medicare.
+            ({"medicaid": True, "medicare": True}, ("medicaid", None)),
+            ({"medicaid": True, "below_poverty_line": True}, ("medicaid", None)),
+            ({"medicare": True, "below_poverty_line": True}, ("medicare", None)),
+            ({"subsidized": True}, ("subsidized_marketplace", None)),
+            # Current law below about $6,960 of wages: the work requirement
+            # bars Medicaid and the credit, though income is also below the
+            # poverty line.
+            (
+                {"work_requirement": True, "below_poverty_line": True},
+                ("no_subsidized_option", "work_requirement"),
+            ),
+            # No expansion and income below the poverty line: the gap.
+            (
+                {"below_poverty_line": True},
+                ("no_subsidized_option", "below_poverty_line"),
+            ),
+            (
+                {"above_subsidy_limit": True},
+                ("no_subsidized_option", "above_subsidy_limit"),
+            ),
+            ({}, ("no_subsidized_option", "other")),
+        ],
+    )
+    def test_person_status_and_reason(self, flags, expected):
+        assert self._person(**flags) == expected
+
+    def test_household_follows_the_head(self):
+        """Three households: single on Medicaid; a couple in the gap; a
+        couple with a subsidized plan whose spouse is 65 or older."""
+        status, reason = household_coverage(
+            head_status=[1, 4, 3],
+            head_reason=[0, 2, 0],
+            head_medicare=[0, 0, 0],
+            spouse_status=[0, 4, 2],
+            spouse_reason=[0, 2, 0],
+            spouse_medicare=[0, 0, 1],
+        )
+        assert decode_codes(status, COVERAGE_STATUSES).tolist() == [
+            "medicaid",
+            "no_subsidized_option",
+            "subsidized_marketplace",
+        ]
+        assert decode_codes(reason, NO_OPTION_REASONS).tolist() == [
+            None,
+            "below_poverty_line",
+            None,
+        ]
+
+    def test_household_follows_a_spouse_under_65_when_the_head_is_65_or_older(self):
+        """Head on Medicare with a spouse in the gap; head on Medicaid
+        through the aged group with a spouse on a subsidized plan; both 65
+        or older; a single head on Medicare."""
+        status, reason = household_coverage(
+            head_status=[2, 1, 2, 2],
+            head_reason=[0, 0, 0, 0],
+            head_medicare=[1, 1, 1, 1],
+            spouse_status=[4, 3, 2, 0],
+            spouse_reason=[2, 0, 0, 0],
+            spouse_medicare=[0, 0, 1, 0],
+        )
+        assert decode_codes(status, COVERAGE_STATUSES).tolist() == [
+            "no_subsidized_option",
+            "subsidized_marketplace",
+            "medicare",
+            "medicare",
+        ]
+        assert decode_codes(reason, NO_OPTION_REASONS).tolist() == [
+            "below_poverty_line",
+            None,
+            None,
+            None,
+        ]
+
+    def test_text_outputs(self):
+        assert TEXT_OUTPUTS == {"coverage_status", "no_option_reason"}
+        assert set(TEXT_OUTPUTS) <= set(EXPECTED_KEYS["medicaid"])
+
+
 def _fake_arrays(measure, count, offset=0.0):
-    return {
-        key: np.arange(count, dtype=float) * (i + 1) + offset + 0.004
-        for i, key in enumerate(output_keys(measure))
-    }
+    arrays = {}
+    for i, key in enumerate(output_keys(measure)):
+        if key == "coverage_status":
+            arrays[key] = np.array(
+                ["medicaid", "no_subsidized_option"] * count, dtype=object
+            )[:count]
+        elif key == "no_option_reason":
+            arrays[key] = np.array([None, "work_requirement"] * count, dtype=object)[
+                :count
+            ]
+        else:
+            arrays[key] = np.arange(count, dtype=float) * (i + 1) + offset + 0.004
+    return arrays
 
 
 class TestAssembleResponse:
     @pytest.mark.parametrize("slug", MEASURE_SLUGS)
     def test_layout(self, slug):
         measure = MEASURES[slug]
-        household = HouseholdInput.from_dict({"measure": slug, "age_head": 40, "income": 0})
+        household = HouseholdInput.from_dict(
+            {"measure": slug, "age_head": 40, "income": 0}
+        )
         grid = (1_000, 5, 0)
-        sweep = {p: _fake_arrays(measure, 5, offset=o) for p, o in zip(POLICIES, (0, 10))}
-        point = {p: {k: float(v[0]) for k, v in sweep[p].items()} for p in POLICIES}
+        sweep = {
+            p: _fake_arrays(measure, 5, offset=o) for p, o in zip(POLICIES, (0, 10))
+        }
+        point = {p: {k: v[1] for k, v in sweep[p].items()} for p in POLICIES}
         response = assemble_response(household, grid, sweep, point, "SINGLE")
         assert set(response) == {
             "measure",
@@ -503,14 +637,34 @@ class TestAssembleResponse:
         for policy in POLICIES:
             assert list(response["sweep"][policy]) == output_keys(measure)
             assert list(response["at_income"][policy]) == output_keys(measure)
-            for series in response["sweep"][policy].values():
+            for key, series in response["sweep"][policy].items():
                 assert len(series) == 5
-                assert all(v == round(v, 2) for v in series)
-        assert response["at_income"]["reform"]["net_income"] == 10.0
+                if key in TEXT_OUTPUTS:
+                    assert all(v is None or isinstance(v, str) for v in series)
+                else:
+                    assert all(
+                        isinstance(v, float) and v == round(v, 2) for v in series
+                    )
+        assert response["at_income"]["reform"]["net_income"] == 11.0
+        if measure.kind == "medicaid":
+            assert response["sweep"]["baseline"]["coverage_status"] == [
+                "medicaid",
+                "no_subsidized_option",
+            ] * 2 + ["medicaid"]
+            assert response["sweep"]["baseline"]["no_option_reason"][:2] == [
+                None,
+                "work_requirement",
+            ]
+            point = response["at_income"]["reform"]
+            assert point["coverage_status"] == "no_subsidized_option"
+            assert point["no_option_reason"] == "work_requirement"
+            assert isinstance(point["cash_net_income"], float)
 
     def test_rejects_misaligned_sweeps(self):
         measure = MEASURES["co-prop-nn"]
-        household = HouseholdInput.from_dict({"measure": "co-prop-nn", "age_head": 40, "income": 0})
+        household = HouseholdInput.from_dict(
+            {"measure": "co-prop-nn", "age_head": 40, "income": 0}
+        )
         sweep = {p: _fake_arrays(measure, 4) for p in POLICIES}
         point = {p: {k: 0.0 for k in output_keys(measure)} for p in POLICIES}
         with pytest.raises(RuntimeError):
@@ -584,7 +738,11 @@ def test_co_amendment_87_top_earners_pay_more(household_calculator):
 def test_co_prop_nn_single_filer_loses_the_refund(household_calculator, year, refund):
     """Single filer, $40,000: the LCS September 2026 first-tier refund."""
     response = _run(
-        household_calculator, measure="co-prop-nn", year=year, age_head=30, income=40_000
+        household_calculator,
+        measure="co-prop-nn",
+        year=year,
+        age_head=30,
+        income=40_000,
     )
     at = response["at_income"]
     assert at["baseline"]["refund"] == refund
@@ -658,7 +816,11 @@ def test_sd_amendment_i_ends_expansion_coverage(household_calculator, income, ge
     premium tax credit replaces part of it; below it there is no credit
     (the coverage gap)."""
     response = _run(
-        household_calculator, measure="sd-amendment-i", year=2028, age_head=40, income=income
+        household_calculator,
+        measure="sd-amendment-i",
+        year=2028,
+        age_head=40,
+        income=income,
     )
     at = response["at_income"]
     assert at["baseline"]["medicaid_enrolled"] == 1
@@ -673,6 +835,93 @@ def test_sd_amendment_i_ends_expansion_coverage(household_calculator, income, ge
         - _change(response, "marketplace_premium"),
         abs=1,
     )
+    # Coverage, and the cash change: only the premium the adult pays.
+    assert at["baseline"]["coverage_status"] == "medicaid"
+    assert at["baseline"]["no_option_reason"] is None
+    if gets_ptc:
+        assert at["reform"]["coverage_status"] == "subsidized_marketplace"
+        assert at["reform"]["no_option_reason"] is None
+        assert at["reform"]["marketplace_premium"] > 0
+    else:
+        assert at["reform"]["coverage_status"] == "no_subsidized_option"
+        assert at["reform"]["no_option_reason"] == "below_poverty_line"
+        assert at["reform"]["marketplace_premium"] == 0
+    assert _change(response, "cash_net_income") == pytest.approx(
+        -_change(response, "marketplace_premium"), abs=0.02
+    )
+    for policy in POLICIES:
+        point = at[policy]
+        assert point["cash_net_income"] == pytest.approx(
+            point["net_income"] - point["medicaid"] - point["ptc"], abs=0.02
+        )
+
+
+@pytest.mark.slow
+def test_sd_amendment_i_coverage_along_the_sweep(household_calculator):
+    """Single adult, 40. Current law: below about $6,960 of wages the adult
+    fails Medicaid's work requirement, which also bars the credit; then
+    expansion Medicaid to 138% of the poverty guideline; then the credit.
+    In the scenario: the coverage gap below 100%, then the credit."""
+    response = _run(
+        household_calculator,
+        measure="sd-amendment-i",
+        year=2028,
+        age_head=40,
+        income=5_000,
+    )
+    incomes = response["income_range"]
+    sweep = response["sweep"]
+
+    def status_at(policy, income):
+        i = incomes.index(income)
+        return sweep[policy]["coverage_status"][i], sweep[policy]["no_option_reason"][i]
+
+    assert status_at("baseline", 0) == ("no_subsidized_option", "work_requirement")
+    assert status_at("baseline", 6_500) == ("no_subsidized_option", "work_requirement")
+    assert status_at("baseline", 7_500) == ("medicaid", None)
+    assert status_at("baseline", 20_000) == ("medicaid", None)
+    assert status_at("baseline", 40_000) == ("subsidized_marketplace", None)
+    assert status_at("reform", 0) == ("no_subsidized_option", "below_poverty_line")
+    assert status_at("reform", 7_500) == ("no_subsidized_option", "below_poverty_line")
+    assert status_at("reform", 20_000) == ("subsidized_marketplace", None)
+    assert status_at("reform", 40_000) == ("subsidized_marketplace", None)
+    # The entered $5,000 is on the grid, below the work requirement.
+    assert (
+        response["at_income"]["baseline"]["coverage_status"] == "no_subsidized_option"
+    )
+    assert response["at_income"]["baseline"]["no_option_reason"] == "work_requirement"
+    assert set(sweep["baseline"]["coverage_status"]) <= set(COVERAGE_STATUSES)
+    assert set(sweep["reform"]["no_option_reason"]) <= {None, *NO_OPTION_REASONS}
+
+
+@pytest.mark.slow
+def test_sd_amendment_i_couple_with_a_spouse_on_medicare(household_calculator):
+    """Head 67 (Medicare), spouse 60, $18,000 of wages (about 80% of the
+    poverty guideline for two): the household's status is the spouse's,
+    Medicaid under current law and the coverage gap in the scenario."""
+    response = _run(
+        household_calculator,
+        measure="sd-amendment-i",
+        year=2028,
+        age_head=67,
+        married=True,
+        age_spouse=60,
+        income=18_000,
+    )
+    at = response["at_income"]
+    assert at["baseline"]["coverage_status"] == "medicaid"
+    assert at["reform"]["coverage_status"] == "no_subsidized_option"
+    assert at["reform"]["no_option_reason"] == "below_poverty_line"
+    # An older single adult keeps Medicare either way.
+    older = _run(
+        household_calculator,
+        measure="sd-amendment-i",
+        year=2028,
+        age_head=70,
+        income=30_000,
+    )
+    for policy in POLICIES:
+        assert older["at_income"][policy]["coverage_status"] == "medicare"
 
 
 @pytest.mark.slow
@@ -681,24 +930,40 @@ def test_sweep_matches_the_point_values(household_calculator):
     comes from a copy of the household riding in the sweep simulation; it
     must equal a standalone simulation at that income and leave the sweep
     unchanged."""
-    on = _run(household_calculator, measure="co-prop-nn", year=2027, age_head=30, income=95_000)
+    on = _run(
+        household_calculator,
+        measure="co-prop-nn",
+        year=2027,
+        age_head=30,
+        income=95_000,
+    )
     assert on["income_range"][on["income_index"]] == 95_000
     for policy in POLICIES:
         for key, value in on["at_income"][policy].items():
-            assert on["sweep"][policy][key][on["income_index"]] == pytest.approx(value, abs=0.01)
+            assert on["sweep"][policy][key][on["income_index"]] == pytest.approx(
+                value, abs=0.01
+            )
 
-    payload = dict(measure="co-prop-nn", year=2027, age_head=30, married=True, income=95_500)
+    payload = dict(
+        measure="co-prop-nn", year=2027, age_head=30, married=True, income=95_500
+    )
     off = _run(household_calculator, dependents=[4], **payload)
-    on_grid = _run(household_calculator, dependents=[4], **{**payload, "income": 95_000})
+    on_grid = _run(
+        household_calculator, dependents=[4], **{**payload, "income": 95_000}
+    )
     assert off["income_index"] is None
     assert off["sweep"] == on_grid["sweep"]
     household = HouseholdInput.from_dict({**payload, "dependents": [4]})
     measure = MEASURES["co-prop-nn"]
     for policy in POLICIES:
-        alone = household_calculator.simulation(measure.slug, policy, build_situation(household))
+        alone = household_calculator.simulation(
+            measure.slug, policy, build_situation(household)
+        )
         for key, variable in output_variables(measure):
             expected = float(alone.calculate(variable, 2027, map_to="household")[0])
-            assert off["at_income"][policy][key] == pytest.approx(expected, abs=0.01), key
+            assert off["at_income"][policy][key] == pytest.approx(expected, abs=0.01), (
+                key
+            )
     assert off["filing_status"] == "JOINT"
 
 
@@ -706,13 +971,21 @@ def test_sweep_matches_the_point_values(household_calculator):
 @pytest.mark.parametrize(
     "payload",
     [
-        {"measure": "ca-prop-3", "year": 2031, "age_head": 55, "married": True, "income": 3_000_000},
+        {
+            "measure": "ca-prop-3",
+            "year": 2031,
+            "age_head": 55,
+            "married": True,
+            "income": 3_000_000,
+        },
         {"measure": "co-amendment-87", "year": 2027, "age_head": 50, "income": 700_000},
         {"measure": "sd-amendment-i", "year": 2028, "age_head": 45, "income": 20_000},
     ],
     ids=lambda p: p["measure"],
 )
-def test_skipping_the_structural_pass_matches_the_standard_path(household_calculator, payload):
+def test_skipping_the_structural_pass_matches_the_standard_path(
+    household_calculator, payload
+):
     """The calculator skips Simulation's structural-reform pass because its
     prebuilt systems already include it (California Proposition 3 is a
     structural contributed reform). Results must equal the standard
@@ -726,7 +999,9 @@ def test_skipping_the_structural_pass_matches_the_standard_path(household_calcul
     step, count, _ = sweep_grid(household.income, measure.sweep_max)
     situation = build_situation(household, axis=(step, count))
     fast = household_calculator.simulation(measure.slug, "reform", situation)
-    standard = Simulation(situation=situation, reform=build_reform(measure.reform_policy))
+    standard = Simulation(
+        situation=situation, reform=build_reform(measure.reform_policy)
+    )
     for _, variable in output_variables(measure):
         np.testing.assert_allclose(
             fast.calculate(variable, household.year, map_to="household"),

@@ -59,69 +59,143 @@ image = (
 # put all wages on the head.
 CHECKS = (
     (
-        "co-amendment-87", None, "married-couple-1-2m-wages-2-kids",
+        "co-amendment-87",
+        None,
+        "married-couple-1-2m-wages-2-kids",
         "pays more Colorado tax",
-        lambda b, r: r["state_tax"] > b["state_tax"] and r["net_income"] < b["net_income"],
+        lambda b, r: (
+            r["state_tax"] > b["state_tax"] and r["net_income"] < b["net_income"]
+        ),
     ),
     (
-        "co-amendment-87", None, "single-filer-45k-wages",
+        "co-amendment-87",
+        None,
+        "single-filer-45k-wages",
         "pays less Colorado tax",
-        lambda b, r: r["state_tax"] < b["state_tax"] and r["net_income"] > b["net_income"],
+        lambda b, r: (
+            r["state_tax"] < b["state_tax"] and r["net_income"] > b["net_income"]
+        ),
     ),
     (
-        "co-prop-nn", 2027, "single-filer-40k-wages",
+        "co-prop-nn",
+        2027,
+        "single-filer-40k-wages",
         "loses the $43 TY2027 refund",
-        lambda b, r: b["refund"] == 43 and r["refund"] == 0
-        and abs(r["net_income"] - b["net_income"] + 43) < 0.02,
+        lambda b, r: (
+            b["refund"] == 43
+            and r["refund"] == 0
+            and abs(r["net_income"] - b["net_income"] + 43) < 0.02
+        ),
     ),
     (
-        "co-prop-nn", 2028, "single-filer-40k-wages",
+        "co-prop-nn",
+        2028,
+        "single-filer-40k-wages",
         "loses the $47 TY2028 refund",
-        lambda b, r: b["refund"] == 47 and r["refund"] == 0
-        and abs(r["net_income"] - b["net_income"] + 47) < 0.02,
+        lambda b, r: (
+            b["refund"] == 47
+            and r["refund"] == 0
+            and abs(r["net_income"] - b["net_income"] + 47) < 0.02
+        ),
     ),
     (
-        "ca-prop-3", None, "married-couple-3m-wages",
+        "ca-prop-3",
+        None,
+        "married-couple-3m-wages",
         "pays more California tax",
-        lambda b, r: r["state_tax"] > b["state_tax"] and r["net_income"] < b["net_income"],
+        lambda b, r: (
+            r["state_tax"] > b["state_tax"] and r["net_income"] < b["net_income"]
+        ),
     ),
     (
-        "ca-prop-3", None, "single-filer-150k-wages",
+        "ca-prop-3",
+        None,
+        "single-filer-150k-wages",
         "is unaffected",
-        lambda b, r: r["state_tax"] == b["state_tax"] and r["net_income"] == b["net_income"],
+        lambda b, r: (
+            r["state_tax"] == b["state_tax"] and r["net_income"] == b["net_income"]
+        ),
     ),
     (
-        "wa-i-645", 2028, "married-couple-5m-wages",
+        "wa-i-645",
+        2028,
+        "married-couple-5m-wages",
         "pays 9.9% x ($5M - $1M deduction) = $396,000 less Washington tax",
         lambda b, r: abs((b["state_tax"] - r["state_tax"]) - 0.099 * 4_000_000) < 1,
     ),
     (
-        "wa-i-645", None, "married-couple-5m-wages",
+        "wa-i-645",
+        None,
+        "married-couple-5m-wages",
         "pays less Washington tax",
-        lambda b, r: r["state_tax"] < b["state_tax"] and r["net_income"] > b["net_income"],
+        lambda b, r: (
+            r["state_tax"] < b["state_tax"] and r["net_income"] > b["net_income"]
+        ),
     ),
     (
-        "wa-i-645", None, "married-couple-250k-wages-2-kids",
+        "wa-i-645",
+        None,
+        "married-couple-250k-wages-2-kids",
         "is unaffected",
-        lambda b, r: r["state_tax"] == b["state_tax"] and r["net_income"] == b["net_income"],
+        lambda b, r: (
+            r["state_tax"] == b["state_tax"] and r["net_income"] == b["net_income"]
+        ),
     ),
     (
-        "nd-measure-2", None, "married-couple-110k-3-kids",
+        "nd-measure-2",
+        None,
+        "married-couple-110k-3-kids",
         "gains free-meal value",
-        lambda b, r: r["free_meals"] > b["free_meals"] and r["meal_value"] > b["meal_value"]
-        and r["net_income"] > b["net_income"],
+        lambda b, r: (
+            r["free_meals"] > b["free_meals"]
+            and r["meal_value"] > b["meal_value"]
+            and r["net_income"] > b["net_income"]
+        ),
     ),
     (
-        "sd-amendment-i", None, "single-adult-20k-wages",
-        "loses Medicaid and gains the premium tax credit",
-        lambda b, r: b["medicaid_enrolled"] >= 1 and r["medicaid_enrolled"] == 0
-        and r["ptc"] > b["ptc"],
+        "sd-amendment-i",
+        None,
+        "single-adult-20k-wages",
+        "moves from Medicaid to a subsidized marketplace plan; cash falls by the premium",
+        lambda b, r: (
+            (b["coverage_status"], r["coverage_status"])
+            == ("medicaid", "subsidized_marketplace")
+            and b["medicaid_enrolled"] >= 1
+            and r["medicaid_enrolled"] == 0
+            and r["ptc"] > b["ptc"]
+            and r["marketplace_premium"] > 0
+            # Net income counts health benefits, less the premium paid.
+            and abs(
+                (r["net_income"] - b["net_income"])
+                - (
+                    r["medicaid"]
+                    - b["medicaid"]
+                    + r["ptc"]
+                    - b["ptc"]
+                    - (r["marketplace_premium"] - b["marketplace_premium"])
+                )
+            )
+            < 1
+            and abs(
+                (r["cash_net_income"] - b["cash_net_income"])
+                + (r["marketplace_premium"] - b["marketplace_premium"])
+            )
+            < 0.02
+        ),
     ),
     (
-        "sd-amendment-i", None, "single-adult-14k-wages",
-        "loses Medicaid with no premium tax credit (coverage gap)",
-        lambda b, r: b["medicaid_enrolled"] >= 1 and r["medicaid_enrolled"] == 0
-        and r["ptc"] == 0,
+        "sd-amendment-i",
+        None,
+        "single-adult-14k-wages",
+        "loses Medicaid with no premium tax credit (coverage gap); no cash change",
+        lambda b, r: (
+            (b["coverage_status"], r["coverage_status"], r["no_option_reason"])
+            == ("medicaid", "no_subsidized_option", "below_poverty_line")
+            and b["medicaid_enrolled"] >= 1
+            and r["medicaid_enrolled"] == 0
+            and r["ptc"] == 0
+            and abs(r["cash_net_income"] - b["cash_net_income"]) < 0.02
+        ),
     ),
 )
 
@@ -180,9 +254,19 @@ def check_results(payload: dict) -> list[tuple[str, int, str, str, bool]]:
         for c_slug, c_year, c_id, expectation, test in CHECKS:
             if c_slug == slug and c_id == household["id"] and c_year in (None, year):
                 results.append(
-                    (slug, year, household["id"], expectation, bool(test(at["baseline"], at["reform"])))
+                    (
+                        slug,
+                        year,
+                        household["id"],
+                        expectation,
+                        bool(test(at["baseline"], at["reform"])),
+                    )
                 )
     return results
+
+
+def _show(value) -> str:
+    return f"{value:,.2f}" if isinstance(value, (int, float)) else str(value)
 
 
 def summary_lines(payload: dict) -> list[str]:
@@ -192,7 +276,9 @@ def summary_lines(payload: dict) -> list[str]:
         at = household["response"]["at_income"]
         base, reform = at["baseline"], at["reform"]
         changes = ", ".join(
-            f"{key} {base[key]:,.2f} -> {reform[key]:,.2f}" for key in base if key != "net_income"
+            f"{key} {_show(base[key])} -> {_show(reform[key])}"
+            for key in base
+            if key != "net_income"
         )
         lines.append(
             f"{slug} {year} | {household['label']} | {household['response']['filing_status']} | "
@@ -202,11 +288,19 @@ def summary_lines(payload: dict) -> list[str]:
     return lines
 
 
+# A JSON scalar without spaces: a number, true/false/null, or a string of
+# letters, digits, underscores and hyphens (coverage_status values).
+_SCALAR = r'(?:-?[0-9.eE+-]+|true|false|null|"[A-Za-z0-9_-]*")'
+_SCALAR_LIST = re.compile(rf"\[\s*((?:{_SCALAR},\s*)*{_SCALAR})\s*\]")
+
+
 def to_json(payload: dict) -> str:
-    """Indented JSON with each list of numbers on one line."""
+    """Indented JSON with each list of numbers (or short codes) on one line."""
     text = json.dumps(payload, indent=1)
-    number_list = re.compile(r"\[\s*((?:-?[0-9.eE+-]+,\s*)*-?[0-9.eE+-]+)\s*\]")
-    return number_list.sub(lambda m: "[" + re.sub(r"\s+", "", m.group(1)) + "]", text) + "\n"
+    return (
+        _SCALAR_LIST.sub(lambda m: "[" + re.sub(r"\s+", "", m.group(1)) + "]", text)
+        + "\n"
+    )
 
 
 def write(payload: dict, force: bool) -> None:
@@ -217,10 +311,14 @@ def write(payload: dict, force: bool) -> None:
         print(f"{'PASS' if passed else 'FAIL'}  {slug} {year} {hid}: {expectation}")
     expected = sum(1 for _ in CHECKS)
     if len(results) < expected:
-        print(f"Only {len(results)} checks matched an example; expected at least {expected}.")
+        print(
+            f"Only {len(results)} checks matched an example; expected at least {expected}."
+        )
     failed = [r for r in results if not r[-1]]
     if (failed or len(results) < expected) and not force:
-        raise SystemExit("Checks failed; not writing. Rerun with --force to write anyway.")
+        raise SystemExit(
+            "Checks failed; not writing. Rerun with --force to write anyway."
+        )
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(to_json(payload), encoding="utf-8")
     print(f"Wrote {OUTPUT_PATH}")
@@ -281,14 +379,22 @@ def main(force: bool = False):
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--check", metavar="URL", help="compare a deployed endpoint with the committed file")
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    parser.add_argument(
+        "--check",
+        metavar="URL",
+        help="compare a deployed endpoint with the committed file",
+    )
     parser.add_argument(
         "--local",
         action="store_true",
         help="compute in this process (needs policyengine-us installed; heavy)",
     )
-    parser.add_argument("--force", action="store_true", help="write even if a check fails")
+    parser.add_argument(
+        "--force", action="store_true", help="write even if a check fails"
+    )
     args = parser.parse_args()
     if args.check:
         raise SystemExit(compare_with_endpoint(args.check))
@@ -297,4 +403,6 @@ if __name__ == "__main__":
 
         write(build_payload(HouseholdCalculator()), args.force)
     else:
-        parser.error("run on Modal with `modal run scripts/compute_example_households.py`, or pass --local or --check URL")
+        parser.error(
+            "run on Modal with `modal run scripts/compute_example_households.py`, or pass --local or --check URL"
+        )
