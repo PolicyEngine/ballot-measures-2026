@@ -103,6 +103,7 @@ export default function Footer() {
     >
       <div style={{ maxWidth: '976px', margin: '0 auto' }}>
         {/* Logo */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- external SVG logo, matches app-v2 */}
         <img
           src="https://policyengine.org/assets/logos/policyengine/white.svg"
           alt="PolicyEngine"

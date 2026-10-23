@@ -1,269 +1,444 @@
 'use client';
 
+import { useState } from 'react';
 import {
-  LineChart,
+  CartesianGrid,
   Line,
+  LineChart,
+  ReferenceLine,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-  ReferenceLine,
 } from 'recharts';
 import { useHouseholdImpact } from '@/hooks/useHouseholdImpact';
-import type {
-  HouseholdImpactResponse,
-  HouseholdRequest,
-} from '@/lib/types';
-import { CO_DASHBOARD_YEAR } from '@/lib/household';
-import { formatUSD, formatUSDWithSign } from '@/lib/format';
-import ChartWatermark from './ChartWatermark';
+import {
+  HouseholdApiError,
+  type HouseholdRequest,
+  type HouseholdResponse,
+} from '@/lib/householdApi';
+import {
+  KIND_SERIES,
+  atIncomeRows,
+  buildChartRows,
+  changeAt,
+  filingStatusLabel,
+  netIncomeChange,
+  type AtIncomeRow,
+  type HouseholdChartRow,
+} from '@/lib/householdForm';
+import type { Measure } from '@/lib/registry';
+import { formatCount, formatIncomeTick, formatUSD, formatUSDWithSign } from '@/lib/format';
+import { CHART_MARGIN, ChartFigure, PillToggle, TICK_STYLE, niceStep } from './chartUtils';
+import { MetricCard, toneOf, type Tone } from './ui';
 
 interface Props {
+  measure: Measure;
   request: HouseholdRequest | null;
-  triggered: boolean;
-  maxEarnings?: number;
-  /** When supplied, the chart renders this precomputed payload instead
-   * of firing a live /us/calculate request. */
-  precomputed?: HouseholdImpactResponse | null;
+  /** When supplied, renders this stored result instead of calling the API. */
+  precomputed?: HouseholdResponse | null;
+  /** Label of the example household the stored result belongs to. */
+  exampleLabel?: string | null;
 }
 
-interface ChartRow {
-  income: number;
-  benefit: number;
-  federalTaxChange: number;
-  stateTaxChange: number;
-  netIncomeChange: number;
-}
-
-const formatCurrency = formatUSD;
-const formatCurrencyWithSign = formatUSDWithSign;
-const formatIncome = (value: number) => {
-  if (value >= 1_000_000) return `$${(value / 1_000_000).toFixed(1)}M`;
-  return `$${(value / 1000).toFixed(0)}k`;
-};
-
-function HoverTooltip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: Array<{ payload: ChartRow }>;
-  label?: number;
-}) {
-  if (!active || !payload || !payload.length) return null;
-  const p = payload[0].payload;
-  const incomeLabel = typeof label === 'number' ? label : p.income;
+/** Loading panel; cold starts take 1-2 minutes. */
+export function CalculatingNotice() {
   return (
-    <div
-      style={{
-        background: 'var(--chart-tooltip-bg, #fff)',
-        border: '1px solid var(--chart-tooltip-border, #e5e7eb)',
-        borderRadius: 4,
-        padding: '8px 12px',
-        fontFamily: 'var(--font-sans)',
-        fontSize: 12,
-        minWidth: 240,
-      }}
-    >
-      <p style={{ margin: '0 0 4px', fontWeight: 600 }}>
-        Income: {formatCurrency(Math.round(incomeLabel / 100) * 100)}
-      </p>
-      <p
-        style={{
-          margin: '4px 0 2px',
-          fontSize: 11,
-          color: 'var(--text-muted)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em',
-        }}
-      >
-        By tax channel
-      </p>
-      <p
-        style={{ margin: 0 }}
-        title="Change in Colorado individual income tax liability under the Initiative 195 graduated schedule compared with current law. A positive value indicates an increase in tax."
-      >
-        CO tax change: {formatCurrencyWithSign(p.stateTaxChange)}
-      </p>
-      <p
-        style={{ margin: 0 }}
-        title="Change in federal individual income tax under the Initiative 195 graduated schedule compared with current law. Colorado income tax counts toward the federal itemized deduction for state and local taxes (subject to the SALT cap), so a change in Colorado tax can shift federal taxable income and therefore federal tax. A positive value indicates an increase in tax."
-      >
-        Federal tax change: {formatCurrencyWithSign(p.federalTaxChange)}
-      </p>
-      <p style={{ margin: '4px 0 0', fontWeight: 600 }}>
-        Net income change: {formatCurrencyWithSign(p.netIncomeChange)}
-      </p>
+    <div className="flex items-center justify-center py-16" role="status" aria-live="polite">
+      <div className="text-center max-w-md">
+        <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary-500 border-r-transparent" />
+        <p className="mt-4 font-semibold text-gray-800">Calculating…</p>
+        <p className="mt-1 text-sm text-gray-600">
+          Usually a few seconds; a calculator that has just started can take 1-2 minutes.
+        </p>
+      </div>
     </div>
   );
 }
 
-export default function ImpactAnalysis({
-  request,
-  triggered,
-  maxEarnings,
-  precomputed,
-}: Props) {
-  const liveQuery = useHouseholdImpact(request, triggered && !precomputed);
-  const data = precomputed ?? liveQuery.data;
-  const isLoading = !precomputed && liveQuery.isLoading;
-  const error = precomputed ? null : liveQuery.error;
+function ErrorPanel({ error }: { error: unknown }) {
+  const apiError = error instanceof HouseholdApiError ? error : null;
+  const title =
+    apiError?.kind === 'validation'
+      ? 'The calculator could not use these inputs'
+      : apiError?.kind === 'timeout'
+        ? 'The calculator took too long to respond'
+        : 'Household calculator unavailable';
+  const message = error instanceof Error ? error.message : 'Unknown error';
+  return (
+    <div className="bg-gray-50 border border-gray-200 rounded-lg p-5" role="alert">
+      <h3 className="text-gray-900 font-semibold mb-1">{title}</h3>
+      <p className="text-sm text-gray-700">{message}</p>
+      {apiError?.kind !== 'validation' && (
+        <p className="text-sm text-gray-600 mt-2">The example households above load without the calculator.</p>
+      )}
+    </div>
+  );
+}
 
-  if (!triggered) return null;
+/** Labels for the two policies. */
+export function policyLabels(measure: Measure): { baseline: string; reform: string } {
+  return measure.kind_params?.conditional === true
+    ? { baseline: 'Current law', reform: 'Scenario: expansion ends' }
+    : { baseline: 'Current law', reform: 'If it passes' };
+}
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="mt-4 text-gray-600">Calculating impact...</p>
-        </div>
-      </div>
-    );
-  }
+const POLICY_COLORS = {
+  baseline: 'var(--chart-baseline)',
+  reform: 'var(--chart-1)',
+  change: 'var(--chart-3)',
+};
 
-  if (error) {
-    const errorMessage = (error as Error).message;
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
-        <h2 className="text-yellow-800 font-semibold mb-2">
-          Household calculator temporarily unavailable
-        </h2>
-        <p className="text-yellow-700">
-          The PolicyEngine API returned an error: <code>{errorMessage}</code>. You
-          can still see precomputed results in the example-household cards above
-          or on the <strong>Statewide impact</strong> tab.
-        </p>
-      </div>
-    );
-  }
+type ChartView = 'change' | 'levels' | 'kind';
 
-  if (!data) return null;
+const TOOLTIP_STYLE: React.CSSProperties = {
+  background: 'var(--chart-tooltip-bg)',
+  border: '1px solid var(--chart-tooltip-border)',
+  borderRadius: 4,
+  padding: '8px 12px',
+  fontFamily: 'var(--font-sans)',
+  fontSize: 12,
+  color: 'var(--text-body)',
+  minWidth: 200,
+};
 
-  const benefitData = data.benefit_at_income;
+function Swatch({ color }: { color: string }) {
+  return (
+    <span
+      aria-hidden="true"
+      style={{
+        display: 'inline-block',
+        width: 8,
+        height: 8,
+        borderRadius: 2,
+        marginRight: 6,
+        backgroundColor: color,
+      }}
+    />
+  );
+}
 
-  const federalTaxChangePoint = benefitData.federal_tax_change;
-  const stateTaxChangePoint = benefitData.state_tax_change;
-  const netIncomeChangePoint = benefitData.net_income_change;
+export function HouseholdTooltip({
+  active,
+  payload,
+  view,
+  labels,
+  kindLabel,
+}: {
+  active?: boolean;
+  payload?: { payload?: HouseholdChartRow }[];
+  view: ChartView;
+  labels: { baseline: string; reform: string };
+  kindLabel: string;
+}) {
+  const row = payload?.[0]?.payload;
+  if (!active || !row) return null;
+  const line = (color: string, label: string, value: string) => (
+    <p style={{ margin: '2px 0 0', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+      <span>
+        <Swatch color={color} />
+        {label}
+      </span>
+      <span style={{ fontVariantNumeric: 'tabular-nums' }}>{value}</span>
+    </p>
+  );
+  return (
+    <div style={TOOLTIP_STYLE}>
+      <p style={{ margin: 0, fontWeight: 600, color: 'var(--text-heading)' }}>
+        Employment income: {formatUSD(row.income)}
+      </p>
+      {view === 'change' && line(POLICY_COLORS.change, 'Change in net income', formatUSDWithSign(row.change))}
+      {view === 'levels' && (
+        <>
+          {line(POLICY_COLORS.baseline, labels.baseline, formatUSD(row.baseline))}
+          {line(POLICY_COLORS.reform, labels.reform, formatUSD(row.reform))}
+        </>
+      )}
+      {view === 'kind' && (
+        <>
+          <p style={{ margin: '4px 0 0', color: 'var(--text-muted)' }}>{kindLabel}</p>
+          {line(POLICY_COLORS.baseline, labels.baseline, formatUSD(row.kindBaseline))}
+          {line(POLICY_COLORS.reform, labels.reform, formatUSD(row.kindReform))}
+        </>
+      )}
+    </div>
+  );
+}
 
-  const xMax = maxEarnings ?? data.x_axis_max;
+function formatRowValue(row: AtIncomeRow, value: number): string {
+  return row.unit === 'count' ? formatCount(value) : formatUSD(value);
+}
 
-  const federalTaxChangeSeries = data.federalTaxChange;
-  const stateTaxChangeSeries = data.stateTaxChange;
-  const netIncomeChangeSeries = data.netIncomeChange;
+function formatRowChange(row: AtIncomeRow): string {
+  const change = row.reform - row.baseline;
+  return row.unit === 'count'
+    ? `${change > 0 ? '+' : ''}${formatCount(change)}`
+    : formatUSDWithSign(change);
+}
 
-  const chartData: ChartRow[] = data.income_range
-    .map((inc, i) => ({
-      income: inc,
-      benefit: netIncomeChangeSeries[i],
-      federalTaxChange: federalTaxChangeSeries[i],
-      stateTaxChange: stateTaxChangeSeries[i],
-      netIncomeChange: netIncomeChangeSeries[i],
-    }))
-    .filter((d) => d.income <= xMax);
+/** Tone of a change from the household's side (a tax increase is a loss). */
+const householdTone = (row: AtIncomeRow): Tone => {
+  const change = row.reform - row.baseline;
+  return toneOf(row.higherIsBetter ? change : -change);
+};
 
-  const metricCard = (
-    label: string,
-    value: number,
-    inverseSign: boolean = false,
-  ) => {
-    const householdSign = inverseSign ? -value : value;
-    const positive = householdSign > 0;
-    const negative = householdSign < 0;
-    return (
-      <div
-        className={`rounded-lg p-6 border ${
-          positive
-            ? 'bg-green-50 border-success'
-            : negative
-            ? 'bg-red-50 border-red-300'
-            : 'bg-gray-50 border-gray-300'
-        }`}
-      >
-        <p className="text-sm text-gray-700 mb-2">{label}</p>
-        <p
-          className={`text-3xl font-bold ${
-            positive ? 'text-green-600' : negative ? 'text-red-600' : 'text-gray-600'
-          }`}
-        >
-          {value !== 0 ? `${formatCurrencyWithSign(value)}/year` : '$0/year'}
-        </p>
-      </div>
-    );
-  };
+/** Cards, comparison table and chart for one calculator response. */
+export function HouseholdResults({
+  measure,
+  result,
+  exampleLabel,
+}: {
+  measure: Measure;
+  result: HouseholdResponse;
+  exampleLabel?: string | null;
+}) {
+  const [view, setView] = useState<ChartView>('change');
+  const labels = policyLabels(measure);
+  const kind = KIND_SERIES[measure.kind];
+  const rows = buildChartRows(result, measure.kind);
+  const tableRows = atIncomeRows(result, measure);
+  const change = netIncomeChange(result);
+  const xMax = rows.length ? rows[rows.length - 1].income : result.income ?? 0;
+  const xStep = niceStep(xMax, 4);
+  const xTicks = Array.from({ length: Math.floor(xMax / xStep) + 1 }, (_, i) => i * xStep);
+  const entered = result.income ?? (result.income_index !== null ? result.income_range[result.income_index] : null);
+  const filing = filingStatusLabel(result.filing_status);
+  const stateTaxChange = changeAt(result, 'state_tax');
+
+  const kindCard = (() => {
+    switch (measure.kind) {
+      case 'income_tax':
+        return (
+          <MetricCard
+            label={`Change in ${measure.state_name} income tax`}
+            value={`${formatUSDWithSign(stateTaxChange)}/year`}
+            tone={toneOf(-stateTaxChange)}
+          />
+        );
+      case 'tabor_refund': {
+        const refund = changeAt(result, 'refund');
+        return (
+          <MetricCard
+            label="Change in sales tax refund"
+            value={`${formatUSDWithSign(refund)}/year`}
+            tone={toneOf(refund)}
+          />
+        );
+      }
+      case 'school_meals': {
+        const meals = changeAt(result, 'meal_value');
+        return (
+          <MetricCard
+            label="Change in value of school meals"
+            value={`${formatUSDWithSign(meals)}/year`}
+            tone={toneOf(meals)}
+          />
+        );
+      }
+      case 'medicaid': {
+        const health = changeAt(result, 'medicaid') + changeAt(result, 'ptc');
+        return (
+          <MetricCard
+            label="Change in Medicaid and premium tax credit"
+            value={`${formatUSDWithSign(health)}/year`}
+            tone={toneOf(health)}
+          />
+        );
+      }
+    }
+  })();
 
   return (
     <div className="space-y-8">
-      <h2 className="text-2xl font-bold text-primary">Impact analysis</h2>
-
-      {/* Personal impact */}
       <div>
-        <h3 className="text-xl font-bold text-gray-800 mb-4">
-          Your household&apos;s estimated impact from Initiative 195 ({request?.year ?? CO_DASHBOARD_YEAR})
+        <h3 className="text-2xl font-bold text-primary-700">
+          {exampleLabel ? exampleLabel : 'Your household’s results'}
         </h3>
-        <p className="text-gray-600 mb-4">
-          Based on your employment income of <strong>{formatCurrency(request?.income ?? 0)}</strong>,
-          comparing the Initiative 195 graduated schedule (reform) with current
-          law (4.4% flat tax). Impact = reform &minus; baseline.
+        <p className="text-sm text-gray-600 mt-1">
+          {[
+            measure.state_name,
+            filing,
+            entered !== null ? `employment income ${formatUSD(entered)}` : null,
+            `tax year ${result.year}`,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
         </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {metricCard('Federal tax change', federalTaxChangePoint, true)}
-          {metricCard(
-            'Colorado state tax change',
-            stateTaxChangePoint,
-            true,
-          )}
-          {metricCard('Net income change', netIncomeChangePoint)}
-        </div>
       </div>
 
-      <hr className="border-gray-200" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <MetricCard
+          label="Change in household net income"
+          value={`${formatUSDWithSign(change)}/year`}
+          tone={toneOf(change)}
+          detail={
+            measure.kind_params?.conditional === true
+              ? 'In the scenario, compared with current law'
+              : 'If it passes, compared with current law'
+          }
+        />
+        {kindCard}
+      </div>
 
-      {/* Chart */}
-      <div className="bg-white border rounded-lg p-6">
-        <h3 className="text-lg font-semibold mb-1 text-gray-800">
-          Change in net income under Initiative 195
-        </h3>
-        <p className="text-sm text-gray-500 mb-4">
-          Graduated schedule (reform) vs. current law (4.4% flat tax), by
-          employment income
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <caption className="text-left text-sm font-semibold text-gray-800 mb-2">
+            At your employment income
+          </caption>
+          <thead>
+            <tr className="border-b border-gray-200">
+              <th scope="col" className="text-left py-2 pr-3 font-medium text-gray-600">
+                Annual amount
+              </th>
+              <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">
+                {labels.baseline}
+              </th>
+              <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">
+                {labels.reform}
+              </th>
+              <th scope="col" className="text-right py-2 pl-3 font-medium text-gray-600">
+                Change
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {tableRows.map((row) => {
+              const tone = householdTone(row);
+              return (
+                <tr key={row.key}>
+                  <th scope="row" className="text-left py-2 pr-3 font-normal text-gray-800">
+                    {row.label}
+                  </th>
+                  <td className="text-right py-2 px-3 tabular-nums">{formatRowValue(row, row.baseline)}</td>
+                  <td className="text-right py-2 px-3 tabular-nums">{formatRowValue(row, row.reform)}</td>
+                  <td
+                    className={`text-right py-2 pl-3 tabular-nums font-semibold ${
+                      tone === 'positive' ? 'text-green-600' : tone === 'negative' ? 'text-red-600' : 'text-gray-700'
+                    }`}
+                  >
+                    {formatRowChange(row)}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        <p className="text-xs text-gray-500 mt-2">
+          Taxes are after refundable credits. Net income is income after taxes plus benefits
+          {measure.kind === 'medicaid' ? ', counting the value of health coverage' : ''}.
         </p>
-        <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={chartData} margin={{ left: 20, right: 20, top: 5, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
-              <XAxis
-                dataKey="income"
-                type="number"
-                tickFormatter={formatIncome}
-                stroke="var(--chart-reference)"
-                domain={[0, xMax]}
-                allowDataOverflow={false}
-              />
-              <YAxis tickFormatter={formatCurrency} stroke="var(--chart-reference)" width={80} />
-              <Tooltip content={<HoverTooltip />} />
-              <Legend />
-              <ReferenceLine y={0} stroke="var(--chart-reference)" strokeWidth={2} />
+      </div>
+
+      <ChartFigure
+        title={
+          view === 'change'
+            ? 'Change in net income by employment income'
+            : view === 'levels'
+              ? 'Net income by employment income'
+              : `${kind.label} by employment income`
+        }
+        actions={
+          <PillToggle
+            label="Chart"
+            value={view}
+            onChange={setView}
+            options={[
+              { value: 'change', label: 'Change' },
+              { value: 'levels', label: 'Net income' },
+              { value: 'kind', label: kind.label },
+            ]}
+          />
+        }
+        legend={
+          view === 'change'
+            ? [
+                { label: 'Change in net income', color: POLICY_COLORS.change, shape: 'line' as const },
+                { label: 'Your income', color: 'var(--chart-axis)', shape: 'dashed' as const },
+              ]
+            : [
+                { label: labels.baseline, color: POLICY_COLORS.baseline, shape: 'line' as const },
+                { label: labels.reform, color: POLICY_COLORS.reform, shape: 'line' as const },
+                { label: 'Your income', color: 'var(--chart-axis)', shape: 'dashed' as const },
+              ]
+        }
+        caption="Varies your employment income only; any spouse income stays fixed."
+      >
+        <ResponsiveContainer width="100%" height={320}>
+          <LineChart data={rows} margin={{ ...CHART_MARGIN, left: 10 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--chart-grid)" />
+            <XAxis
+              dataKey="income"
+              type="number"
+              domain={[0, xMax]}
+              ticks={xTicks}
+              tickFormatter={formatIncomeTick}
+              tick={TICK_STYLE}
+              stroke="var(--chart-axis)"
+            />
+            <YAxis
+              tickFormatter={(v: number) => (view === 'change' ? formatUSDWithSign(v) : formatIncomeTick(v))}
+              tick={TICK_STYLE}
+              stroke="var(--chart-axis)"
+              width={76}
+            />
+            <Tooltip
+              content={<HouseholdTooltip view={view} labels={labels} kindLabel={kind.label} />}
+            />
+            {view === 'change' && <ReferenceLine y={0} stroke="var(--chart-axis)" />}
+            {entered !== null && (
+              <ReferenceLine x={entered} stroke="var(--chart-axis)" strokeDasharray="4 4" />
+            )}
+            {view === 'change' ? (
               <Line
-                type="monotone"
-                dataKey="benefit"
-                stroke="var(--chart-positive)"
+                type="linear"
+                dataKey="change"
+                name="Change in net income"
+                stroke={POLICY_COLORS.change}
                 strokeWidth={3}
-                name="Net income change"
                 dot={false}
+                isAnimationActive={false}
               />
-            </LineChart>
-          </ResponsiveContainer>
-        <ChartWatermark />
-        <p className="text-[11px] text-gray-500 italic mt-2">
-          A value below the zero line means the household&apos;s net income
-          falls (its tax rises) under the graduated schedule; a value above
-          the line means net income rises.
-        </p>
-      </div>
+            ) : (
+              [
+                <Line
+                  key="baseline"
+                  type="linear"
+                  dataKey={view === 'levels' ? 'baseline' : 'kindBaseline'}
+                  name={labels.baseline}
+                  stroke={POLICY_COLORS.baseline}
+                  strokeWidth={2.5}
+                  dot={false}
+                  isAnimationActive={false}
+                />,
+                <Line
+                  key="reform"
+                  type="linear"
+                  dataKey={view === 'levels' ? 'reform' : 'kindReform'}
+                  name={labels.reform}
+                  stroke={POLICY_COLORS.reform}
+                  strokeWidth={3}
+                  strokeDasharray="6 3"
+                  dot={false}
+                  isAnimationActive={false}
+                />,
+              ]
+            )}
+          </LineChart>
+        </ResponsiveContainer>
+      </ChartFigure>
     </div>
+  );
+}
+
+export default function ImpactAnalysis({ measure, request, precomputed, exampleLabel }: Props) {
+  const live = useHouseholdImpact(request, !precomputed);
+  const data = precomputed ?? live.data;
+
+  if (!precomputed && live.isFetching && !live.data) return <CalculatingNotice />;
+  if (!precomputed && live.error) return <ErrorPanel error={live.error} />;
+  if (!data) return null;
+
+  return (
+    <HouseholdResults measure={measure} result={data} exampleLabel={precomputed ? exampleLabel : null} />
   );
 }

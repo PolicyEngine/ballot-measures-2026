@@ -1,333 +1,463 @@
 'use client';
 
-import { useAggregateImpact } from '@/hooks/useAggregateImpact';
-import { CO_DASHBOARD_YEAR } from '@/lib/household';
+import { getContent } from '@/content/measures';
+import { formatCount, formatPercent, formatTimestamp } from '@/lib/format';
+import {
+  REGISTRY,
+  useManifest,
+  useResultsCsv,
+  type Manifest,
+  type Measure,
+} from '@/lib/measures';
+import {
+  CORE_METRICS as C,
+  MEDICAID_METRICS as MC,
+  SCHOOL_MEALS_METRICS as SM,
+  compareEstimate,
+  formatEstimateValue,
+  type EstimateComparison,
+} from '@/lib/metrics';
+import { STATEWIDE_FILES, metric, metricsFor } from '@/lib/results';
+import { SimpleDataTable } from './PolicyOverview';
+import { asPercent } from './statewide/KindSummary';
+import { Callout, CompareTable, ExternalLink } from './ui';
 
-/**
- * Validation & methodology tab, modeled on the FUTA wage-base
- * dashboard's validation tab: compare the model's revenue estimate with
- * the official Legislative Council Staff fiscal impact statement, then
- * document methodology, sources, and known modeling limitations.
- */
+const DASH = '—';
 
-// Official estimate: Legislative Council Staff, Initiative 195 Fiscal
-// Impact Statement (March 9, 2026). Full-year figure is FY 2027-28;
-// the FY 2026-27 figure is a half-year impact of tax year 2027.
-const OFFICIAL = {
-  source:
-    'Legislative Council Staff, Initiative 195 fiscal impact statement (March 9, 2026)',
-  url: 'https://leg.colorado.gov/initiative_files/3320/download',
-  fy2027HalfYear: 963_200_000, // FY 2026-27 (half-year of TY 2027)
-  fy2028FullYear: 1_981_100_000, // FY 2027-28 (first full fiscal year)
-  maxDollarChange: 2_700_000_000, // required forecast-error bound, FY 2027-28
-};
+const POSITION_TEXT = {
+  below: 'below',
+  above: 'above',
+  within: 'within',
+  equal: 'equal to',
+} as const;
 
-const MODEL_INFO = {
-  policyengineUs: '1.825.0',
-  pin: 'policyengine-us==1.825.0 (first release containing PR #9431)',
-};
+function differenceText(c: EstimateComparison): string {
+  if (!c.model || c.position === null) return DASH;
+  const official = c.estimate;
+  const range = official.low !== official.high;
+  if (range) return `${POSITION_TEXT[c.position]} the official range`;
+  if (c.ratioPercent === null) return DASH;
+  return `${formatPercent(c.ratioPercent, 0)} of the official figure`;
+}
 
-const formatBillions = (value: number) => {
-  const abs = Math.abs(value);
-  const sign = value < 0 ? '-' : '';
-  if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(2)}B`;
-  if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(0)}M`;
-  return `${sign}$${abs.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
-};
-
-export default function ValidationMethodology() {
-  const { data } = useAggregateImpact(true, CO_DASHBOARD_YEAR);
-
-  // Model revenue = change in Colorado state income-tax collections
-  // under the reform (positive = revenue increase). Wired to
-  // metrics.csv; shows a pending state until the Modal precompute lands.
-  const modelRevenue = data?.budget?.state_tax_revenue_impact ?? null;
-
-  const comparisonRows = [
-    {
-      label: 'PolicyEngine household model, tax year 2027',
-      amount:
-        modelRevenue !== null ? formatBillions(modelRevenue) : 'Pending',
-      note: 'Individual income tax only; lower bound (see below)',
-      highlight: true,
-    },
-    {
-      label: 'Model, adjusted for SOI top-tail coverage',
-      amount: '≈$1.9B',
-      note: "Scales the model's upper-bracket revenue by the IRS SOI income coverage ratio",
-      highlight: false,
-    },
-    {
-      label: 'LCS estimate, tax year 2027 annualized',
-      amount: '≈$1.93B',
-      note: '2 × the FY 2026-27 half-year figure; includes individual and corporate taxpayers',
-      highlight: false,
-    },
-    {
-      label: 'LCS estimate, FY 2027-28',
-      amount: '$1,981.1M',
-      note: 'First full fiscal year; includes individual and corporate taxpayers',
-      highlight: false,
-    },
-  ];
-
+/** Model vs official estimates, one row per official estimate. */
+export function ValidationTable({
+  measure,
+  metricsByYear,
+}: {
+  measure: Measure;
+  metricsByYear: Record<number, Record<string, number> | null>;
+}) {
+  const rows = measure.official_estimates.map((e) =>
+    compareEstimate(e, metricsByYear[e.model_year] ?? null),
+  );
+  if (rows.length === 0) {
+    return <p className="text-sm text-gray-600">No official estimate has been published for this measure.</p>;
+  }
   return (
-    <div className="space-y-8">
-      {/* Model vs official estimate */}
-      <section>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Model estimate vs. official fiscal impact statement
-        </h2>
-        <p className="text-gray-700 mb-6">
-          Colorado&apos;s Legislative Council Staff (LCS) fiscal impact
-          statement estimates the measure raises state revenue by $963.2
-          million in FY 2026-27 (a half-year impact of tax year 2027) and
-          $1,981.1 million in FY 2027-28, with a TABOR-required maximum of
-          $2.7 billion; the added revenue is exempt from TABOR as a
-          voter-approved revenue change. The model&apos;s tax year{' '}
-          {CO_DASHBOARD_YEAR} estimate sits below the LCS figures for
-          quantifiable reasons decomposed below.
-        </p>
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <caption className="text-left text-sm font-semibold text-gray-800 mb-2">
+          PolicyEngine and official estimates
+        </caption>
+        <thead>
+          <tr className="border-b border-gray-200">
+            <th scope="col" className="text-left py-2 pr-3 font-medium text-gray-600">Official source and period</th>
+            <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">Official estimate</th>
+            <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">PolicyEngine</th>
+            <th scope="col" className="text-left py-2 px-3 font-medium text-gray-600">Comparison</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100 align-top">
+          {rows.map((c, i) => (
+            <tr key={`${c.estimate.source}-${c.estimate.period}-${i}`}>
+              <th scope="row" className="text-left py-3 pr-3 font-normal text-gray-800">
+                <ExternalLink href={c.estimate.url}>{c.estimate.source}</ExternalLink>
+                <span className="block text-xs text-gray-500 mt-0.5">{c.estimate.period}</span>
+                {c.estimate.note && (
+                  <span className="block text-xs text-gray-500 mt-1">{c.estimate.note}</span>
+                )}
+              </th>
+              <td className="py-3 px-3 text-right tabular-nums text-gray-800 whitespace-nowrap">
+                {formatEstimateValue(c.estimate, c.estimate.unit, { sign: c.estimate.low < 0 })}
+              </td>
+              <td className="py-3 px-3 text-right tabular-nums font-semibold text-gray-900 whitespace-nowrap">
+                {c.model
+                  ? formatEstimateValue(c.model, c.estimate.unit, { sign: c.model.low < 0, model: true })
+                  : 'Pending'}
+                <span className="block text-xs font-normal text-gray-500">{c.estimate.model_year}</span>
+              </td>
+              <td className="py-3 px-3 text-gray-700">{differenceText(c)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 
-        <div className="overflow-x-auto mb-4">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-300">
-                <th className="text-left px-4 py-3 font-medium text-gray-900">Estimate</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-900">Revenue increase</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-900">Basis</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {comparisonRows.map((row) => (
-                <tr key={row.label} className={row.highlight ? 'bg-primary-50' : ''}>
-                  <td className="px-4 py-3 text-gray-900">{row.label}</td>
-                  <td
-                    className={`px-4 py-3 text-right font-semibold tabular-nums ${
-                      row.amount === 'Pending'
-                        ? 'text-gray-400'
-                        : row.highlight
-                          ? 'text-primary-600'
-                          : 'text-gray-900'
-                    }`}
-                  >
-                    {row.amount}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{row.note}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+function SampleSizes({
+  measure,
+  metricsByYear,
+}: {
+  measure: Measure;
+  metricsByYear: Record<number, Record<string, number> | null>;
+}) {
+  const show = (v: number | null) => (v === null ? DASH : formatCount(v));
+  return (
+    <CompareTable
+      caption="Survey households behind the estimates"
+      firstColumn="Households"
+      columns={measure.years.map(String)}
+      rows={[
+        {
+          label: `Sampled in ${measure.state_name}`,
+          values: measure.years.map((y) => show(metric(metricsByYear[y], C.sampleHouseholds))),
+        },
+        {
+          label: 'Effective sample size',
+          values: measure.years.map((y) => show(metric(metricsByYear[y], C.effectiveSampleHouseholds))),
+        },
+        {
+          label: 'Sampled households the measure affects',
+          values: measure.years.map((y) => show(metric(metricsByYear[y], C.affectedSampleHouseholds))),
+        },
+        {
+          label: 'Effective sample size, affected households',
+          values: measure.years.map((y) =>
+            show(metric(metricsByYear[y], C.effectiveAffectedSampleHouseholds)),
+          ),
+        },
+      ]}
+    />
+  );
+}
 
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-5 mb-4">
-          <p className="text-sm font-semibold text-gray-900 mb-2">
-            Why the model figure is a lower bound on the individual side
-          </p>
-          <p className="text-sm text-gray-700 mb-2">
-            The microdata&apos;s Colorado income distribution matches IRS SOI
-            actuals on filer counts at high incomes — it carries 184% of
-            SOI&apos;s count of returns with AGI over $1 million — but
-            truncates income per filer: mean AGI in the $1M+ band is $1.27
-            million in the model vs. $3.03 million in SOI (tax year 2023).
-            Income mass above the $1 million threshold, which the top 8.4%
-            bracket taxes, is $7.8 billion in the model vs. $31.7 billion in
-            SOI — 24% coverage.
-          </p>
-          <p className="text-sm text-gray-700">
-            Scaling the model&apos;s upper-bracket revenue by the SOI
-            coverage ratio yields approximately $1.9 billion, within 5% of
-            the LCS annualized estimate.
-          </p>
-        </div>
-
-        <p className="text-sm text-gray-600">
-          <strong>Scope and baseline differences.</strong> The LCS estimate
-          covers both individual and corporate taxpayers — Section 4 of the
-          measure applies the same rate schedule to C corporations, which is
-          outside this household model&apos;s scope — and LCS publishes no
-          individual/corporate split. Additional smaller differences: the
-          LCS baseline excludes 2025 H.R. 1 (the &quot;One Big Beautiful
-          Bill Act&quot;), which this model&apos;s baseline includes; the
-          model is stated by tax year while the LCS figures are stated by
-          state fiscal year; and both estimates are static, with no
-          behavioral response.
-        </p>
-      </section>
-
-      {/* Key modeling limitations */}
-      <section>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Key modeling limitations
-        </h2>
-        <p className="text-gray-700 mb-6">
-          Four simplifications in how this dashboard represents Initiative
-          195 are large enough to shape the results and deserve prominence.
-        </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-5">
-            <p className="text-sm font-bold text-gray-900 mb-2">
-              Home-sale carve-out unmodeled
-            </p>
-            <p className="text-sm text-gray-700">
-              Section (1.8)(b) of the measure taxes gains from a primary-home
-              sale in excess of the federal Section 121 exclusion at the flat
-              4.4% rate rather than the graduated schedule. The model applies
-              the graduated schedule to all taxable income, so for filers
-              with such gains it understates tax below $100,000 of taxable
-              income, has no effect between $100,000 and $500,000, and
-              overstates tax above $500,000.
-            </p>
-          </div>
-          <div className="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-5">
-            <p className="text-sm font-bold text-gray-900 mb-2">
-              Corporate and TABOR sections out of scope
-            </p>
-            <p className="text-sm text-gray-700">
-              The measure&apos;s corporate income-tax schedule (Section 4)
-              and its TABOR / Colorado&apos;s Future Fund revenue-allocation
-              accounting (Section 5) fall outside the household model&apos;s
-              scope. All figures here cover the individual income-tax
-              schedule only, while the LCS estimate includes both individual
-              and corporate taxpayers.
-            </p>
-          </div>
-          <div className="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-5">
-            <p className="text-sm font-bold text-gray-900 mb-2">
-              Federal revenue effect not modeled
-            </p>
-            <p className="text-sm text-gray-700">
-              The federal revenue effect is not modeled (shown as &quot;not
-              modeled&quot; on the statewide tab). PolicyEngine computes the
-              federal SALT deduction from a flat-rate state withholding proxy
-              to break the circularity between Colorado taxable income and
-              federal itemized deductions, so Initiative 195&apos;s rate
-              changes do not feed back into federal tax. If modeled, the net
-              federal effect would likely be small (on the order of 1&ndash;2%
-              of the state revenue change) and would modestly increase
-              federal revenue: filers above $500,000 are already at the
-              phased-down SALT cap, while itemizers below $500,000 would
-              deduct up to $325 less.
-            </p>
-          </div>
-          <div className="bg-amber-50 border-l-4 border-amber-400 rounded-lg p-5">
-            <p className="text-sm font-bold text-gray-900 mb-2">
-              District geography is PUMA-based
-            </p>
-            <p className="text-sm text-gray-700">
-              Statewide and district figures come from the same single
-              calibrated national dataset, so district totals sum to the
-              statewide total up to rounding. Households are assigned to
-              congressional districts via PUMA-based geography from the ACS
-              multispine, which approximates district boundaries, so treat
-              the split across districts as approximate.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      {/* Methodology and sources */}
-      <section>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">
-          Methodology and sources
-        </h2>
+function KindMethodology({
+  measure,
+  metrics,
+}: {
+  measure: Measure;
+  metrics: Record<string, number> | null;
+}) {
+  switch (measure.kind) {
+    case 'school_meals': {
+      const unadjusted = metric(metrics, SM.mealValueChangeModel);
+      const lunch = metric(metrics, SM.participationLunch);
+      const breakfast = metric(metrics, SM.participationBreakfast);
+      const scale = metric(metrics, SM.enrollmentScale);
+      return (
         <div className="space-y-3 text-sm text-gray-700">
           <p>
-            <strong>Model and data.</strong> Estimates use{' '}
-            <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">
-              {MODEL_INFO.pin}
-            </code>
-            , the first release containing the contributed Initiative 195
-            rate schedule. Statewide and district results both come from a
-            single calibrated national dataset: Populace build P ACS
-            local-area (
-            <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">
-              populace_us_2024_acs_local.h5
-            </code>
-            , revision{' '}
-            <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">
-              populace-us-2024-buildp-acs-local-592ae5d6-20260819T020303Z
-            </code>
-            , ~1.6M households with PUMA-assigned 119th-Congress districts).
-            Statewide figures filter to Colorado (state FIPS 08); district
-            figures group the same file by congressional-district geoid
-            (801&ndash;808).
+            <strong>Participation adjustment.</strong> PolicyEngine values each meal a student would
+            newly receive free and, by default, assumes every child aged 5 to 17 eats breakfast and
+            lunch on each of 180 school days. Not every student does, so the statewide figures scale
+            the model to public school enrollment (excluding schools that already serve every meal
+            free) and to the meals served per enrolled student on a typical day, from federal
+            average daily participation data. The low case keeps today&apos;s participation; the
+            high case adds the increase the Department of Public Instruction assumed from states
+            that serve every student free (9 percentage points for lunch, 12 for breakfast). The
+            midpoint drives the statewide charts and poverty figures.
           </p>
-          <p>
-            <strong>Reform definition.</strong> The baseline is current law
-            (Colorado&apos;s 4.4% flat income tax). The reform switches on a
-            single contributed parameter,{' '}
-            <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">
-              gov.contrib.states.co.progressive_income_tax.in_effect
-            </code>
-            , from 2027 forward, which applies the six-bracket graduated
-            schedule. Every figure on this dashboard is reform minus
-            baseline for tax year {CO_DASHBOARD_YEAR}: positive state revenue
-            changes are revenue increases, and negative household net-income
-            changes are tax increases.
-          </p>
-          <p>
-            <strong>Calibration coverage.</strong> The dataset calibrates
-            Colorado aggregates tightly — total AGI is within +0.12% and
-            total taxable income within &minus;0.10% of IRS SOI targets —
-            but the calibration includes no income-amount targets above
-            $500,000, so the top tail is uncalibrated in exactly the region
-            the new 7.4%, 7.9%, and 8.4% brackets tax. This is the root
-            cause of the lower-bound behavior quantified above. Per-target
-            diagnostics are published on the{' '}
-            <a
-              href="https://calibration-diagnostics.vercel.app"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary-600 hover:text-primary-700 underline"
-            >
-              calibration diagnostics dashboard
-            </a>
-            .
-          </p>
-          <p>
-            <strong>Static estimate.</strong> No behavioral response is
-            modeled: the estimates hold reported incomes fixed and do not
-            capture changes in labor supply, capital-gains realization
-            timing, tax planning, or migration. The official fiscal impact
-            statement is likewise a static estimate.
-          </p>
-          <p>
-            <strong>Poverty measures.</strong> Poverty impacts use the
-            Supplemental Poverty Measure computed on the survey data. Survey
-            data can overstate poverty levels, so emphasize the modeled
-            changes rather than the levels.
-          </p>
+          <ul className="list-disc pl-5 space-y-1">
+            <li>
+              Value of newly free meals if every student ate both meals daily:{' '}
+              {unadjusted === null
+                ? DASH
+                : formatEstimateValue({ low: unadjusted, high: unadjusted }, 'usd', { model: true })}
+            </li>
+            <li>Lunch participation: {lunch === null ? DASH : formatPercent(asPercent(lunch))}</li>
+            <li>Breakfast participation: {breakfast === null ? DASH : formatPercent(asPercent(breakfast))}</li>
+            <li>Enrollment scaling factor: {scale === null ? DASH : scale.toFixed(3)}</li>
+          </ul>
         </div>
-        <ul className="mt-4 space-y-1 text-sm">
+      );
+    }
+    case 'medicaid': {
+      const enrolled = metric(metrics, MC.baselineExpansionEnrollees);
+      const total = metric(metrics, MC.medicaidCostChange);
+      const state = metric(metrics, MC.medicaidStateCostChange);
+      const usd = (v: number) => formatEstimateValue({ low: v, high: v }, 'usd', { model: true });
+      return (
+        <div className="space-y-3 text-sm text-gray-700">
+          <p>
+            <strong>Health benefits in net income.</strong> Both current law and the scenario count
+            Medicaid at its average cost per enrollee and marketplace premium tax credits at their
+            dollar value in household net income, so the household and distributional figures show
+            the value of coverage lost and credits gained. They do not reflect differences in
+            premiums paid, cost sharing or access to care.
+          </p>
+          <p>
+            <strong>Expansion enrollment.</strong> The model counts{' '}
+            {enrolled === null ? 'a pending number of' : formatCount(enrolled)} people enrolled
+            through expansion under current law. The Department of Social Services reports an
+            average of 29,055 a month in state fiscal year 2025, and the ballot pamphlet&apos;s
+            statements cite about 30,000.
+          </p>
+          {total !== null && (
+            <p>
+              <strong>Expansion costs.</strong> In the model, Medicaid spending on the expansion
+              group is {usd(Math.abs(total))} a year
+              {state !== null ? `, of which the state pays ${usd(Math.abs(state))} at today's 10% share` : ''}.
+              The state spending change on the statewide tab compares the scenario with current
+              law at that 10% share. Each 10-percentage-point drop in the federal share would shift
+              about {usd(Math.abs(total) * 0.1)} a year of that spending to the state if expansion
+              continued.
+            </p>
+          )}
+        </div>
+      );
+    }
+    case 'tabor_refund':
+      return (
+        <p className="text-sm text-gray-700">
+          <strong>Refund tiers.</strong> Current law in the model uses the six-tier refund amounts
+          and income thresholds from the Legislative Council Staff September 2026 forecast for tax
+          years 2027 and 2028, applied to both simulations. Refunds are claimed per qualifying
+          adult, so a joint return receives two.
+        </p>
+      );
+    case 'income_tax':
+      return (
+        <p className="text-sm text-gray-700">
+          <strong>Top incomes.</strong> Changes in tax on high incomes drive this measure&apos;s
+          revenue. The few sampled households at the top carry large weights, so the effective
+          sample sizes above, and the comparison with IRS data below, are the best guides to the
+          estimate&apos;s precision.
+        </p>
+      );
+  }
+}
+
+const SOI_ROWS: { key: string; label: string; money: boolean }[] = [
+  { key: 'returns_500k_1m', label: 'Returns with income of $500,000 to $1 million', money: false },
+  { key: 'agi_500k_1m', label: 'Adjusted gross income of those returns', money: true },
+  { key: 'returns_1m_plus', label: 'Returns with income of $1 million or more', money: false },
+  { key: 'agi_1m_plus', label: 'Adjusted gross income of $1 million-plus returns', money: true },
+  { key: 'agi_above_1m', label: 'Income above $1 million', money: true },
+];
+
+/** Model filers vs IRS Statistics of Income at the top, and the coverage-scaled revenue. */
+export function TopTailComparison({
+  measure,
+  year,
+  manifest,
+}: {
+  measure: Measure;
+  year: number;
+  manifest: Manifest | null | undefined;
+}) {
+  const state = manifest?.top_tail?.states?.[measure.state];
+  if (measure.kind !== 'income_tax' || !state) return null;
+  const entry = state.measures?.[`${measure.slug}:${year}`];
+  const fmt = (v: number | undefined, money: boolean) =>
+    v === undefined || !Number.isFinite(v)
+      ? DASH
+      : money
+        ? formatEstimateValue({ low: v, high: v }, 'usd')
+        : formatCount(v);
+  return (
+    <section aria-labelledby="top-tail-heading" className="space-y-3">
+      <h3 id="top-tail-heading" className="text-lg font-semibold text-gray-900">
+        Top incomes compared with IRS data
+      </h3>
+      <CompareTable
+        caption={`${measure.state_name} filers: model (${state.model_year} data) and IRS Statistics of Income (${state.soi_year})`}
+        firstColumn="Filers"
+        columns={['Model', 'IRS', 'Model ÷ IRS']}
+        rows={SOI_ROWS.map((r) => ({
+          label: r.label,
+          values: [
+            fmt(state.model_filers?.[r.key], r.money),
+            fmt(state.soi?.[r.key], r.money),
+            state.coverage?.[r.key] === undefined ? DASH : formatPercent(state.coverage[r.key] * 100, 0),
+          ],
+        }))}
+      />
+      {entry && (
+        <p className="text-sm text-gray-700">
+          The model&apos;s revenue change for {year} is{' '}
+          <strong>
+            {formatEstimateValue({ low: entry.revenue_change, high: entry.revenue_change }, 'usd', {
+              sign: true,
+              model: true,
+            })}
+          </strong>
+          . Scaling the change in each income band so the model&apos;s top-income returns and income
+          match the IRS figures gives{' '}
+          <strong>
+            {formatEstimateValue(
+              { low: entry.coverage_scaled_revenue_change, high: entry.coverage_scaled_revenue_change },
+              'usd',
+              { sign: true, model: true },
+            )}
+          </strong>
+          . The scaled figure is an adjustment for comparison, not a separate simulation.
+        </p>
+      )}
+    </section>
+  );
+}
+
+function overrideLines(overrides: Measure['reform_overrides']): string[] {
+  return Object.entries(overrides).flatMap(([path, periods]) =>
+    Object.entries(periods).map(([period, value]) => `${path} = ${JSON.stringify(value)} (${period})`),
+  );
+}
+
+function ModelAndData({ measure, manifest }: { measure: Measure; manifest: Manifest | null | undefined }) {
+  const hashMatches = manifest ? manifest.registry_hash === REGISTRY.registry_hash : null;
+  const baseline = overrideLines(measure.baseline_overrides);
+  const reform = overrideLines(measure.reform_overrides);
+  return (
+    <div className="space-y-4 text-sm text-gray-700">
+      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="rounded-lg border border-gray-200 p-3">
+          <dt className="text-xs text-gray-500">Model</dt>
+          <dd className="mt-0.5 font-mono text-xs break-all">{manifest?.pin ?? REGISTRY.pin}</dd>
+        </div>
+        <div className="rounded-lg border border-gray-200 p-3">
+          <dt className="text-xs text-gray-500">Dataset revision</dt>
+          <dd className="mt-0.5 font-mono text-xs break-all">{manifest?.dataset_revision ?? 'Pending'}</dd>
+        </div>
+        <div className="rounded-lg border border-gray-200 p-3">
+          <dt className="text-xs text-gray-500">Results generated</dt>
+          <dd className="mt-0.5 text-xs">
+            {manifest?.generated_at_utc ? formatTimestamp(manifest.generated_at_utc) : 'Pending'}
+          </dd>
+        </div>
+        <div className="rounded-lg border border-gray-200 p-3">
+          <dt className="text-xs text-gray-500">Measure registry</dt>
+          <dd className="mt-0.5 text-xs">
+            <span className="font-mono">{REGISTRY.registry_hash}</span>
+            {hashMatches === false && (
+              <span className="block text-gray-600 mt-1">
+                The results were generated from registry {manifest?.registry_hash}; rerun the
+                pipeline to match.
+              </span>
+            )}
+          </dd>
+        </div>
+      </dl>
+      <div>
+        <p className="font-semibold text-gray-900">How the measure is modeled</p>
+        <p className="mt-1">
+          Every figure is the difference between two simulations of the same households in the same
+          year: one under current law and one{' '}
+          {measure.kind_params?.conditional === true ? 'under the scenario' : 'with the measure in effect'}
+          . Parameter changes:
+        </p>
+        <pre className="mt-2 overflow-x-auto rounded-lg bg-gray-50 border border-gray-200 p-3 text-xs leading-5 text-gray-800">
           {[
-            {
-              href: 'https://www.sos.state.co.us/pubs/elections/Initiatives/titleBoard/filings/2025-2026/195Final.pdf',
-              text: 'Initiative 2025-2026 #195 final text (Colorado Secretary of State)',
-            },
-            {
-              href: OFFICIAL.url,
-              text: OFFICIAL.source,
-            },
-            {
-              href: 'https://leg.colorado.gov/initiatives/graduated-income-tax-195',
-              text: 'Legislative Council Staff initiative page (Initiative 195)',
-            },
-            {
-              href: 'https://github.com/PolicyEngine/policyengine-us/pull/9431',
-              text: 'policyengine-us PR #9431 — Colorado graduated income tax (contrib)',
-            },
-          ].map(({ href, text }) => (
-            <li key={href}>
-              <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary-600 hover:text-primary-700 underline"
-              >
-                {text}
-              </a>
+            ...(baseline.length ? ['# Both simulations (current law assumptions)', ...baseline, ''] : []),
+            measure.kind_params?.conditional === true ? '# The scenario' : '# The measure passes',
+            ...reform,
+          ].join('\n')}
+        </pre>
+      </div>
+    </div>
+  );
+}
+
+interface Props {
+  measure: Measure;
+  year: number;
+}
+
+export default function ValidationMethodology({ measure, year }: Props) {
+  const content = getContent(measure.slug);
+  const metricsFile = useResultsCsv(STATEWIDE_FILES.metrics);
+  const { data: manifest } = useManifest();
+  const metricsByYear = Object.fromEntries(
+    measure.years.map((y) => [y, metricsFor(metricsFile.data, measure.slug, y)]),
+  ) as Record<number, Record<string, number> | null>;
+
+  return (
+    <div className="space-y-10">
+      <section aria-labelledby="validation-heading" className="space-y-4">
+        <h2 id="validation-heading" className="text-2xl font-bold text-gray-900">
+          Validation
+        </h2>
+        <ValidationTable measure={measure} metricsByYear={metricsByYear} />
+        <div className="space-y-3 text-sm text-gray-700">
+          {content.officialEstimateProse.map((p) => (
+            <p key={p}>{p}</p>
+          ))}
+        </div>
+        {content.officialTables?.map((t) => (
+          <SimpleDataTable key={t.caption} table={t} />
+        ))}
+      </section>
+
+      <TopTailComparison measure={measure} year={year} manifest={manifest} />
+
+      <section aria-labelledby="sample-heading" className="space-y-3">
+        <h3 id="sample-heading" className="text-lg font-semibold text-gray-900">
+          Sample sizes
+        </h3>
+        <SampleSizes measure={measure} metricsByYear={metricsByYear} />
+        <p className="text-xs text-gray-500">
+          The effective sample size accounts for unequal survey weights (Kish): a few heavily
+          weighted households count for less than their raw number. Estimates that rest on small
+          effective samples, such as poverty changes or changes concentrated among very high
+          incomes, are less precise.
+        </p>
+      </section>
+
+      <section aria-labelledby="kind-heading" className="space-y-3">
+        <h3 id="kind-heading" className="text-lg font-semibold text-gray-900">
+          Measure-specific methods
+        </h3>
+        <KindMethodology measure={measure} metrics={metricsByYear[year] ?? null} />
+      </section>
+
+      <section aria-labelledby="left-out-heading" className="grid gap-6 md:grid-cols-2">
+        <div>
+          <h3 id="left-out-heading" className="text-lg font-semibold text-gray-900 mb-2">
+            What the model leaves out
+          </h3>
+          <ul className="list-disc pl-5 space-y-1.5 text-sm text-gray-700">
+            {content.notModeled.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Caveats</h3>
+          <ul className="list-disc pl-5 space-y-1.5 text-sm text-gray-700">
+            {content.caveats.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+            <li>
+              Estimates are static: they hold work, investment, filing behavior and where people
+              live fixed.
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section aria-labelledby="data-heading" className="space-y-3">
+        <h3 id="data-heading" className="text-lg font-semibold text-gray-900">
+          Model and data
+        </h3>
+        <ModelAndData measure={measure} manifest={manifest} />
+        <Callout>
+          PolicyEngine&apos;s microsimulation model,{' '}
+          <ExternalLink href="https://github.com/PolicyEngine/policyengine-us">policyengine-us</ExternalLink>
+          , runs on a calibrated sample of US households (Populace), assigned to states and
+          congressional districts. All estimates compare the measure with current law in the same
+          tax year and assume no change in behavior.
+        </Callout>
+      </section>
+
+      <section aria-labelledby="refs-heading">
+        <h3 id="refs-heading" className="text-lg font-semibold text-gray-900 mb-2">
+          Sources
+        </h3>
+        <ul className="space-y-1 text-sm">
+          {content.references.map((r) => (
+            <li key={r.url}>
+              <ExternalLink href={r.url}>{r.label}</ExternalLink>
             </li>
           ))}
         </ul>

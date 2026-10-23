@@ -1,55 +1,52 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { fireEvent, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it } from 'vitest';
 import PolicyOverview from '../components/PolicyOverview';
+import { getMeasure } from '../lib/registry';
+import { fixtureFiles, mockDataFiles, renderWithQuery } from './testUtils';
+
+beforeEach(() => {
+  mockDataFiles(fixtureFiles());
+});
 
 describe('PolicyOverview', () => {
-  it('renders the measure heading', () => {
-    render(<PolicyOverview />);
-    expect(
-      screen.getByText('Colorado Initiative 195 (Amendment 87)')
-    ).toBeInTheDocument();
+  it('compares current law with the measure', async () => {
+    renderWithQuery(<PolicyOverview measure={getMeasure('co-amendment-87')} />);
+    expect(screen.getByRole('heading', { name: 'What Amendment 87 does' })).toBeInTheDocument();
+    const table = screen.getByRole('table', { name: /Income tax rates on Colorado taxable income/ });
+    expect(table).toHaveTextContent('Current law');
+    expect(table).toHaveTextContent('If it passes');
+    expect(table).toHaveTextContent('8.4%');
+    expect(screen.getByRole('heading', { name: 'Who is affected' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Proposition 136' })).toBeInTheDocument();
+    // The headline estimate loads beside the official one.
+    expect(await screen.findByText('+$1.81B')).toBeInTheDocument();
+    expect(screen.getByText('+$1.97B')).toBeInTheDocument();
   });
 
-  it('displays all six bracket rates', () => {
-    render(<PolicyOverview />);
-    for (const rate of ['3.7%', '4.2%', '7.4%', '7.9%', '8.4%']) {
-      expect(screen.getByText(rate)).toBeInTheDocument();
-    }
-    // 4.4% appears both as the current flat rate and as a bracket rate.
-    expect(screen.getAllByText('4.4%').length).toBeGreaterThan(1);
-  });
-
-  it('displays the bracket thresholds', () => {
-    render(<PolicyOverview />);
-    expect(screen.getByText('$0 – $25,000')).toBeInTheDocument();
-    expect(screen.getByText('$25,000 – $100,000')).toBeInTheDocument();
-    expect(screen.getByText('$100,000 – $500,000')).toBeInTheDocument();
-    expect(screen.getByText('$500,000 – $750,000')).toBeInTheDocument();
-    expect(screen.getByText('$750,000 – $1,000,000')).toBeInTheDocument();
-    expect(screen.getByText('Over $1,000,000')).toBeInTheDocument();
-  });
-
-  it('links to the official measure text and the model PR', () => {
-    render(<PolicyOverview />);
-    const sosLink = screen.getByRole('link', {
-      name: 'Final text (Colorado Secretary of State)',
-    });
-    expect(sosLink).toHaveAttribute(
+  it('shows the ballot title as printed, with its source', () => {
+    renderWithQuery(<PolicyOverview measure={getMeasure('co-amendment-87')} />);
+    fireEvent.click(screen.getByText('Ballot title as it appears on the ballot'));
+    expect(screen.getByText(/SHALL STATE TAXES BE INCREASED \$2\.7 BILLION ANNUALLY/)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '2026 Blue Book, page 10' })).toHaveAttribute(
       'href',
-      'https://www.sos.state.co.us/pubs/elections/Initiatives/titleBoard/filings/2025-2026/195Final.pdf'
-    );
-    const prLink = screen.getByRole('link', { name: 'PR #9431' });
-    expect(prLink).toHaveAttribute(
-      'href',
-      'https://github.com/PolicyEngine/policyengine-us/pull/9431'
+      expect.stringContaining('#page=10'),
     );
   });
 
-  it('states the effective year and ballot timing', () => {
-    render(<PolicyOverview />);
-    expect(
-      screen.getByText(/effective tax year 2027/i)
-    ).toBeInTheDocument();
-    expect(screen.getByText(/November 2026 ballot/i)).toBeInTheDocument();
+  it('opens South Dakota with the conditional scenario and both readings', () => {
+    renderWithQuery(<PolicyOverview measure={getMeasure('sd-amendment-i')} />);
+    expect(screen.getByRole('heading', { name: 'A conditional scenario, not a forecast' })).toBeInTheDocument();
+    expect(screen.getByText(/would NOT automatically end Medicaid expansion/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Current law and the scenario' })).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: /covered through expansion/ })).toHaveTextContent(
+      'Scenario: expansion ends',
+    );
+  });
+
+  it('shows both years of Proposition NN refund tiers', () => {
+    renderWithQuery(<PolicyOverview measure={getMeasure('co-prop-nn')} />);
+    expect(screen.getByRole('table', { name: /tax year 2027/ })).toHaveTextContent('$137');
+    expect(screen.getByRole('table', { name: /tax year 2028/ })).toHaveTextContent('$147');
+    expect(screen.getByText('Tax years 2027 and 2028')).toBeInTheDocument();
   });
 });

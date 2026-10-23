@@ -1,6 +1,6 @@
 'use client';
 
-const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+import { assetUrl } from '@/lib/config';
 
 /**
  * PolicyEngine logo watermark for Recharts charts.
@@ -11,7 +11,7 @@ export default function ChartWatermark() {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={`${basePath}/policyengine-logo-teal.png`}
+      src={assetUrl('policyengine-logo-teal.png')}
       alt=""
       aria-hidden="true"
       style={{
