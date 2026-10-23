@@ -26,6 +26,10 @@ describe('ValidationMethodology', () => {
     expect(await within(table).findByText('within the official range')).toBeInTheDocument();
     expect(table).toHaveTextContent('$124.3M to $134.3M');
     expect(screen.getByText(/Participation adjustment/)).toBeInTheDocument();
+    // Enrollment and the count already eating free come from the registry (kind_params).
+    expect(screen.getByText(/Participation adjustment/).closest('p')).toHaveTextContent(
+      /public school enrollment \(116,762 students, less the 9,196 at public schools that already serve every meal free on the Department of Public Instruction’s 2026 community eligibility list\)/,
+    );
   });
 
   it('shows provenance from the manifest and the parameter changes', async () => {

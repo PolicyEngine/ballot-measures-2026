@@ -87,6 +87,21 @@ describe('PolicyOverview', () => {
     expect(screen.getByRole('link', { name: 'Fiscal impact statement, page 4' })).toBeInTheDocument();
   });
 
+  it('gives North Dakota’s enrollment figures from the registry with official sources', () => {
+    const measure = getMeasure('nd-measure-2');
+    const { whoIsAffected, whoIsAffectedSources } = getContent('nd-measure-2');
+    const text = whoIsAffected.join(' ');
+    const count = (key: string) => (measure.kind_params[key] as number).toLocaleString('en-US');
+    expect(text).toContain(`${count('public_enrollment')} students`);
+    expect(text).toContain(`${count('cep_students')} students at 39 public schools`);
+    expect(text).toMatch(/Bureau of Indian Education, tribal and private schools/);
+    expect(text).not.toMatch(/Food Research|FRAC/);
+    expect(whoIsAffectedSources?.map((s) => s.url)).toContain(
+      'https://www.nd.gov/dpi/sites/default/files/documents/ChildNutrition/SNP/2026CEPLEAwideNotificationReport2.pdf#page=2',
+    );
+    expect(whoIsAffectedSources?.some((s) => s.url.includes('frac.org'))).toBe(false);
+  });
+
   it('shows both years of Proposition NN refund tiers', () => {
     renderWithQuery(<PolicyOverview measure={getMeasure('co-prop-nn')} />);
     expect(screen.getByRole('table', { name: /tax year 2027/ })).toHaveTextContent('$137');

@@ -37,6 +37,21 @@ describe('compareEstimate', () => {
     expect(compareEstimate(nd, { state_cost_biennium: 1e8 }).position).toBe('below');
   });
 
+  it('says which end of a model range falls in an overlapping official range', () => {
+    const nd = getMeasure('nd-measure-2').official_estimates[0]; // $124.3M to $134.3M
+    const high = compareEstimate(nd, { state_cost_biennium_low: 1.07e8, state_cost_biennium_high: 1.274e8 });
+    expect(high.position).toBe('below');
+    expect(high.overlap).toBe('high');
+    expect(
+      compareEstimate(nd, { state_cost_biennium_low: 1.3e8, state_cost_biennium_high: 1.5e8 }).overlap,
+    ).toBe('low');
+    expect(
+      compareEstimate(nd, { state_cost_biennium_low: 1.0e8, state_cost_biennium_high: 2.0e8 }).overlap,
+    ).toBe('spans');
+    expect(compareEstimate(nd, { state_cost_biennium_low: 0.9e8, state_cost_biennium_high: 1.0e8 }).overlap).toBeNull();
+    expect(compareEstimate(nd, { state_cost_biennium: 1.0e8 }).overlap).toBeNull();
+  });
+
   it('is pending when the model has no matching metric', () => {
     const c = compareEstimate(estimate, {});
     expect(c.model).toBeNull();

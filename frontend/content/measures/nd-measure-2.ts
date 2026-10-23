@@ -55,7 +55,7 @@ const content: MeasureContent = {
     },
   ],
   whoIsAffected: [
-    'North Dakota public schools enrolled 116,762 students in kindergarten through grade 12 in 2024-25 (National Center for Education Statistics). About 11,600 students attend schools that already serve every meal free under the federal community eligibility provision, according to 2025-26 data from the Food Research & Action Center, an advocacy organization; PolicyEngine uses this figure. The Department of Public Instruction’s 2026 community eligibility report lists 10,742 students at such schools.',
+    'North Dakota public schools enrolled 116,762 students in kindergarten through grade 12 in 2024-25 (National Center for Education Statistics). The Department of Public Instruction’s 2026 community eligibility list counts 9,196 students at 39 public schools in 18 districts that already serve every meal free; PolicyEngine uses this count, leaving out the list’s Bureau of Indian Education, tribal and private schools because the measure covers public schools.',
     'Families above 130% of the poverty line who buy school meals would no longer pay for them. The savings depend on how often a student eats breakfast and lunch at school.',
   ],
   whoIsAffectedSources: [
@@ -64,11 +64,7 @@ const content: MeasureContent = {
       url: 'https://nces.ed.gov/ccd/Data/zip/ccd_sea_052_2425_l_1a_073025.zip',
     },
     {
-      label: 'Food Research & Action Center, community eligibility report (2026), page 16',
-      url: 'https://frac.org/wp-content/uploads/CEP-Report-2026.pdf#page=16',
-    },
-    {
-      label: 'Department of Public Instruction, 2026 community eligibility report by district, page 2',
+      label: 'Department of Public Instruction, 2026 community eligibility list by district, page 2',
       url: 'https://www.nd.gov/dpi/sites/default/files/documents/ChildNutrition/SNP/2026CEPLEAwideNotificationReport2.pdf#page=2',
     },
   ],

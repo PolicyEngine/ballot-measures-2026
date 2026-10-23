@@ -136,13 +136,19 @@ export interface EstimateComparison {
   ratioPercent: number | null;
   /** Where the model midpoint falls relative to the official range. */
   position: EstimatePosition | null;
+  /**
+   * When a model range overlaps an official range but its midpoint falls
+   * outside it: which end lies within ("high", "low"), or "spans" when the
+   * model range contains the official one.
+   */
+  overlap: 'high' | 'low' | 'spans' | null;
 }
 
 const mid = (r: { low: number; high: number }) => (r.low + r.high) / 2;
 
 export function compareEstimate(estimate: OfficialEstimate, metrics: Metrics): EstimateComparison {
   const model = metricRange(metrics, estimate.metric);
-  if (!model) return { estimate, model: null, ratioPercent: null, position: null };
+  if (!model) return { estimate, model: null, ratioPercent: null, position: null, overlap: null };
   const official = mid(estimate);
   const m = mid(model);
   const ratioPercent = official !== 0 ? (m / official) * 100 : null;
@@ -159,7 +165,18 @@ export function compareEstimate(estimate: OfficialEstimate, metrics: Metrics): E
         : m > hi
           ? 'above'
           : 'within';
-  return { estimate, model, ratioPercent, position };
+  const inside = (v: number) => v >= lo && v <= hi;
+  const overlap =
+    lo === hi || model.low === model.high || position === 'within'
+      ? null
+      : inside(model.high) && !inside(model.low)
+        ? 'high'
+        : inside(model.low) && !inside(model.high)
+          ? 'low'
+          : model.low < lo && model.high > hi
+            ? 'spans'
+            : null;
+  return { estimate, model, ratioPercent, position, overlap };
 }
 
 /**

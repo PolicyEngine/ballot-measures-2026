@@ -38,7 +38,12 @@ function differenceText(c: EstimateComparison): string {
   if (!c.model || c.position === null) return DASH;
   const official = c.estimate;
   const range = official.low !== official.high;
-  if (range) return `${POSITION_TEXT[c.position]} the official range`;
+  if (range) {
+    if (c.overlap === 'high') return 'high case within the official range';
+    if (c.overlap === 'low') return 'low case within the official range';
+    if (c.overlap === 'spans') return 'spans the official range';
+    return `${POSITION_TEXT[c.position]} the official range`;
+  }
   if (c.ratioPercent === null) return DASH;
   return `${formatPercent(c.ratioPercent, 0)} of the official figure`;
 }
@@ -258,16 +263,25 @@ function KindMethodology({
       const lunch = metric(metrics, SM.participationLunch);
       const breakfast = metric(metrics, SM.participationBreakfast);
       const scale = metric(metrics, SM.enrollmentScale);
+      const count = (key: string) => {
+        const v = measure.kind_params?.[key];
+        return typeof v === 'number' ? formatCount(v) : null;
+      };
+      const enrolled = count('public_enrollment');
+      const alreadyFree = count('cep_students');
       return (
         <div className="space-y-3 text-sm text-gray-700">
           <p>
             <strong>Participation adjustment.</strong>{' '}
             PolicyEngine values each meal a student would newly receive free and, by default,
             assumes every child aged 5 to 17 eats breakfast and lunch on each of 180 school days.
-            Not every student does, so the statewide figures scale
-            the model to public school enrollment (excluding schools that already serve every meal
-            free) and to the meals served per enrolled student on a typical day, from federal
-            average daily participation data. The low case keeps today&apos;s participation; the
+            Not every student does, so the statewide figures scale the model to public school
+            enrollment
+            {enrolled && alreadyFree
+              ? ` (${enrolled} students, less the ${alreadyFree} at public schools that already serve every meal free on the Department of Public Instruction’s 2026 community eligibility list)`
+              : ' (excluding schools that already serve every meal free)'}{' '}
+            and to the meals served per enrolled student on a typical day, from federal average
+            daily participation data. The low case keeps today&apos;s participation; the
             high case adds the increase the Department of Public Instruction assumed from states
             that serve every student free (9 percentage points for lunch, 12 for breakfast). The
             midpoint drives the statewide charts and poverty figures.
