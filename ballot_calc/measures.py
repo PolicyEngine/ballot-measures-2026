@@ -583,9 +583,24 @@ ND_MEASURE_2 = Measure(
         # ~/PolicyEngine/searchlight-school-meals/research/data/).
         # NCES Common Core of Data 2024-25: public K-12 enrollment.
         "public_enrollment": 116_762,
-        # FRAC Community Eligibility report 2025-26: students in North
-        # Dakota schools that already serve every meal free.
-        "cep_students": 11_566,
+        # Students at PUBLIC schools that already serve every meal free under
+        # the Community Eligibility Provision (CEP): 9,196 at 39 schools in 18
+        # public districts. Source: North Dakota Department of Public
+        # Instruction, CEP Annual Notification of Local Educational Agencies,
+        # 2026 (sum of the "Total Student Enrollment at CEP Schools" column;
+        # the TOTAL row, 10,742 students at 47 schools, includes the rows
+        # below).
+        # https://www.nd.gov/dpi/sites/default/files/documents/ChildNutrition/SNP/2026CEPLEAwideNotificationReport2.pdf#page=2
+        # Excluded, because public_enrollment (NCES Common Core of Data) counts
+        # state public schools only and the measure covers public schools:
+        # the Bureau of Indian Education, tribal and Catholic schools coded
+        # -900, -409 and -410, 1,546 students at 8 schools: 03-900 Tate Topa
+        # Tribal School (451), 08-900 Theodore Jamerson Elementary (97),
+        # 40-900 Dunseith Day Elementary (189), 43-900 Standing Rock
+        # Community Schools (546), 40-409 Ojibwa Indian School (208), 43-409
+        # St. Bernard Mission School (39) and 40-410 St. Ann's Catholic
+        # School (16).
+        "cep_students": 9_196,
         # USDA FNS FY 2025 (preliminary, data as of 2026-09-11): lunches and
         # breakfasts served in North Dakota. Current participation = meals /
         # (school days x participating enrollment).

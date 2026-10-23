@@ -1,7 +1,7 @@
 {
   "election_date": "2026-11-03",
   "pin": "policyengine-us==2.60.4",
-  "registry_hash": "de8938a81d6a3992",
+  "registry_hash": "58c2dae54eb37534",
   "measures": [
     {
       "slug": "co-amendment-87",
@@ -727,7 +727,7 @@
       ],
       "kind_params": {
         "public_enrollment": 116762,
-        "cep_students": 11566,
+        "cep_students": 9196,
         "lunch_meals": 14982168,
         "breakfast_meals": 5436081,
         "participating_enrollment": 126261,

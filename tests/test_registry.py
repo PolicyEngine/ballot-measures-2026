@@ -241,6 +241,16 @@ def test_copy_fixes():
     assert "Department of Revenue" in wa_count.note
 
 
+def test_nd_cep_students_are_dpi_public_schools():
+    params = MEASURES["nd-measure-2"].kind_params
+    # DPI 2026 CEP annual notification: 10,742 students at 47 CEP schools,
+    # less 1,546 at 8 Bureau of Indian Education, tribal and Catholic
+    # schools (codes -900, -409, -410), which NCES public enrollment omits.
+    assert params["cep_students"] == 10_742 - 1_546 == 9_196
+    assert params["public_enrollment"] == 116_762
+    assert 0 < params["cep_students"] < params["public_enrollment"]
+
+
 def test_school_meals_start_july_2027():
     m = MEASURES["nd-measure-2"]
     assert m.reform_overrides == {
