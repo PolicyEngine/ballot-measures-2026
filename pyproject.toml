@@ -17,7 +17,9 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
+    "pytest-timeout>=2.0",
     "modal>=1.0",
+    "ruff>=0.6",
 ]
 
 [build-system]
@@ -32,6 +34,10 @@ addopts = "-v --tb=short -m 'not slow'"
 markers = [
     "slow: builds PolicyEngine simulations; run on Modal (scripts/modal_tests.py)",
 ]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
 
 [tool.hatch.build.targets.wheel]
 packages = ["ballot_calc"]

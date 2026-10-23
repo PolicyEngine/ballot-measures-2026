@@ -481,27 +481,65 @@ ND_MEASURE_2 = Measure(
             metric="state_cost_biennium",
             low=124_300_000,
             high=134_300_000,
-            note="Meal reimbursements per two-year budget, plus $300,000 for administration.",
+            note=(
+                "Meals ($124 million to $134 million) plus $300,000 for "
+                "administration per two-year budget. The range reflects how much "
+                "participation rises: $124 million if it rises as in other "
+                "universal-meal states, $134 million if it rises more."
+            ),
+        ),
+        OfficialEstimate(
+            source="North Dakota Department of Public Instruction fiscal note (June 2026)",
+            url="https://ndlegis.gov/sites/default/files/pdf/committees/69-2025/27.5158.03000appendix.pdf",
+            period="2027-29 biennium, participation at current levels",
+            model_year=2028,
+            metric="state_cost_biennium_low",
+            low=105_300_000,
+            high=105_300_000,
+            note=(
+                "DPI's scenario in which participation stays at current levels: "
+                "$105 million for meals plus $300,000 for administration."
+            ),
         ),
     ),
     kind_params={
-        # Benchmarks for the participation adjustment (sources in
+        # Benchmarks for the participation adjustment in
+        # ballot_calc/metrics/school_meals.py (source files in
         # ~/PolicyEngine/searchlight-school-meals/research/data/).
         # NCES Common Core of Data 2024-25: public K-12 enrollment.
         "public_enrollment": 116_762,
         # FRAC Community Eligibility report 2025-26: students in North
         # Dakota schools that already serve every meal free.
         "cep_students": 11_566,
-        # USDA FNS FY2025 average daily participation.
+        # USDA FNS FY 2025 (preliminary, data as of 2026-09-11): lunches and
+        # breakfasts served in North Dakota. Current participation = meals /
+        # (school days x participating enrollment).
+        "lunch_meals": 14_982_168,
+        "breakfast_meals": 5_436_081,
+        # ND DPI testimony, December 10, 2025: SY 2024-25 enrollment at
+        # schools in the federal lunch program (119,506 public plus 6,755
+        # private), the population those meals were served to.
+        # https://ndlegis.gov/sites/default/files/pdf/committees/69-2025/27.5088.03000appendixb.pdf
+        "participating_enrollment": 126_261,
+        # FNS FY 2025 average daily participation, for reference only: FNS
+        # divides average daily meals by a 0.927 attendance factor, so ADP /
+        # enrollment overstates meals per enrolled student-day by about 11%.
         "lunch_adp": 92_641,
         "breakfast_adp": 33_835,
         # Biennial administration cost from the fiscal impact statement.
         "admin_cost_per_biennium": 300_000,
-        # High-case participation uplift under universal free meals, in
-        # percentage points of enrollment; set from cited evidence in
-        # metrics/school_meals.py.
-        "uplift_lunch": None,
-        "uplift_breakfast": None,
+        # High case: participation rises by what DPI's fiscal note assumed
+        # from nine states with universal free meals, +9 percentage points at
+        # lunch and +12 at breakfast (June 11, 2026,
+        # https://ndlegis.gov/sites/default/files/pdf/committees/69-2025/27.5158.03000appendix.pdf).
+        # The lunch figure matches Ramponi et al., JAMA Pediatrics (2025),
+        # doi:10.1001/jamapediatrics.2025.2301: +9 points (95% CI 7-10) for
+        # lunch and +5 (3-6) for breakfast in the CO/MI/MN/NM wave of
+        # universal-meal states, +19 and +26 in the first wave. USDA's CEP
+        # evaluation (Logan et al., 2014) found +3.5 and +3.6 points for
+        # schools adopting community eligibility.
+        "uplift_lunch": 0.09,
+        "uplift_breakfast": 0.12,
     },
 )
 

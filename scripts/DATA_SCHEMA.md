@@ -1,213 +1,222 @@
-# Data contract — co-initiative-195 (Colorado Initiative 195 / Amendment 87)
+# Data contract: 2026 ballot measures dashboard
 
-Authoritative schema for every file the Python pipelines write into
-`frontend/public/data/`. Builder B codes `frontend/lib` consumers against this
-file. Produced by:
+The files in `frontend/public/data/` that the frontend reads. The Modal
+pipeline (`scripts/modal_pipeline.py`) writes the five CSVs, `measures.json`
+and `manifest.json`; `make pipeline-fetch` downloads them after checking the
+pin, the registry hash and completeness. `example_households.json` comes from
+the household pipeline (`scripts/compute_example_households.py`) and is
+documented there.
 
-- `scripts/modal_pipeline.py` — ALL five CSVs (single merged Modal app: one
-  national baseline + one national reform pass yields both the statewide CSVs
-  and `congressional_districts.csv`)
-- `scripts/compute_example_households.py` — `example_households.json` (local)
+## Conventions
 
-## Dataset provenance (microsimulation CSVs)
+- **Direction.** Every change is (measure passes) − (current law), for one
+  tax year. Current law includes each measure's `baseline_overrides` (for
+  Proposition NN, the September 2026 forecast refund tiers); the passes
+  policy merges `reform_overrides` over them (`ballot_calc/measures.py`).
+- **Household side.** A positive net-income change means the household gains.
+- **Budget side.** Signed from the government's side: a positive
+  `*_budget_impact` means the government gains revenue or spends less.
+  `*_revenue_impact` and `*_spending_impact` are the changes in collections and
+  in spending (positive = up); `*_budget_impact` = revenue − spending.
+- **Units.** Dollars are annual (tax-year) dollars of that year. `*_rate`
+  values are percents (12.3 = 12.3%); `*_rate_change` values are percentage
+  points; `*_percent_change` values are percents of the current-law rate;
+  `*_share` and `relative_*` values are fractions (0.05 = 5%).
+- **Weights.** Household counts are weighted households; person counts are
+  weighted people; tax-unit counts are weighted tax units.
+- **Winners and losers** (metrics, income brackets, districts): households
+  whose net income changes by more than $1 either way.
+- **Scope.** Each measure is simulated on its state's households only. The
+  model scores tax-year liability and benefit values; official estimates are
+  usually by state fiscal year (see `official_estimates` in `measures.json`).
+- **Federal revenue.** The federal SALT deduction in policyengine-us 2.60.4
+  reads an imputed `state_withheld_income_tax`, so federal income tax does not
+  respond to state income tax changes; `federal_revenue_impact` is 0 for the
+  income tax measures by construction.
 
-Single national Populace build P ACS local-area file (~1.6M households,
-PUMA-assigned CD-119 / county / state geography), loaded FUTA-template style
-(`hf_hub_download` then `Microsimulation(dataset=<path>)`):
+Every CSV is long format with `measure` (registry slug) and `year` (tax year)
+columns. Rows follow the registry order of measures and years.
 
-- `repo_id`: `policyengine/populace-us` (HF **dataset** repo)
-- `revision`: `populace-us-2024-buildp-acs-local-592ae5d6-20260819T020303Z`
-- `filename`: `populace_us_2024_acs_local.h5`
+| measure | years | kind | districts |
+|---|---|---|---|
+| `co-amendment-87` | 2027 | income_tax | 8 (CO-01 … CO-08) |
+| `co-prop-nn` | 2027, 2028 | tabor_refund | 8 |
+| `ca-prop-3` | 2031 | income_tax | 52 (CA-01 … CA-52) |
+| `wa-i-645` | 2028, 2029 | income_tax | 10 (WA-01 … WA-10) |
+| `nd-measure-2` | 2028 | school_meals | none (at large) |
+| `sd-amendment-i` | 2028 | medicaid | none (at large) |
 
-Colorado rows: `state_fips == 8`. Districts: `congressional_district_geoid`
-in 801..808 (integer SSDD = state FIPS × 100 + district number; verified
-empirically against the h5).
+## `metrics.csv`
 
-**CO-subset step**: because Initiative 195 only affects Colorado, the
-pipeline extracts the CO households (plus all their linked persons / tax
-units / spm units / families / marital units, weights preserved — ~30–50k
-households) from the national file into a CO-only `USSingleYearDataset` h5
-BEFORE simulating, cached in the results Volume at
-`cache/co_subset_<revision>.h5` so reruns skip the ~10GB national download.
-Each household keeps its weight, so weighted CO statistics from the subset
-are identical in meaning to CO-filtered statistics from a full national
-run. Statewide and district results come from the same CO-only pass, so
-district totals aggregate consistently to the statewide totals (unlike the
-old per-district ECPS files, which were calibrated independently).
+Columns: `measure,year,metric,value`. Every measure-year has every core
+metric plus its kind's metrics, in the order below.
 
-## Global conventions
+### Core metrics (every measure)
 
-- **Direction is FORWARD**: baseline = current law (4.4% flat tax), reform =
-  Initiative 195 graduated schedule (contrib flag
-  `gov.contrib.states.co.progressive_income_tax.in_effect` = true from
-  2027-01-01).
-- **Sign convention**: every "change"/"impact" value is `reform − baseline`.
-  - Household/net-income quantities: **negative = the household pays more tax**
-    under Initiative 195; positive = the household gains.
-  - Revenue quantities (`*_revenue_impact`): expressed as *government revenue*
-    change, i.e. `reform tax − baseline tax`; **positive = the state collects
-    more revenue** under Initiative 195.
-  - `budgetary_impact` (metrics.csv) is a revenue quantity (positive = revenue
-    gain); `total_cost = −budgetary_impact` is the household-side mirror.
-- **Year**: single tax year **2027** everywhere. The `year` column is retained
-  for schema stability but always equals `2027`.
-- **No `_revert` suffixes.** Files are `metrics.csv`,
-  `distributional_impact.csv`, `winners_losers.csv`, `income_brackets.csv`,
-  `congressional_districts.csv`, `example_households.json`.
-- Pin: `policyengine-us==1.825.0` (first release containing PR #9431).
-
-## metrics.csv (long format: one metric per row)
-
-| column | meaning |
+| metric | meaning |
 |---|---|
-| `year` | 2027 |
-| `metric` | metric name (below) |
-| `value` | numeric value |
+| `households` | Weighted households in the state |
+| `sample_households` | Survey household records in the state subset |
+| `effective_sample_households` | Kish effective sample size of the household weights, (Σw)²/Σw² |
+| `affected_sample_households` | Records whose net income changes by more than $1 |
+| `effective_affected_sample_households` | Kish effective sample size of those records |
+| `net_income_change_total` | Σ weighted change in household net income |
+| `avg_household_net_income_change` | Per household, over all households |
+| `winners`, `losers` | Weighted households gaining / losing more than $1 |
+| `winners_rate`, `losers_rate` | Percent of households |
+| `avg_gain`, `avg_loss` | Average change among winners (positive) / losers (negative) |
+| `{poverty,child_poverty,deep_poverty,deep_child_poverty}_baseline_rate` | SPM poverty rate under current law, percent of people (children: under 18). Deep poverty: below half the SPM threshold |
+| `…_reform_rate` | The same if the measure passes |
+| `…_rate_change` | reform − baseline, percentage points (negative = poverty falls) |
+| `…_percent_change` | rate change as a percent of the baseline rate |
+| `people_lifted_out_of_poverty` | Weighted people in poverty under current law but not if the measure passes |
+| `people_pushed_into_poverty` | The reverse |
+| `children_lifted_out_of_poverty` | People under 18 lifted out |
+| `state_revenue_impact` | Change in the measure's state revenue variables |
+| `state_spending_impact` | Change in the measure's state spending (see kinds) |
+| `state_budget_impact` | `state_revenue_impact − state_spending_impact` (headline for most measures) |
+| `federal_revenue_impact`, `federal_spending_impact`, `federal_budget_impact` | The same for the federal government |
+| `target_change` | Weighted change in the measure's `target_variable` (summed to households). The pipeline refuses to write results unless it moves in the direction of `target_sign` by more than 0.1% of its current-law total |
 
-Metrics:
+Revenue and spending variables per measure are in `measures.json`
+(`state_revenue_variables`, etc.).
 
-| metric | meaning / sign |
+### `income_tax` (CO Amendment 87, CA Proposition 3, WA I-645)
+
+Over tax units, using the measure's state income tax (`target_variable`).
+Tax changes are signed from the taxpayer's side (positive = pays more).
+
+| metric | meaning |
 |---|---|
-| `budgetary_impact` | total (federal + CO state) tax revenue change, $/yr; positive = revenue gain |
-| `federal_tax_revenue_impact` | federal income tax revenue change (SALT / itemization interactions), $ |
-| `state_tax_revenue_impact` | CO income tax revenue change, $; positive = Initiative 195 raises revenue |
-| `tax_revenue_impact` | = federal + state revenue impact |
-| `households` | weighted count of CO households |
-| `avg_household_net_income_change` | mean household net-income change across ALL households, $; negative = average tax increase |
-| `total_cost` | `−budgetary_impact` (aggregate household net-income change), $ |
-| `beneficiaries` | weighted households with net-income change > 0 |
-| `avg_benefit` | mean net-income change among beneficiaries only, $ (positive) |
-| `winners` | weighted households gaining > $1 |
-| `losers` | weighted households losing > $1 |
-| `winners_rate` | winners / households × 100 (percent) |
-| `losers_rate` | losers / households × 100 (percent) |
-| `poverty_baseline_rate` | SPM poverty rate under current law, percent |
-| `poverty_reform_rate` | SPM poverty rate under Initiative 195, percent |
-| `poverty_rate_change` | `reform − baseline` percentage points; negative = poverty falls under the initiative |
-| `poverty_percent_change` | `rate_change / baseline_rate × 100`, percent |
-| `child_poverty_*`, `deep_poverty_*`, `deep_child_poverty_*` | same four fields for child / deep / deep-child poverty, same sign convention |
+| `tax_units_paying_more`, `tax_units_paying_less` | Weighted tax units whose state income tax changes by more than $1 |
+| `avg_tax_change_paying_more`, `avg_tax_change_paying_less` | Average change among them |
+| `revenue_share_agi_1m_plus` | Share of the total state tax change from tax units with current-law AGI ≥ $1M. Exceeds 1 when lower-income tax units pay less (CO Amendment 87) |
+| `baseline_state_income_tax` | Current-law state income tax, all tax units |
 
-Note the poverty sign convention differs from the GA template (which used
-`baseline − reform` in the revert direction): here **all** change metrics are
-uniformly `reform − baseline`.
+### `tabor_refund` (CO Proposition NN)
 
-## distributional_impact.csv
-
-One row per income decile.
-
-| column | meaning |
+| metric | meaning |
 |---|---|
-| `year` | 2027 |
-| `decile` | `1`..`10` — **Colorado-relative** decile (weighted deciles of baseline household net income computed among Colorado households, so decile 1 = poorest tenth of Colorado, not of the nation) |
-| `average_change` | mean household net-income change in the decile, $ (negative = tax increase) |
-| `relative_change` | decile total net-income change ÷ decile total baseline net income (fraction, e.g. `-0.004` = −0.4%) |
+| `refund_total_baseline` | Current-law six-tier sales tax refund, all tax units |
+| `refund_recipients_baseline` | Weighted tax units receiving one |
+| `avg_refund_baseline` | Per recipient tax unit (joint returns get two per-person amounts) |
 
-## winners_losers.csv
+`co_income_tax` nets the refundable refund, so the state revenue impact of
+keeping the surplus is the refund total.
 
-One row per decile plus an `All` row. Person-weighted shares; each row's five
-share columns sum to 1.
+### `school_meals` (ND Measure No. 2)
 
-| column | meaning |
+The model values meals as if every child aged 5-17 ate both meals on every
+one of 180 school days. The participation adjustment
+(`ballot_calc/metrics/school_meals.py`) scales each SPM unit's change:
+
+    adjusted = s × 180 × K-12 children × (r_L × Δlunch + r_B × Δbreakfast)
+
+`s` scales the model's K-12 children to public enrollment outside schools
+that already serve every meal free (CEP); `r` is meals served per enrolled
+student per school day. **Low** = current participation; **high** = current
+plus the rise DPI assumed from states with universal meals (+9 points lunch,
++12 breakfast; `kind_params` in `measures.json` has every input and its
+source). The **central** case (midpoint of low and high) drives the core
+metrics, deciles, winners, income brackets and poverty (poverty is recomputed
+as current-law SPM resources plus the adjusted change). The state pays each
+adjusted meal's value, so `state_spending_impact` = central adjusted meal
+value + administration ($300,000 per biennium, $150,000 a year).
+
+| metric | meaning |
 |---|---|
-| `year` | 2027 |
-| `decile` | `All`, `1`..`10` |
-| `gain_more_5pct` | share gaining > 5% of net income |
-| `gain_less_5pct` | share gaining ≤ 5% |
-| `no_change` | share with \|relative change\| ≤ 0.1% |
-| `lose_less_5pct` | share losing ≤ 5% |
-| `lose_more_5pct` | share losing > 5% |
+| `k12_children_model` | Weighted children aged 5-17 in the model |
+| `children_newly_free_model` | Of them, those whose lunch becomes free (unadjusted) |
+| `meal_value_change_model` | Unadjusted change in school meal value, 100% take-up |
+| `meal_value_change_adjusted_low`, `_high` | Participation-adjusted meal value (= state meal cost) |
+| `state_cost_adjusted_low`, `_high` | Adjusted meal cost + administration, per year |
+| `state_cost_biennium_low`, `_high` | Twice the annual cost (compare with the official per-biennium range) |
+| `participation_lunch`, `participation_breakfast` | Current participation rates (low case) |
+| `enrollment_scale` | `s` |
 
-## income_brackets.csv
+### `medicaid` (SD Amendment I scenario)
 
-One row per household-AGI band. Bands extend past $1M so all six Initiative
-195 brackets are visible. Band labels (exact strings, in order):
+Health benefits (Medicaid value and premium tax credits) count in household
+net income in both simulations. Costs are changes, so negative = savings.
 
-`$0 - $25k`, `$25k - $50k`, `$50k - $75k`, `$75k - $100k`, `$100k - $200k`,
-`$200k - $500k`, `$500k - $750k`, `$750k - $1M`, `$1M+`
-
-| column | meaning |
+| metric | meaning |
 |---|---|
-| `year` | 2027 |
-| `bracket` | band label above (household AGI, baseline) |
-| `households` | weighted household count in the band |
-| `beneficiaries` | weighted households in the band with net-income change > 0 (column name kept from the GA template) |
-| `total_cost` | weighted SUM of net-income change over ALL households in the band, $; negative = band pays more tax in aggregate |
-| `avg_benefit` | weighted MEAN net-income change over ALL households in the band, $; negative = average tax increase (name kept from GA template; recomputed forward over all households, not just gainers) |
+| `people_losing_medicaid` | Weighted people enrolled under current law but not if expansion ends |
+| `losing_below_100fpl` | Of them, Medicaid income below 100% of the poverty guideline (no marketplace subsidy: the coverage gap) |
+| `losing_100_plus_fpl` | At or above 100% |
+| `gaining_ptc` | People losing Medicaid whose tax unit's take-up-adjusted premium tax credit (`assigned_aca_ptc`) rises |
+| `medicaid_cost_change` | Total Medicaid spending change |
+| `medicaid_state_cost_change`, `medicaid_federal_cost_change` | Its state and federal shares |
+| `ptc_change` | Change in `assigned_aca_ptc` |
+| `baseline_expansion_enrollees` | People enrolled through the adult expansion group under current law (compare with the pamphlet's ~30,000) |
 
-## congressional_districts.csv
+State spending is `medicaid_state_cost`; federal spending is
+`medicaid_federal_cost` + `assigned_aca_ptc`.
 
-One row per district, CO-01..CO-08 (FIPS 08), year 2027.
+## `distributional_impact.csv`
 
-| column | meaning |
+Columns: `measure,year,decile,average_change,relative_change`. Deciles 1-10
+of current-law household net income within the state (household-weighted).
+`average_change` is dollars per household; `relative_change` is the decile's
+total change over its total current-law net income, counting negative
+incomes as zero (a fraction).
+
+## `winners_losers.csv`
+
+Columns: `measure,year,decile,gain_more_5pct,gain_less_5pct,no_change,lose_less_5pct,lose_more_5pct`.
+`decile` is `All` then `1`…`10`. Shares of people (household size × weight)
+in each decile by relative change in household net income (change over
+current-law net income floored at $1): more than 5%, 0.1%-5%, within 0.1%,
+and the losses mirrored. Each row sums to 1; `All` averages the ten deciles.
+
+## `income_brackets.csv`
+
+Columns: `measure,year,bracket,households,winners,losers,total_change,average_change,state_budget_impact`.
+Bands of household AGI under current law; labels and edges are each
+measure's `income_bands` in `measures.json` (lower edge inclusive).
+`total_change` and `average_change` are household net income;
+`state_budget_impact` is the state budget effect attributed to the band's
+households (ND: adjusted meal cost, without administration).
+
+## `congressional_districts.csv`
+
+Columns: `measure,year,district,state,households,average_household_income_change,relative_household_income_change,winners_share,losers_share,state_budget_impact`.
+CO, CA and WA only (8, 52 and 10 districts per measure-year); `district` is
+`CO-01` style (119th Congress, from the dataset's PUMA-based assignment).
+`relative_household_income_change` = average change / average current-law
+net income. No district poverty: district samples are too thin.
+
+## `measures.json`
+
+The registry (`python -m ballot_calc.export`): election date, pin,
+`registry_hash`, and per measure every `Measure` field plus `state_name`,
+`state_fips`, `has_districts`, `district_count`. Infinite band edges and the
+SD `-inf` income limit are the strings `"Infinity"` / `"-Infinity"`.
+
+## `manifest.json`
+
+| key | meaning |
 |---|---|
-| `district` | `CO-01`..`CO-08` |
-| `average_household_income_change` | mean household net-income change, $ (negative = tax increase) |
-| `relative_household_income_change` | avg change ÷ avg baseline net income (fraction) |
-| `winners_share` | share of households gaining > $1 (fraction 0-1) |
-| `losers_share` | share of households losing > $1 (fraction 0-1) |
-| `affected_share` | `winners_share + losers_share` (fraction 0-1) |
-| `state_revenue_impact` | district total CO income-tax revenue change, $; positive = more revenue |
-| `poverty_pct_change` | SPM poverty percent change, `(reform − baseline)/baseline × 100`; negative = poverty falls |
-| `child_poverty_pct_change` | same for children |
-| `state` | `CO` |
-| `year` | 2027 |
+| `generated_at_utc` | When `run_all` wrote the files |
+| `pin` | policyengine-us pin used |
+| `dataset_repo`, `dataset_revision`, `dataset_filename` | Populace source file |
+| `registry_hash` | Hash of the registry's computational fields; must equal `measures.json`'s |
+| `measure_years`, `missing_measure_years`, `complete`, `failures` | Coverage of the run |
+| `files` | Files written |
+| `subsets` | Per state: subset path, household/person counts, district geoids, SPM cleaning counts, NaN inputs filled |
+| `guards` | Per measure-year: target variable, expected sign, change and current-law total |
+| `headline` | Per measure-year: headline metric, state budget impact, target change, effective sample |
+| `passes`, `peak_rss_gb` | Per pass: key, seconds, households, persons, peak memory |
+| `diagnostics` | Per measure-year reducer checks (poverty-flag agreement, unadjusted change, ND participation rates) |
+| `top_tail` | IRS SOI Historic Table 2 comparison for CO, CA and WA (`scripts/diagnostics/tail_analysis.py`), or null |
 
-Provenance note (surface in the validation tab): districts come from the
-SAME national pass as the statewide CSVs (grouped by
-`congressional_district_geoid`), so district totals aggregate consistently
-to statewide. The old "independently calibrated district files do not sum
-to statewide" caveat no longer applies; the remaining caveat is that
-district geography is PUMA-assigned (households are placed in CD-119
-districts from PUMA-to-district mappings).
+## Dataset
 
-## example_households.json
-
-```jsonc
-{
-  "year": 2027,
-  "pin": "policyengine-us==1.825.0",
-  "households": [
-    {
-      "label": "…",                       // display label
-      "income": 95000,                    // employment income at the point estimate
-      "age_head": 40,
-      "married": true,
-      "dependents": [6, 9],               // ages; [] if none
-      // optional extra inputs a profile may carry (taxable_pension_income,
-      // social_security_retirement, …) — informational only
-      "baseline": {                       // current law (flat 4.4%)
-        "household_net_income": 0.0,
-        "co_income_tax": 0.0,
-        "income_tax": 0.0                 // federal
-      },
-      "reform": { /* same three keys under Initiative 195 */ },
-      "net_income_change": 0.0,           // reform − baseline; negative = pays more
-      "state_tax_change": 0.0,            // co_income_tax reform − baseline; positive = pays MORE state tax
-      "federal_tax_change": 0.0,          // federal income_tax reform − baseline
-      "chart": {                          // employment-income sweep, $0..$1,300,000
-        "income_range": [0, 10000, …],    // 131 points, $10k step
-        "net_income_change": [ … ],       // reform − baseline at each point
-        "state_tax_change": [ … ],        // positive = pays more CO tax
-        "federal_tax_change": [ … ]
-      }
-    }
-  ]
-}
-```
-
-Signs: `net_income_change` is household-side (negative = worse off);
-`state_tax_change` / `federal_tax_change` are tax-side (positive = pays more
-tax). Typically `net_income_change ≈ −(state_tax_change + federal_tax_change)`.
-
-Profiles include at least: single filer, married family with children,
-retired couple, and one household above $1,000,000 so the top 8.4% bracket is
-exercised. There is NO per-provision attribution (Initiative 195 is a single
-provision) — the GA `provisions` / `provisions_chart` keys are gone.
-
-## geojson (unchanged from template)
-
-`frontend/public/data/geojson/congressional_districts.geojson` and
-`congressional_districts_hex.geojson` are **national** 119th-Congress files
-already containing all 8 Colorado districts. Filter features by
-`properties.DISTRICT_ID` (`"CO-01"`..`"CO-08"`) or `properties.STATEFP ===
-"08"` (choropleth) / `properties.STATEAB === "CO"` (hex).
+Populace ACS local-area national file (`policyengine/populace-us`,
+`populace_us_2024_acs_local.h5`), default revision
+`populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z`. State subsets
+keep each state's households with all their people and group units and
+their weights. Two cleaning steps: model input columns with NaN (only
+`parent_1_id`/`parent_2_id`, NaN for CPS-donor people) take the variable's
+default (0 = parent unknown), and any SPM unit without an adult is fixed or
+dropped (none in this build).

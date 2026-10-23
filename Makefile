@@ -1,8 +1,12 @@
-.PHONY: dev dev-frontend
-.PHONY: build test test-python lint clean install
-.PHONY: pipeline pipeline-fetch example-households
+.PHONY: dev dev-frontend build test test-python test-slow lint format clean install
+.PHONY: export preflight subsets pipeline pipeline-status pipeline-fetch top-tail
+.PHONY: household-api example-households
 
-# Python module: co_tax_calc (Colorado Initiative 195 / Amendment 87)
+# Python package: ballot_calc (registry, subsets, passes, reducers, outputs).
+# Heavy compute runs on Modal; never run microsimulations locally.
+PY := .venv/Scripts/python.exe
+# The Modal CLI dies on a non-ASCII status glyph in a cp1252 console.
+MODAL := PYTHONIOENCODING=utf-8 PYTHONUTF8=1 modal
 
 # Port selection helper - finds the first available port in 4000-4100
 define find_port
@@ -13,14 +17,11 @@ if 0 else (print('ERROR: no free port in 4000-4100', file=sys.stderr), sys.exit(
 python -c "import socket; s=socket.socket(); s.bind(('',4000)); s.close(); print(4000)" 2>nul || echo 4000)
 endef
 
-# Install dependencies
 install:
 	cd frontend && npm install
 
-# Start development server (frontend only for hybrid-precomputed-api pattern)
 dev: dev-frontend
 
-# Frontend only
 dev-frontend:
 	@cd frontend && set PORT=$(find_port) && npm run dev
 
@@ -30,29 +31,60 @@ build:
 test:
 	cd frontend && npm run test
 
-# Python tests (schema + reform unit tests)
+# Fast Python tests (no policyengine import; seconds).
 test-python:
-	.venv/Scripts/python.exe -m pytest tests
+	$(PY) -m pytest tests
+
+# Slow household tests, on Modal.
+test-slow:
+	$(MODAL) run --detach scripts/modal_tests.py::kickoff
 
 lint:
 	cd frontend && npm run lint
+	$(PY) -m ruff check ballot_calc scripts tests
+
+format:
+	$(PY) -m ruff format ballot_calc scripts tests
 
 clean:
 	cd frontend && if exist .next rmdir /s /q .next
 	cd frontend && if exist node_modules rmdir /s /q node_modules
 
-# Kick off the Modal job that computes ALL five CSVs (statewide +
-# districts) on the Populace build P acs-local national dataset
-# (TY2027). Detach-safe: results are committed to the Modal Volume
-# "co-initiative-195-results" and survive local driver death.
+# Rewrite frontend/public/data/measures.json from the registry.
+export:
+	$(PY) -m ballot_calc.export
+
+# One household per measure through the pipeline's policies (minutes).
+preflight:
+	$(MODAL) run scripts/modal_pipeline.py::preflight
+
+# Build and SPM-clean the five state subsets (one 64 GB container).
+subsets:
+	$(MODAL) run --detach scripts/modal_pipeline.py::build
+
+# Every measure-year: subsets, passes, reduce, CSVs + manifest on the
+# results Volume. Detach-safe; cached passes are skipped. Rerun a subset
+# with: modal run --detach scripts/modal_pipeline.py::kickoff --only co-prop-nn
 pipeline:
-	modal run --detach scripts/modal_pipeline.py::kickoff
+	$(MODAL) run --detach scripts/modal_pipeline.py::kickoff
 
-# Fetch the committed CSVs from the results Volume into
-# frontend/public/data/ (run after the job completes; seconds)
+pipeline-status:
+	$(MODAL) run scripts/modal_pipeline.py::status
+
+# Verify pin, registry hash and completeness, then download into
+# frontend/public/data/.
 pipeline-fetch:
-	modal run scripts/modal_pipeline.py::fetch
+	$(MODAL) run scripts/modal_pipeline.py::fetch
 
-# Regenerate example_households.json locally (no Modal)
+# IRS SOI top-tail check for CO, CA and WA (after the pipeline).
+top-tail:
+	$(MODAL) run scripts/diagnostics/tail_analysis.py
+
+# Preview household endpoint (the production app is deployed by hand after
+# the dashboard PR is approved; see scripts/modal_household_api.py).
+household-api:
+	$(MODAL) deploy --name bm26-household-preview scripts/modal_household_api.py
+
+# Example households, computed on Modal.
 example-households:
-	.venv/Scripts/python.exe scripts/compute_example_households.py
+	$(MODAL) run scripts/compute_example_households.py

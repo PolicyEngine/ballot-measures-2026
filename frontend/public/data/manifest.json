@@ -1,0 +1,833 @@
+{
+  "generated_at_utc": "2026-10-23T14:32:01.102738+00:00",
+  "pin": "policyengine-us==2.60.4",
+  "dataset_repo": "policyengine/populace-us",
+  "dataset_revision": "populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z",
+  "dataset_filename": "populace_us_2024_acs_local.h5",
+  "registry_hash": "68e29e92e1a68d14",
+  "measure_years": [
+    "co-amendment-87:2027",
+    "co-prop-nn:2027",
+    "co-prop-nn:2028",
+    "ca-prop-3:2031",
+    "wa-i-645:2028",
+    "wa-i-645:2029",
+    "nd-measure-2:2028",
+    "sd-amendment-i:2028"
+  ],
+  "missing_measure_years": [],
+  "complete": true,
+  "failures": {},
+  "files": [
+    "metrics.csv",
+    "distributional_impact.csv",
+    "winners_losers.csv",
+    "income_brackets.csv",
+    "congressional_districts.csv",
+    "measures.json"
+  ],
+  "subsets": {
+    "CA": {
+      "path": "/results/cache/ca_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "subset": {
+        "households": 162907,
+        "district_geoids": [
+          601,
+          602,
+          603,
+          604,
+          605,
+          606,
+          607,
+          608,
+          609,
+          610,
+          611,
+          612,
+          613,
+          614,
+          615,
+          616,
+          617,
+          618,
+          619,
+          620,
+          621,
+          622,
+          623,
+          624,
+          625,
+          626,
+          627,
+          628,
+          629,
+          630,
+          631,
+          632,
+          633,
+          634,
+          635,
+          636,
+          637,
+          638,
+          639,
+          640,
+          641,
+          642,
+          643,
+          644,
+          645,
+          646,
+          647,
+          648,
+          649,
+          650,
+          651,
+          652
+        ],
+        "persons": 401287,
+        "weighted_households": 13857962.027970642
+      },
+      "spm_cleaning": {
+        "spm_adultless_units": 0.0,
+        "spm_independent_minor_units": 0.0,
+        "spm_minors_merged": 0.0,
+        "child_only_households_dropped": 0.0,
+        "child_only_household_records_dropped": 0.0,
+        "nan_inputs_filled": {
+          "person.parent_1_id": 7866,
+          "person.parent_2_id": 7866
+        },
+        "households_after_cleaning": 162907.0
+      },
+      "build_peak_rss_gb": 0.8613319396972656
+    },
+    "CO": {
+      "path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "subset": {
+        "households": 30033,
+        "district_geoids": [
+          801,
+          802,
+          803,
+          804,
+          805,
+          806,
+          807,
+          808
+        ],
+        "persons": 66055,
+        "weighted_households": 2160542.4293909846
+      },
+      "spm_cleaning": {
+        "spm_adultless_units": 0.0,
+        "spm_independent_minor_units": 0.0,
+        "spm_minors_merged": 0.0,
+        "child_only_households_dropped": 0.0,
+        "child_only_household_records_dropped": 0.0,
+        "nan_inputs_filled": {
+          "person.parent_1_id": 3274,
+          "person.parent_2_id": 3274
+        },
+        "households_after_cleaning": 30033.0
+      },
+      "build_peak_rss_gb": 0.8613319396972656
+    },
+    "ND": {
+      "path": "/results/cache/nd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "subset": {
+        "households": 4718,
+        "district_geoids": [
+          3800
+        ],
+        "persons": 10248,
+        "weighted_households": 300935.26444303757
+      },
+      "spm_cleaning": {
+        "spm_adultless_units": 0.0,
+        "spm_independent_minor_units": 0.0,
+        "spm_minors_merged": 0.0,
+        "child_only_households_dropped": 0.0,
+        "child_only_household_records_dropped": 0.0,
+        "nan_inputs_filled": {
+          "person.parent_1_id": 1850,
+          "person.parent_2_id": 1850
+        },
+        "households_after_cleaning": 4718.0
+      },
+      "build_peak_rss_gb": 0.8613319396972656
+    },
+    "SD": {
+      "path": "/results/cache/sd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "subset": {
+        "households": 5270,
+        "district_geoids": [
+          4600
+        ],
+        "persons": 11897,
+        "weighted_households": 361780.70149298816
+      },
+      "spm_cleaning": {
+        "spm_adultless_units": 0.0,
+        "spm_independent_minor_units": 0.0,
+        "spm_minors_merged": 0.0,
+        "child_only_households_dropped": 0.0,
+        "child_only_household_records_dropped": 0.0,
+        "nan_inputs_filled": {
+          "person.parent_1_id": 2288,
+          "person.parent_2_id": 2288
+        },
+        "households_after_cleaning": 5270.0
+      },
+      "build_peak_rss_gb": 0.8613319396972656
+    },
+    "WA": {
+      "path": "/results/cache/wa_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "subset": {
+        "households": 37934,
+        "district_geoids": [
+          5301,
+          5302,
+          5303,
+          5304,
+          5305,
+          5306,
+          5307,
+          5308,
+          5309,
+          5310
+        ],
+        "persons": 86629,
+        "weighted_households": 2805994.6244334592
+      },
+      "spm_cleaning": {
+        "spm_adultless_units": 0.0,
+        "spm_independent_minor_units": 0.0,
+        "spm_minors_merged": 0.0,
+        "child_only_households_dropped": 0.0,
+        "child_only_household_records_dropped": 0.0,
+        "nan_inputs_filled": {
+          "person.parent_1_id": 3743,
+          "person.parent_2_id": 3743
+        },
+        "households_after_cleaning": 37934.0
+      },
+      "build_peak_rss_gb": 0.8613319396972656
+    }
+  },
+  "guards": {
+    "co-amendment-87:2027": {
+      "target_variable": "co_income_tax",
+      "target_sign": 1,
+      "target_change": 1425814456.4840426,
+      "target_baseline_total": 12048392393.928158
+    },
+    "co-prop-nn:2027": {
+      "target_variable": "co_sales_tax_refund",
+      "target_sign": -1,
+      "target_change": -275834622.68702793,
+      "target_baseline_total": 275834622.68702793
+    },
+    "co-prop-nn:2028": {
+      "target_variable": "co_sales_tax_refund",
+      "target_sign": -1,
+      "target_change": -296644226.64986587,
+      "target_baseline_total": 296644226.64986587
+    },
+    "ca-prop-3:2031": {
+      "target_variable": "ca_income_tax",
+      "target_sign": 1,
+      "target_change": 10136489129.158735,
+      "target_baseline_total": 157782859768.58282
+    },
+    "wa-i-645:2028": {
+      "target_variable": "wa_income_tax",
+      "target_sign": -1,
+      "target_change": -3660307467.816826,
+      "target_baseline_total": 4220644525.7200127
+    },
+    "wa-i-645:2029": {
+      "target_variable": "wa_income_tax",
+      "target_sign": -1,
+      "target_change": -3946581071.570099,
+      "target_baseline_total": 4467057688.492226
+    },
+    "nd-measure-2:2028": {
+      "target_variable": "school_meal_net_subsidy",
+      "target_sign": 1,
+      "target_change": 145573114.44918942,
+      "target_baseline_total": 34952049.504280016
+    },
+    "sd-amendment-i:2028": {
+      "target_variable": "medicaid_enrolled",
+      "target_sign": -1,
+      "target_change": -55952.08352656506,
+      "target_baseline_total": 116457.64888099613
+    }
+  },
+  "headline": {
+    "co-amendment-87:2027": {
+      "state_budget_impact": 1425814456.4840426,
+      "target_change": 1425814456.4840426,
+      "effective_sample_households": 233.46104221267578
+    },
+    "co-prop-nn:2027": {
+      "state_budget_impact": 275834622.67359704,
+      "target_change": -275834622.68702793,
+      "effective_sample_households": 233.46104221267578
+    },
+    "co-prop-nn:2028": {
+      "state_budget_impact": 296644225.26599646,
+      "target_change": -296644226.64986587,
+      "effective_sample_households": 233.46103869994025
+    },
+    "ca-prop-3:2031": {
+      "state_budget_impact": 10136489129.158735,
+      "target_change": 10136489129.158735,
+      "effective_sample_households": 1145.792656779088
+    },
+    "wa-i-645:2028": {
+      "state_budget_impact": -3660307467.816826,
+      "target_change": -3660307467.816826,
+      "effective_sample_households": 409.3985021176908
+    },
+    "wa-i-645:2029": {
+      "state_budget_impact": -3946581071.570099,
+      "target_change": -3946581071.570099,
+      "effective_sample_households": 409.3985010330856
+    },
+    "nd-measure-2:2028": {
+      "state_budget_impact": -57311625.32682799,
+      "target_change": 145573114.44918942,
+      "effective_sample_households": 243.20738162723032
+    },
+    "sd-amendment-i:2028": {
+      "people_losing_medicaid": 55952.08352656506,
+      "state_budget_impact": 63911461.18271096,
+      "target_change": -55952.08352656506,
+      "effective_sample_households": 214.49903299029327
+    }
+  },
+  "partial_keys": {
+    "co-amendment-87:2027": {
+      "baseline": "5fb319d1b08aef98",
+      "reform": "64aae9611fc350cc"
+    },
+    "co-prop-nn:2027": {
+      "baseline": "3875d23a89c8995b",
+      "reform": "36848b937b0ef45a"
+    },
+    "co-prop-nn:2028": {
+      "baseline": "180f6a6802fc3d47",
+      "reform": "b50439eb093f85f4"
+    },
+    "ca-prop-3:2031": {
+      "baseline": "cc24a2494b4ea5ef",
+      "reform": "93006711b63ee46d"
+    },
+    "wa-i-645:2028": {
+      "baseline": "50d3a2434200ca7c",
+      "reform": "0c774a41fc0f4571"
+    },
+    "wa-i-645:2029": {
+      "baseline": "7bee7a1e9089d90b",
+      "reform": "9c7221e359658966"
+    },
+    "nd-measure-2:2028": {
+      "baseline": "186f5ca647925470",
+      "reform": "3d574cef9fc447b7"
+    },
+    "sd-amendment-i:2028": {
+      "baseline": "723ec9f57b30f187",
+      "reform": "715f28f4e121fa1c"
+    }
+  },
+  "passes": {
+    "co-amendment-87:2027:baseline": {
+      "slug": "co-amendment-87",
+      "year": 2027,
+      "policy": "baseline",
+      "key": "5fb319d1b08aef98",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 30033,
+      "persons": 66055,
+      "seconds": 108.0,
+      "peak_rss_gb": 3.7,
+      "skipped": true
+    },
+    "co-amendment-87:2027:reform": {
+      "slug": "co-amendment-87",
+      "year": 2027,
+      "policy": "reform",
+      "key": "64aae9611fc350cc",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 30033,
+      "persons": 66055,
+      "seconds": 138.5,
+      "peak_rss_gb": 4.45,
+      "skipped": true
+    },
+    "co-prop-nn:2027:baseline": {
+      "slug": "co-prop-nn",
+      "year": 2027,
+      "policy": "baseline",
+      "key": "3875d23a89c8995b",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 30033,
+      "persons": 66055,
+      "seconds": 129.8,
+      "peak_rss_gb": 4.45,
+      "skipped": true
+    },
+    "co-prop-nn:2027:reform": {
+      "slug": "co-prop-nn",
+      "year": 2027,
+      "policy": "reform",
+      "key": "36848b937b0ef45a",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 30033,
+      "persons": 66055,
+      "seconds": 132.5,
+      "peak_rss_gb": 4.45,
+      "skipped": true
+    },
+    "co-prop-nn:2028:baseline": {
+      "slug": "co-prop-nn",
+      "year": 2028,
+      "policy": "baseline",
+      "key": "180f6a6802fc3d47",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 30033,
+      "persons": 66055,
+      "seconds": 150.4,
+      "peak_rss_gb": 4.55,
+      "skipped": true
+    },
+    "co-prop-nn:2028:reform": {
+      "slug": "co-prop-nn",
+      "year": 2028,
+      "policy": "reform",
+      "key": "b50439eb093f85f4",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 30033,
+      "persons": 66055,
+      "seconds": 131.8,
+      "peak_rss_gb": 4.53,
+      "skipped": true
+    },
+    "ca-prop-3:2031:baseline": {
+      "slug": "ca-prop-3",
+      "year": 2031,
+      "policy": "baseline",
+      "key": "cc24a2494b4ea5ef",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/ca_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 162907,
+      "persons": 401287,
+      "seconds": 230.2,
+      "peak_rss_gb": 11.92,
+      "skipped": true
+    },
+    "ca-prop-3:2031:reform": {
+      "slug": "ca-prop-3",
+      "year": 2031,
+      "policy": "reform",
+      "key": "93006711b63ee46d",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/ca_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 162907,
+      "persons": 401287,
+      "seconds": 206.0,
+      "peak_rss_gb": 14.75,
+      "skipped": true
+    },
+    "wa-i-645:2028:baseline": {
+      "slug": "wa-i-645",
+      "year": 2028,
+      "policy": "baseline",
+      "key": "50d3a2434200ca7c",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/wa_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 37934,
+      "persons": 86629,
+      "seconds": 72.3,
+      "peak_rss_gb": 3.23,
+      "skipped": true
+    },
+    "wa-i-645:2028:reform": {
+      "slug": "wa-i-645",
+      "year": 2028,
+      "policy": "reform",
+      "key": "0c774a41fc0f4571",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/wa_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 37934,
+      "persons": 86629,
+      "seconds": 127.7,
+      "peak_rss_gb": 3.99,
+      "skipped": true
+    },
+    "wa-i-645:2029:baseline": {
+      "slug": "wa-i-645",
+      "year": 2029,
+      "policy": "baseline",
+      "key": "7bee7a1e9089d90b",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/wa_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 37934,
+      "persons": 86629,
+      "seconds": 106.8,
+      "peak_rss_gb": 3.32,
+      "skipped": true
+    },
+    "wa-i-645:2029:reform": {
+      "slug": "wa-i-645",
+      "year": 2029,
+      "policy": "reform",
+      "key": "9c7221e359658966",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/wa_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 37934,
+      "persons": 86629,
+      "seconds": 131.6,
+      "peak_rss_gb": 4.13,
+      "skipped": true
+    },
+    "sd-amendment-i:2028:baseline": {
+      "slug": "sd-amendment-i",
+      "year": 2028,
+      "policy": "baseline",
+      "key": "723ec9f57b30f187",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/sd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 5270,
+      "persons": 11897,
+      "seconds": 113.7,
+      "peak_rss_gb": 2.58,
+      "skipped": true
+    },
+    "sd-amendment-i:2028:reform": {
+      "slug": "sd-amendment-i",
+      "year": 2028,
+      "policy": "reform",
+      "key": "715f28f4e121fa1c",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/sd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 5270,
+      "persons": 11897,
+      "seconds": 112.5,
+      "peak_rss_gb": 2.59,
+      "skipped": true
+    },
+    "nd-measure-2:2028:baseline": {
+      "slug": "nd-measure-2",
+      "year": 2028,
+      "policy": "baseline",
+      "key": "186f5ca647925470",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/nd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 4718,
+      "persons": 10248,
+      "seconds": 49.9,
+      "peak_rss_gb": 1.48,
+      "skipped": true
+    },
+    "nd-measure-2:2028:reform": {
+      "slug": "nd-measure-2",
+      "year": 2028,
+      "policy": "reform",
+      "key": "3d574cef9fc447b7",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/nd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 4718,
+      "persons": 10248,
+      "seconds": 89.1,
+      "peak_rss_gb": 2.05,
+      "skipped": true
+    }
+  },
+  "peak_rss_gb": {
+    "co-amendment-87:2027:baseline": 3.7,
+    "co-amendment-87:2027:reform": 4.45,
+    "co-prop-nn:2027:baseline": 4.45,
+    "co-prop-nn:2027:reform": 4.45,
+    "co-prop-nn:2028:baseline": 4.55,
+    "co-prop-nn:2028:reform": 4.53,
+    "ca-prop-3:2031:baseline": 11.92,
+    "ca-prop-3:2031:reform": 14.75,
+    "wa-i-645:2028:baseline": 3.23,
+    "wa-i-645:2028:reform": 3.99,
+    "wa-i-645:2029:baseline": 3.32,
+    "wa-i-645:2029:reform": 4.13,
+    "sd-amendment-i:2028:baseline": 2.58,
+    "sd-amendment-i:2028:reform": 2.59,
+    "nd-measure-2:2028:baseline": 1.48,
+    "nd-measure-2:2028:reform": 2.05
+  },
+  "diagnostics": {
+    "co-amendment-87:2027": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": -1425815498.9317918
+    },
+    "co-prop-nn:2027": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": -275834625.6678768
+    },
+    "co-prop-nn:2028": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": -296644236.55558455
+    },
+    "ca-prop-3:2031": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": -10136482689.989212
+    },
+    "wa-i-645:2028": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": 3660307797.141916
+    },
+    "wa-i-645:2029": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": 3946580665.3623233
+    },
+    "nd-measure-2:2028": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": 145572955.21653438,
+      "participation_high_lunch": 0.7492238828036105,
+      "participation_high_breakfast": 0.35919064477550466,
+      "participation_central_lunch": 0.7042238828036106,
+      "participation_central_breakfast": 0.2991906447755047,
+      "meal_value_change_adjusted_central": 57161625.32682799,
+      "school_days": 180.0
+    },
+    "sd-amendment-i:2028": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": -610334285.9479458
+    }
+  },
+  "top_tail": {
+    "dataset_revision": "populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z",
+    "pin": "policyengine-us==2.60.4",
+    "states": {
+      "CO": {
+        "state": "CO",
+        "model_year": 2024,
+        "soi_year": 2023,
+        "model_filers": {
+          "returns": 2807377.0875107283,
+          "agi": 336303854196.9985,
+          "returns_500k_1m": 38968.15086179192,
+          "agi_500k_1m": 29610061961.764236,
+          "records_500k_1m": 909,
+          "returns_1m_plus": 36545.347799380674,
+          "agi_1m_plus": 52533263064.688034,
+          "records_1m_plus": 327,
+          "agi_above_1m": 15987915265.307362
+        },
+        "soi": {
+          "returns": 3086830,
+          "agi": 314115675000,
+          "returns_500k_1m": 38030,
+          "agi_500k_1m": 25370899000,
+          "returns_1m_plus": 15610,
+          "agi_1m_plus": 47266883000,
+          "agi_above_1m": 31656883000
+        },
+        "coverage": {
+          "returns": 0.9094692896954897,
+          "agi": 1.0706369689987565,
+          "returns_500k_1m": 1.0246687052798296,
+          "agi_500k_1m": 1.1670876133228167,
+          "returns_1m_plus": 2.3411497629327784,
+          "agi_1m_plus": 1.1114179681509364,
+          "agi_above_1m": 0.5050375700383187
+        },
+        "band_scale": {
+          "under_500k": 1.0,
+          "500k_1m": 0.8568337017586012,
+          "1m_plus_returns": 0.4271405511227489,
+          "1m_plus_above": 1.9800507117205695
+        },
+        "measures": {
+          "co-amendment-87:2027": {
+            "revenue_change": 1425814456.484043,
+            "revenue_change_by_agi_band": {
+              "under_500k": -533198046.5685613,
+              "500k_1m": 168772799.3096597,
+              "1m_plus": 1790239703.7429447
+            },
+            "revenue_change_1m_plus_above_threshold": 976636674.8732798,
+            "revenue_change_1m_plus_at_threshold": 813603028.8696649,
+            "coverage_scaled_revenue_change": 1892725165.1418705,
+            "model_top_tail_scored_year": {
+              "returns": 3037568.8768333434,
+              "agi": 393362991196.464,
+              "returns_500k_1m": 44288.81142612088,
+              "agi_500k_1m": 28500204963.611862,
+              "records_500k_1m": 1061,
+              "returns_1m_plus": 53029.001256075295,
+              "agi_1m_plus": 77444918127.90729,
+              "records_1m_plus": 391,
+              "agi_above_1m": 24415916871.831993
+            }
+          }
+        }
+      },
+      "CA": {
+        "state": "CA",
+        "model_year": 2024,
+        "soi_year": 2023,
+        "model_filers": {
+          "returns": 17858194.050933957,
+          "agi": 2262462129803.3145,
+          "returns_500k_1m": 287486.32408509584,
+          "agi_500k_1m": 212101643391.20856,
+          "records_500k_1m": 5603,
+          "returns_1m_plus": 279465.9388672375,
+          "agi_1m_plus": 496354879872.4973,
+          "records_1m_plus": 2311,
+          "agi_above_1m": 216888941005.25986
+        },
+        "soi": {
+          "returns": 18482300,
+          "agi": 2050805047000,
+          "returns_500k_1m": 317160,
+          "agi_500k_1m": 213715326000,
+          "returns_1m_plus": 132720,
+          "agi_1m_plus": 400221114000,
+          "agi_above_1m": 267501114000
+        },
+        "coverage": {
+          "returns": 0.9662322357571275,
+          "agi": 1.103206827539719,
+          "returns_500k_1m": 0.9064394125523264,
+          "agi_500k_1m": 0.9924493828355977,
+          "returns_1m_plus": 2.105680672598233,
+          "agi_1m_plus": 1.240201634820539,
+          "agi_above_1m": 0.8107964029086617
+        },
+        "band_scale": {
+          "under_500k": 1.0,
+          "500k_1m": 1.0076080627334656,
+          "1m_plus_returns": 0.47490581692336287,
+          "1m_plus_above": 1.233355249742829
+        },
+        "measures": {
+          "ca-prop-3:2031": {
+            "revenue_change": 10136489129.158733,
+            "revenue_change_by_agi_band": {
+              "under_500k": 17795415.562448997,
+              "500k_1m": 305977655.6317471,
+              "1m_plus": 9812716057.964539
+            },
+            "revenue_change_1m_plus_above_threshold": 10995898757.299757,
+            "revenue_change_1m_plus_at_threshold": -1183182699.3352184,
+            "coverage_scaled_revenue_change": 13326050079.952206,
+            "model_top_tail_scored_year": {
+              "returns": 19876997.20652227,
+              "agi": 3023328871020.8813,
+              "returns_500k_1m": 543159.2784644628,
+              "agi_500k_1m": 352226695121.377,
+              "records_500k_1m": 7559,
+              "returns_1m_plus": 404520.6758419785,
+              "agi_1m_plus": 771050634418.6371,
+              "records_1m_plus": 3772,
+              "agi_above_1m": 366529958576.65857
+            }
+          }
+        }
+      },
+      "WA": {
+        "state": "WA",
+        "model_year": 2024,
+        "soi_year": 2023,
+        "model_filers": {
+          "returns": 3505578.3727801936,
+          "agi": 469527435616.4388,
+          "returns_500k_1m": 62252.63846823838,
+          "agi_500k_1m": 42406312891.72351,
+          "records_500k_1m": 1129,
+          "returns_1m_plus": 53502.632875336654,
+          "agi_1m_plus": 77845543462.00775,
+          "records_1m_plus": 344,
+          "agi_above_1m": 24342910586.671097
+        },
+        "soi": {
+          "returns": 3781890,
+          "agi": 434342159000,
+          "returns_500k_1m": 67020,
+          "agi_500k_1m": 44630153000,
+          "returns_1m_plus": 23370,
+          "agi_1m_plus": 60595722000,
+          "agi_above_1m": 37225722000
+        },
+        "coverage": {
+          "returns": 0.92693821681228,
+          "agi": 1.0810082003032977,
+          "returns_500k_1m": 0.9288665841276988,
+          "agi_500k_1m": 0.9501718018247329,
+          "returns_1m_plus": 2.2893723951791465,
+          "agi_1m_plus": 1.284670615229368,
+          "agi_above_1m": 0.6539271578579751
+        },
+        "band_scale": {
+          "under_500k": 1.0,
+          "500k_1m": 1.0524412512343302,
+          "1m_plus_returns": 0.4368009337868113,
+          "1m_plus_above": 1.5292223116648531
+        },
+        "measures": {
+          "wa-i-645:2028": {
+            "revenue_change": -3660307467.816826,
+            "revenue_change_by_agi_band": {
+              "under_500k": 0.0,
+              "500k_1m": -4381847.257839262,
+              "1m_plus": -3655925620.5589867
+            },
+            "revenue_change_1m_plus_above_threshold": -3737641496.383224,
+            "revenue_change_1m_plus_at_threshold": 81715875.82423735,
+            "coverage_scaled_revenue_change": -5684602835.219159,
+            "model_top_tail_scored_year": {
+              "returns": 3867558.0998895396,
+              "agi": 566004663097.2172,
+              "returns_500k_1m": 95154.8794759637,
+              "agi_500k_1m": 62796609891.59849,
+              "records_500k_1m": 1350,
+              "returns_1m_plus": 60934.05359948485,
+              "agi_1m_plus": 98688008108.40631,
+              "records_1m_plus": 470,
+              "agi_above_1m": 37753954508.921455
+            }
+          },
+          "wa-i-645:2029": {
+            "revenue_change": -3946581071.570098,
+            "revenue_change_by_agi_band": {
+              "under_500k": 0.0,
+              "500k_1m": -5280451.949919611,
+              "1m_plus": -3941300619.620178
+            },
+            "revenue_change_1m_plus_above_threshold": -4025241274.984421,
+            "revenue_change_1m_plus_at_threshold": 83940655.36424255,
+            "coverage_scaled_revenue_change": -6124380776.351934,
+            "model_top_tail_scored_year": {
+              "returns": 3882509.343919709,
+              "agi": 585762074460.4081,
+              "returns_500k_1m": 121026.92235669825,
+              "agi_500k_1m": 76461240730.17308,
+              "records_500k_1m": 1399,
+              "returns_1m_plus": 63678.96341365563,
+              "agi_1m_plus": 104337966191.27603,
+              "records_1m_plus": 529,
+              "agi_above_1m": 40659002777.62041
+            }
+          }
+        }
+      }
+    }
+  }
+}

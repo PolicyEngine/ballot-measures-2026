@@ -1,7 +1,7 @@
 {
   "election_date": "2026-11-03",
   "pin": "policyengine-us==2.60.4",
-  "registry_hash": "711203b4f00322af",
+  "registry_hash": "68e29e92e1a68d14",
   "measures": [
     {
       "slug": "co-amendment-87",
@@ -698,17 +698,31 @@
           "low": 124300000,
           "high": 134300000,
           "unit": "usd",
-          "note": "Meal reimbursements per two-year budget, plus $300,000 for administration."
+          "note": "Meals ($124 million to $134 million) plus $300,000 for administration per two-year budget. The range reflects how much participation rises: $124 million if it rises as in other universal-meal states, $134 million if it rises more."
+        },
+        {
+          "source": "North Dakota Department of Public Instruction fiscal note (June 2026)",
+          "url": "https://ndlegis.gov/sites/default/files/pdf/committees/69-2025/27.5158.03000appendix.pdf",
+          "period": "2027-29 biennium, participation at current levels",
+          "model_year": 2028,
+          "metric": "state_cost_biennium_low",
+          "low": 105300000,
+          "high": 105300000,
+          "unit": "usd",
+          "note": "DPI's scenario in which participation stays at current levels: $105 million for meals plus $300,000 for administration."
         }
       ],
       "kind_params": {
         "public_enrollment": 116762,
         "cep_students": 11566,
+        "lunch_meals": 14982168,
+        "breakfast_meals": 5436081,
+        "participating_enrollment": 126261,
         "lunch_adp": 92641,
         "breakfast_adp": 33835,
         "admin_cost_per_biennium": 300000,
-        "uplift_lunch": null,
-        "uplift_breakfast": null
+        "uplift_lunch": 0.09,
+        "uplift_breakfast": 0.12
       },
       "state_name": "North Dakota",
       "state_fips": 38,
