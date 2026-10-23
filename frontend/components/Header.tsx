@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 /**
  * Header matching policyengine-app-v2 exactly.
@@ -370,6 +370,7 @@ export default function Header() {
         {/* Left: Logo + Desktop Nav */}
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <a href="https://policyengine.org/us" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', marginRight: '12px' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element -- external SVG logo, matches app-v2 */}
             <img
               src="https://policyengine.org/assets/logos/policyengine/white.svg"
               alt="PolicyEngine"

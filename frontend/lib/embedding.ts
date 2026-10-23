@@ -2,19 +2,35 @@
  * Embedding utilities for iframe integration with policyengine.org
  *
  * This module provides:
- * 1. Hash-based parameter parsing (e.g., #country=us&income=50000)
- * 2. hashchange event listener to respond to URL changes
- * 3. postMessage communication to sync state with parent frame
+ * 1. Hash-based parameter parsing (e.g., #measure=wa-i-645&year=2029&tab=statewide)
+ * 2. hashchange event listener support to respond to URL changes
+ * 3. postMessage communication to sync state with the parent frame
  */
+
+export const TAB_IDS = ['overview', 'household', 'statewide', 'districts', 'methodology'] as const;
+export type TabId = (typeof TAB_IDS)[number];
+
+/** Older links used `tab=validation` for the methodology tab. */
+const TAB_ALIASES: Record<string, TabId> = { validation: 'methodology' };
 
 export interface HashParams {
   country?: string;
+  /** Measure slug, e.g. "wa-i-645". */
+  measure?: string;
+  /** Tax year shown on the statewide and district tabs. */
+  year?: number;
+  tab?: TabId;
   income?: number;
-  state?: string;
   age?: number;
   married?: boolean;
   dependents?: number[];
-  tab?: 'overview' | 'household' | 'statewide' | 'districts' | 'validation';
+}
+
+export function parseTab(value: string | null | undefined): TabId | undefined {
+  if (!value) return undefined;
+  const v = value.trim().toLowerCase();
+  if ((TAB_IDS as readonly string[]).includes(v)) return v as TabId;
+  return TAB_ALIASES[v];
 }
 
 /**
@@ -32,14 +48,20 @@ export function parseHashParams(hash: string = ''): HashParams {
   const country = searchParams.get('country');
   if (country) params.country = country;
 
+  const measure = searchParams.get('measure');
+  if (measure && /^[a-z0-9-]+$/i.test(measure.trim())) params.measure = measure.trim().toLowerCase();
+
+  const year = searchParams.get('year');
+  if (year && /^\d{4}$/.test(year.trim())) params.year = parseInt(year, 10);
+
+  const tab = parseTab(searchParams.get('tab'));
+  if (tab) params.tab = tab;
+
   const income = searchParams.get('income');
   if (income) {
     const parsed = parseInt(income, 10);
     if (!isNaN(parsed)) params.income = parsed;
   }
-
-  const state = searchParams.get('state');
-  if (state) params.state = state.toUpperCase();
 
   const age = searchParams.get('age');
   if (age) {
@@ -52,19 +74,11 @@ export function parseHashParams(hash: string = ''): HashParams {
 
   const dependents = searchParams.get('dependents');
   if (dependents) {
-    const ages = dependents.split(',').map(d => parseInt(d.trim(), 10)).filter(n => !isNaN(n));
+    const ages = dependents
+      .split(',')
+      .map((d) => parseInt(d.trim(), 10))
+      .filter((n) => !isNaN(n));
     if (ages.length > 0) params.dependents = ages;
-  }
-
-  const tab = searchParams.get('tab');
-  if (
-    tab === 'overview' ||
-    tab === 'household' ||
-    tab === 'statewide' ||
-    tab === 'districts' ||
-    tab === 'validation'
-  ) {
-    params.tab = tab;
   }
 
   return params;
@@ -89,14 +103,15 @@ export function buildHashString(params: HashParams): string {
   const searchParams = new URLSearchParams();
 
   if (params.country) searchParams.set('country', params.country);
+  if (params.measure) searchParams.set('measure', params.measure);
+  if (params.year !== undefined) searchParams.set('year', String(params.year));
+  if (params.tab) searchParams.set('tab', params.tab);
   if (params.income !== undefined) searchParams.set('income', String(params.income));
-  if (params.state) searchParams.set('state', params.state);
   if (params.age !== undefined) searchParams.set('age', String(params.age));
   if (params.married !== undefined) searchParams.set('married', String(params.married));
   if (params.dependents && params.dependents.length > 0) {
     searchParams.set('dependents', params.dependents.join(','));
   }
-  if (params.tab) searchParams.set('tab', params.tab);
 
   return searchParams.toString();
 }
@@ -110,7 +125,11 @@ export function updateHash(params: HashParams): void {
   const hashString = buildHashString(params);
   const newHash = hashString ? `#${hashString}` : '';
   if (window.location.hash !== newHash) {
-    window.history.replaceState(null, '', newHash || window.location.pathname);
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${window.location.pathname}${window.location.search}${newHash}`,
+    );
     notifyParent(newHash);
   }
 }
@@ -126,15 +145,12 @@ export function notifyParent(hash: string): void {
   const hashWithoutPrefix = hash.startsWith('#') ? hash.slice(1) : hash;
 
   // Send hashchange message for compatibility with IframeContent component
-  window.parent.postMessage(
-    { type: 'hashchange', hash: hashWithoutPrefix },
-    '*'
-  );
+  window.parent.postMessage({ type: 'hashchange', hash: hashWithoutPrefix }, '*');
 
   // Also send pathchange for alternative routing patterns
   window.parent.postMessage(
     { type: 'pathchange', path: hashWithoutPrefix ? `/${hashWithoutPrefix}` : '/' },
-    '*'
+    '*',
   );
 }
 
@@ -163,7 +179,7 @@ export function sendMessageToParent(type: string, data: Record<string, unknown> 
  * Notify parent that the dashboard is ready
  */
 export function notifyReady(): void {
-  sendMessageToParent('ready', { source: 'co-initiative-195' });
+  sendMessageToParent('ready', { source: 'ballot-measures-2026' });
 }
 
 /**

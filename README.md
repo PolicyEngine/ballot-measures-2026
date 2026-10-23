@@ -1,137 +1,123 @@
-# Colorado Initiative 195 (Amendment 87) dashboard
+# 2026 ballot measures dashboard
 
-Models the impact of Colorado Initiative 195 — ballot designation
-"Amendment 87" on the November 2026 ballot — which would replace Colorado's
-4.4% flat income tax with six graduated brackets on Colorado taxable income,
-uniform across filing statuses, effective tax year 2027:
+PolicyEngine's dashboard of state ballot measures on the November 3, 2026
+ballot that change household taxes or benefits, served at
+`policyengine.org/us/ballot-measures-2026`. For each measure it shows what
+happens to households and the state budget if the measure passes, compared
+with current law, next to the official estimates.
 
-| Colorado taxable income | Rate |
-|---|---|
-| $0 – $25,000 | 3.7% |
-| $25,000 – $100,000 | 4.2% |
-| $100,000 – $500,000 | 4.4% |
-| $500,000 – $750,000 | 7.4% |
-| $750,000 – $1,000,000 | 7.9% |
-| Over $1,000,000 | 8.4% |
+| Measure | What passing it does | Tax years | Kind |
+|---|---|---|---|
+| Colorado Amendment 87 | Six graduated income tax rates (3.7%-8.4%) replace the 4.4% flat rate | 2027 | income tax |
+| Colorado Proposition NN | The state keeps the TABOR surplus, so no six-tier sales tax refund | 2027, 2028 | TABOR refund |
+| California Proposition 3 | The 10.3%, 11.3% and 12.3% rates continue after 2030 | 2031 | income tax |
+| Washington Initiative 645 | Repeals the 9.9% tax on income over $1 million | 2028, 2029 | income tax |
+| North Dakota Measure No. 2 | Free breakfast and lunch at every public school | 2028 | school meals |
+| South Dakota Amendment I | Scenario: Medicaid expansion ends if the federal share falls below 90% | 2028 | Medicaid |
 
-Official text: [Initiative 195 final filing](https://www.sos.state.co.us/pubs/elections/Initiatives/titleBoard/filings/2025-2026/195Final.pdf).
+`ballot_calc/measures.py` is the single source of truth for each measure:
+the parameter overrides that define current law and the measure passing,
+the years scored, the variables that carry the budget effect, the official
+estimates and the North Dakota participation inputs. Impact everywhere is
+(measure passes) − (current law).
 
-## How it is modeled
+## Layout
 
-- **Reform (forward direction)**: baseline = current law (flat 4.4%); reform
-  sets the contributed parameter
-  `gov.contrib.states.co.progressive_income_tax.in_effect` to true from
-  2027-01-01 (policyengine-us PR #9431). Everywhere in this repository,
-  `impact = reform − baseline`.
-- **Pin**: `policyengine-us==1.825.0` — the first release containing PR
-  #9431. The pin lives in three synchronized places: `pyproject.toml`,
-  `co_tax_calc/reforms.py`, `scripts/modal_pipeline.py`. The pipeline raises
-  at startup if the reform produces no CO income-tax revenue delta
-  (stale-pin guard). Do not substitute the `policyengine` wrapper package —
-  its latest bundle pins policyengine-us 1.764.6, which predates the contrib
-  parameter.
-- **Dataset**: Populace build P ACS local-area national file (~1.6M
-  households, PUMA-assigned CD-119 / county / state geography) from the HF
-  dataset repo `policyengine/populace-us`, revision
-  `populace-us-2024-buildp-acs-local-592ae5d6-20260819T020303Z`, file
-  `populace_us_2024_acs_local.h5`, loaded via `hf_hub_download` then
-  `Microsimulation(dataset=<path>)`. Colorado = `state_fips` 8; districts =
-  `congressional_district_geoid` 801..808 (SSDD encoding). Because the
-  initiative only affects Colorado, the pipeline subsets the CO households
-  (with all linked member entities, weights preserved — ~30–50k households)
-  into a CO-only h5 before simulating, cached in the results Volume keyed
-  by dataset revision, so the simulation itself runs in minutes.
-- **Year**: tax year 2027 only.
-- **Python package**: `co_tax_calc/` (reform definition, household situation
-  builder, statewide microsimulation).
-- **Frontend**: `frontend/` (Next.js / Tailwind).
+- `ballot_calc/` — registry (`measures.py`, `states.py`, `config.py`),
+  state subsets (`subset.py`), one simulation pass per measure-year-policy
+  (`passes.py`), pure-numpy reducers (`metrics/`), CSV rows (`outputs.py`),
+  the `measures.json` export (`export.py`) and the household calculator
+  (`household.py`).
+- `scripts/modal_pipeline.py` — the Modal pipeline behind every statewide,
+  distributional and district figure; `scripts/DATA_SCHEMA.md` is the data
+  contract the frontend codes against.
+- `scripts/modal_household_api.py`, `scripts/compute_example_households.py`
+  — the household calculator endpoint and the precomputed examples.
+- `scripts/diagnostics/` — `tail_analysis.py` prints the IRS SOI top-income
+  comparison the pipeline computes for CO, CA and WA (`top_tail.json`);
+  `poverty_flips.py` breaks down who crosses the poverty line in the
+  top-income measures (`poverty_flips.json`).
+- `frontend/` — Next.js dashboard (landing page plus one route per measure).
 
-## Data pipelines
+## How the numbers are made
 
-Output schemas are documented in [`scripts/DATA_SCHEMA.md`](scripts/DATA_SCHEMA.md)
-(the contract the frontend is coded against).
+- **Model**: `policyengine-us==2.60.4` (pinned in `pyproject.toml`,
+  `ballot_calc/config.py` and the Modal scripts; a test keeps them equal).
+- **Data**: the Populace ACS local-area national file
+  (`policyengine/populace-us`, `populace_us_2024_acs_local.h5`, revision
+  `populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z`).
+- **Subsets**: one 64 GB Modal container loads the national tables once and
+  writes each state's households (with their people, tax units, SPM units,
+  families and marital units, weights unchanged). Model inputs that are NaN
+  in the national file (`parent_1_id`/`parent_2_id` for CPS-donor records)
+  take their defaults, and SPM units without an adult are fixed.
+- **Passes**: each (measure, year) runs a current-law and a passes
+  simulation in separate containers (`dataset_end_year` = the scored year;
+  peak memory 1.5-15 GB). Household net income is computed first
+  (policyengine-us#9740). Passes are cached on the Volume by a key of their
+  overrides, pin and array schema.
+- **Guard**: a measure-year's results are written only if its target
+  variable moves the expected way by more than 0.1% of its current-law total.
+- **Poverty**: SPM resources get back the partnership and S corporation
+  income, farm rent and Alaska dividend that policyengine-us 2.60.4 leaves
+  out of them while taxing (policyengine-us#9919); see
+  `scripts/DATA_SCHEMA.md`.
+- **South Dakota**: the model has about twice the administrative expansion
+  enrollment, so coverage and budget figures are scaled to DSS's 29,055
+  (unscaled values keep a `_model` suffix).
+- **Top incomes**: headlines are the model's own numbers; the IRS
+  SOI-coverage-scaled revenue (`revenue_coverage_scaled`) is for the
+  methodology tab. District breakdowns are shown only for the two Colorado
+  measures (`show_districts`).
+- **North Dakota**: the model values meals at 100% take-up for every child
+  aged 5-17; the dashboard's figures are participation-adjusted (current
+  participation for the low case, plus the rise seen in universal-meal
+  states for the high case; see `scripts/DATA_SCHEMA.md`).
+
+## Running it
+
+Heavy compute runs on Modal (profile `policyengine`); never run
+microsimulations locally. On Windows, the Make targets set
+`PYTHONIOENCODING=utf-8 PYTHONUTF8=1`, which the Modal CLI needs.
 
 ```bash
 # One-time setup
 uv venv --python 3.13 .venv
 uv pip install -p .venv/Scripts/python.exe -e ".[dev]"
 
-# ALL five CSVs — statewide + congressional districts — in one Modal job
-# (single national baseline + reform pass on the build P acs-local file).
-# Detach-safe: the remote function writes + commits every CSV plus a
-# manifest.json to the Modal Volume "co-initiative-195-results", so the
-# run survives local driver death.
-modal run --detach scripts/modal_pipeline.py::kickoff
-
-# After the job completes (check `modal app list` / the app logs), fetch
-# the CSVs from the Volume into frontend/public/data/ (seconds; verifies
-# the manifest's pin and file list first)
-modal run scripts/modal_pipeline.py::fetch
-# equivalent manual fetch:
-#   modal volume get co-initiative-195-results / frontend/public/data/
-
-# Example household profiles + income sweeps (local, no Modal)
-.venv/Scripts/python.exe scripts/compute_example_households.py
-
-# Python tests
-.venv/Scripts/python.exe -m pytest tests
+make test-python      # fast tests, no policyengine import (seconds)
+make export           # rewrite frontend/public/data/measures.json
+make preflight        # one household per measure through the pipeline's policies
+make pipeline         # spawn the full run (subsets, 16 passes, reduce); detach-safe
+make pipeline-status  # passes and partials on the Volume
+make pipeline-fetch   # verify pin, registry hash, completeness; download the files
+make top-tail         # print the IRS SOI top-income comparison (CO, CA, WA)
+make poverty-flips    # who crosses the poverty line in the top-income measures
+make test-slow        # slow household tests on Modal
 ```
 
-All outputs land in `frontend/public/data/` and are committed. The map
-geojson (`frontend/public/data/geojson/`) is national 119th-Congress data and
-already includes Colorado's 8 districts (`DISTRICT_ID` CO-01..CO-08).
+Rerun part of the pipeline with
+`modal run --detach scripts/modal_pipeline.py::kickoff --only co-prop-nn`
+(or `--only wa-i-645:2029`); cached passes are skipped and the CSVs are
+rebuilt from every partial on the Volume. `--revision buildo-0923` selects
+the earlier dataset build.
+
+After changing a computational field in `ballot_calc/measures.py`, rerun the
+pipeline and fetch: `make pipeline-fetch` refuses results whose registry
+hash differs from the local registry, and `tests/test_csv_data.py` skips
+until they match.
 
 ## Frontend
-
-`frontend/` is a Next.js (App Router) + Tailwind v4 single-page dashboard
-with five tabs (`TAB_CONFIG` in `app/(shell)/page.tsx`):
-
-1. **Policy overview** — the six-bracket table, who is affected, effective
-   dates, and the Amendment 87 ballot designation.
-2. **Household impact** — live calculator against
-   `https://api.policyengine.org/us/calculate` (no backend server): baseline
-   vs. the single contrib-parameter reform, state `CO`, tax year 2027,
-   employment-income sweep to $1,300,000 so all six brackets are visible.
-   Precomputed example-household cards load instantly from
-   `public/data/example_households.json`.
-3. **Statewide impact** — precomputed Modal results (revenue, distributional,
-   winners/losers, poverty) read from the plain-named CSVs in
-   `public/data/` per `scripts/DATA_SCHEMA.md`.
-4. **Congressional districts** — SVG choropleth plus table for CO-01..CO-08,
-   reading `congressional_districts.csv` and the committed geojson.
-5. **Validation & methodology** — model revenue vs. the Legislative Council
-   Staff fiscal impact statement, methodology, and the known modeling
-   limitations below.
-
-Every tab that depends on precomputed data renders a clear "not yet
-available" state until the pipelines have run, so the app builds and deploys
-before the Modal precompute.
 
 ```bash
 cd frontend
 npm install
-npm run dev    # http://localhost:3010 (set NEXT_PUBLIC_BASE_PATH="" for local dev)
+npm run dev    # local dev
 npm test       # vitest
-npm run build  # production build (basePath /us/co-initiative-195)
+npm run build  # production build (basePath /us/ballot-measures-2026)
 ```
-
-## Known modeling limitations
-
-- The initiative's (1.8)(b) home-sale carve-out (section 121-excess gains
-  taxed at a flat 4.4%) is not modeled: this understates tax for filers at or
-  below $100,000 with such gains, has no effect between $100,000 and
-  $500,000, and overstates tax above $500,000.
-- The corporate schedule (Section 4) and TABOR / Colorado's Future Fund
-  accounting (Section 5) are outside the household model's scope.
-- Statewide and district results come from the same national pass on one
-  file, so district totals aggregate consistently to statewide; district
-  geography is PUMA-assigned, however, so households are placed in CD-119
-  districts via PUMA-to-district mappings rather than exact addresses.
 
 ## Deploy
 
-Vercel project `co-initiative-195`, multi-zone basePath
-`/us/co-initiative-195` (`vercel deploy --prod --scope policy-engine`, plus
-an appZoneRoutes entry).
-
-Live: TBD.
+Branch + pull request + Vercel preview; production deploys (Vercel and the
+Modal household endpoint) only after the dashboard PR is approved.
