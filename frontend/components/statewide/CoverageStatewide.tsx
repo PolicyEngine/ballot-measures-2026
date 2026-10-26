@@ -8,9 +8,11 @@
  * model's values before calibration.
  */
 
+import { enrollmentScalingNote, modelBeforeCalibration } from '@/lib/figureBasis';
 import { formatCompactUSD, formatCount, formatShare } from '@/lib/format';
 import { MEDICAID_METRICS as MC } from '@/lib/metrics';
 import { metric, type StatewideResults } from '@/lib/results';
+import { BasisBadge, BasisNote } from '../FigureBasis';
 import { Callout, MetricCard } from '../ui';
 import { show, signedMoney } from './KindSummary';
 
@@ -27,6 +29,11 @@ export default function CoverageStatewide({ data }: { data: StatewideResults }) 
   // enrollment they are scaled to (baseline_expansion_enrollees stays the model's).
   const enrolled = metric(m, MC.adminExpansionEnrollees) ?? metric(m, MC.baselineExpansionEnrollees);
   const calibrated = metric(m, MC.enrollmentCalibrationFactor) !== null;
+  const scaling = enrollmentScalingNote(m);
+  // Calibrated cards: the pill and the model's value before calibration.
+  const basis = calibrated ? { badge: <BasisBadge basis="calibrated" /> } : {};
+  const before = (key: string, unit: 'people' | 'usd') =>
+    calibrated ? modelBeforeCalibration(m, key, unit) : null;
   const share = (v: number | null) => (v !== null && losing ? formatShare(v / losing) : null);
   const withShare = (v: number | null, text: string) => {
     const s = share(v);
@@ -44,30 +51,39 @@ export default function CoverageStatewide({ data }: { data: StatewideResults }) 
         <h3 id="coverage-people-heading" className="text-lg font-semibold text-gray-800">
           Health coverage in the scenario, {data.year}
         </h3>
+        {calibrated && scaling && <BasisNote basis="calibrated">{scaling}</BasisNote>}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <MetricCard
             label="People losing Medicaid"
+            {...basis}
             value={show(losing, formatCount)}
             detail={
               enrolled === null
                 ? 'Adults covered through expansion'
                 : `Of ${formatCount(enrolled)} enrolled through expansion under current law`
             }
+            footnote={before(MC.peopleLosingMedicaid, 'people')}
           />
           <MetricCard
             label="In the coverage gap"
+            {...basis}
             value={show(below, formatCount)}
             detail={withShare(below, 'income below the poverty line, with no subsidized marketplace option')}
+            footnote={before(MC.losingBelow100fpl, 'people')}
           />
           <MetricCard
             label="Income at or above the poverty line (may qualify for marketplace subsidies)"
+            {...basis}
             value={show(above, formatCount)}
             detail={withShare(above, '') || undefined}
+            footnote={before(MC.losing100PlusFpl, 'people')}
           />
           <MetricCard
             label="Gaining a premium tax credit"
+            {...basis}
             value={show(gaining, formatCount)}
             detail="People losing Medicaid whose premium tax credit rises, allowing for those who do not enroll"
+            footnote={before(MC.gainingPtc, 'people')}
           />
         </div>
       </section>
@@ -79,6 +95,8 @@ export default function CoverageStatewide({ data }: { data: StatewideResults }) 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <MetricCard
             label="Change in state Medicaid spending"
+            {...basis}
+            footnote={before(MC.medicaidStateCostChange, 'usd')}
             value={show(metric(m, MC.medicaidStateCostChange), signedMoney)}
             detail={`The state's 10% share of expansion costs under current law.${
               perTenPoints
@@ -88,11 +106,15 @@ export default function CoverageStatewide({ data }: { data: StatewideResults }) 
           />
           <MetricCard
             label="Change in federal Medicaid spending"
+            {...basis}
+            footnote={before(MC.medicaidFederalCostChange, 'usd')}
             value={show(metric(m, MC.medicaidFederalCostChange), signedMoney)}
             detail="The federal share of expansion costs"
           />
           <MetricCard
             label="Change in premium tax credits"
+            {...basis}
+            footnote={before(MC.ptcChange, 'usd')}
             value={show(metric(m, MC.ptcChange), signedMoney)}
             detail="Federal credits for people who move to marketplace coverage"
           />
@@ -101,9 +123,6 @@ export default function CoverageStatewide({ data }: { data: StatewideResults }) 
           Negative values mean less spending. Spending changes compare the scenario with current law
           at today&apos;s federal share; the methodology tab shows how the state&apos;s cost would
           change with a lower federal share.
-          {calibrated
-            ? ' Counts and costs are calibrated to the Department of Social Services’ expansion enrollment; the methodology tab shows the model’s values before calibration.'
-            : ''}
         </p>
       </section>
 

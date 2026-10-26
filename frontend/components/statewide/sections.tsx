@@ -20,6 +20,8 @@ import {
   formatPercentagePoints,
   formatUSDWithSign,
 } from '@/lib/format';
+import { SPM_ADJUSTMENT_NOTE } from '@/lib/figureBasis';
+import { useManifest } from '@/lib/measures';
 import { CORE_METRICS as C, POVERTY_MEASURES, povertyMetric } from '@/lib/metrics';
 import type { Measure } from '@/lib/registry';
 import { metric, type StatewideResults } from '@/lib/results';
@@ -35,6 +37,7 @@ import {
   WrappedTick,
   niceDomain,
 } from '../chartUtils';
+import { BasisNote } from '../FigureBasis';
 import { CompareTable, toneOf, toneText } from '../ui';
 import { kindDetailRows, show, signedMoney } from './KindSummary';
 
@@ -391,6 +394,8 @@ export function IncomeBandsSection({ data }: { data: StatewideResults }) {
 
 export function PovertySection({ data }: { data: StatewideResults }) {
   const m = data.metrics;
+  const { data: manifest } = useManifest();
+  const spmAdjusted = manifest?.spm_resources_adjustment?.applied === true;
   const rows = POVERTY_MEASURES.map((p) => ({
     ...p,
     baseline: metric(m, povertyMetric(p.key, 'baseline_rate')),
@@ -423,6 +428,7 @@ export function PovertySection({ data }: { data: StatewideResults }) {
 
   return (
     <div className="space-y-8">
+      {spmAdjusted && <BasisNote basis="adjusted">{SPM_ADJUSTMENT_NOTE}</BasisNote>}
       {chartData.length > 0 ? (
         <ChartFigure
           title="Percent change in poverty rates"

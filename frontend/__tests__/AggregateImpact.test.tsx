@@ -52,7 +52,7 @@ describe('AggregateImpact', () => {
     expect(screen.getByText('Change in federal Medicaid spending')).toBeInTheDocument();
     expect(screen.getByText('Change in premium tax credits')).toBeInTheDocument();
     expect(screen.getByText(/shown in people and government spending rather than household net income/)).toBeInTheDocument();
-    expect(screen.getByText(/calibrated to the Department of Social Services/)).toBeInTheDocument();
+    expect(screen.getByText(/Scaled to the Department of Social Services’ 29,055 expansion enrollees \(×0\.52\)/)).toBeInTheDocument();
     // No net-income sections.
     expect(screen.queryByRole('tablist', { name: 'Statewide sections' })).toBeNull();
     expect(screen.queryByText('Average change in household net income')).toBeNull();

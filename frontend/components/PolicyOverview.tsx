@@ -3,8 +3,10 @@
 import { getContent, type Comparison, type Reference, type SimpleTable } from '@/content/measures';
 import { formatLongDate } from '@/lib/format';
 import { ELECTION_DATE, useMetrics, type Measure } from '@/lib/measures';
+import { headlineBasisNote, measureBasis } from '@/lib/figureBasis';
 import { headlineFor } from '@/lib/metrics';
 import { yearsLabel } from './MeasureCard';
+import { BasisBadge, BasisNote } from './FigureBasis';
 import { ExternalLink } from './ui';
 
 /** "Sources: Blue Book, page 4; Blue Book, page 33" under a statement. */
@@ -113,10 +115,14 @@ export function SimpleDataTable({ table }: { table: SimpleTable }) {
 function AtAGlance({ measure }: { measure: Measure }) {
   const { data: metrics, isLoading } = useMetrics(measure.slug, measure.headline_year);
   const headline = headlineFor(measure, metrics);
+  const basisNote = headline.model ? headlineBasisNote(measure, metrics) : null;
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-        <p className="text-sm text-gray-600">PolicyEngine estimate</p>
+        <p className="text-sm text-gray-600 flex flex-wrap items-center gap-2">
+          PolicyEngine estimate
+          <BasisBadge basis={measureBasis(measure)} />
+        </p>
         <p className="text-2xl font-bold tabular-nums text-gray-900 mt-1">
           {headline.model ?? (
             <span className="text-base font-medium text-gray-500">
@@ -125,6 +131,9 @@ function AtAGlance({ measure }: { measure: Measure }) {
           )}
         </p>
         <p className="text-xs text-gray-500 mt-1">{headline.label}</p>
+        {basisNote && (
+          <BasisNote className="mt-2 border-t border-gray-200 pt-2">{basisNote}</BasisNote>
+        )}
       </div>
       <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
         <p className="text-sm text-gray-600">{headline.officialLabel}</p>

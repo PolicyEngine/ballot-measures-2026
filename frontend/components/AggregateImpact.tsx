@@ -6,6 +6,8 @@ import { useStatewideResults, type Measure } from '@/lib/measures';
 import { CORE_METRICS } from '@/lib/metrics';
 import { metric, type StatewideResults } from '@/lib/results';
 import DownloadResults from './DownloadResults';
+import { FORECAST_INPUT_NOTE } from '@/lib/figureBasis';
+import { BasisNote } from './FigureBasis';
 import { Callout, Loading, ResultsUnavailable, rovingKeyDown } from './ui';
 import CoverageStatewide from './statewide/CoverageStatewide';
 import { KindHeadlineCards } from './statewide/KindSummary';
@@ -66,6 +68,7 @@ function NetIncomeStatewide({ measure, data }: { measure: Measure; data: Statewi
   return (
     <>
       <KindHeadlineCards measure={measure} metrics={data.metrics} />
+      {measure.kind === 'tabor_refund' && <BasisNote basis="forecast">{FORECAST_INPUT_NOTE}</BasisNote>}
       <PrecisionNote metrics={data.metrics} />
 
       <div
@@ -100,6 +103,13 @@ function NetIncomeStatewide({ measure, data }: { measure: Measure; data: Statewi
         ))}
       </div>
 
+      {measure.kind === 'school_meals' && (
+        <BasisNote basis="calibrated">
+          Household gains in these sections, including the poverty figures, use the
+          participation-adjusted midpoint of the low and high cases, not the model&apos;s
+          assumption that every student eats both meals every day.
+        </BasisNote>
+      )}
       {section === 'budget' && <BudgetSection measure={measure} data={data} />}
       {section === 'distributional' && <DistributionalSection data={data} />}
       {section === 'winners' && <WinnersSection data={data} />}

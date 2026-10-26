@@ -69,26 +69,37 @@ export function MetricCard({
   detail,
   tone = 'neutral',
   badge,
+  footnote,
 }: {
   label: string;
   value: string;
   detail?: React.ReactNode;
   tone?: Tone;
-  badge?: string;
+  /** A short pill beside the label (text), or a node such as a BasisBadge. */
+  badge?: React.ReactNode;
+  /** A line under the detail, e.g. the model's value before calibration. */
+  footnote?: React.ReactNode;
 }) {
   const t = CARD_TONES[tone];
   return (
     <div className={`rounded-lg border p-4 ${t.box}`}>
       <p className="text-sm text-gray-700 mb-1 flex flex-wrap items-center gap-2">
         {label}
-        {badge && (
+        {typeof badge === 'string' ? (
           <span className="rounded-full bg-white border border-gray-200 px-2 py-0.5 text-[11px] font-medium text-gray-600">
             {badge}
           </span>
+        ) : (
+          badge
         )}
       </p>
       <p className={`text-2xl font-bold tabular-nums ${t.value}`}>{value}</p>
       {detail && <p className="text-xs text-gray-500 mt-1">{detail}</p>}
+      {footnote && (
+        <p className="text-[11px] leading-4 text-gray-500 mt-2 border-t border-gray-200 pt-2" data-testid="card-footnote">
+          {footnote}
+        </p>
+      )}
     </div>
   );
 }

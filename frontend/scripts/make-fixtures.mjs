@@ -92,6 +92,10 @@ const csv = (header, rows) => [header.join(','), ...rows.map((r) => r.map(field)
 // ── Statewide files ─────────────────────────────────────────────────────
 
 const metricsRows = [];
+// manifest.json diagnostics: the poverty metrics on the model's own SPM
+// resources, before the pipeline adds omitted income back (synthetic: the
+// current-law rates run 0.6 points higher, the changes match).
+const DIAGNOSTICS = {};
 const decileRows = [];
 const wlRows = [];
 const bracketRows = [];
@@ -231,6 +235,12 @@ for (const m of REGISTRY.measures) {
     for (const [metric, value] of Object.entries(metrics)) {
       metricsRows.push([m.slug, year, metric, round(value, 4)]);
     }
+    const povertyModel = Object.fromEntries(
+      Object.entries(metrics)
+        .filter(([k]) => /poverty_(baseline_rate|reform_rate|rate_change|percent_change)$|_(lifted_out_of|pushed_into)_poverty$/.test(k))
+        .map(([k, v]) => [k, /_(baseline|reform)_rate$/.test(k) ? round(v + 0.6, 3) : v]),
+    );
+    DIAGNOSTICS[`${m.slug}:${year}`] = { poverty_model_spm_resources: povertyModel };
 
     // Deciles (households per decile = households / 10). A shape with mixed
     // signs carries the household-side sign in its weights.
@@ -547,6 +557,7 @@ const manifest = {
     ),
   ),
   top_tail: topTailFixture(),
+  diagnostics: DIAGNOSTICS,
   // Same shape as the pipeline's manifest.
   spm_resources_adjustment: {
     applied: true,

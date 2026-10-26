@@ -1,7 +1,8 @@
 'use client';
 
 import { getContent } from '@/content/measures';
-import { formatCount, formatPercent, formatTimestamp } from '@/lib/format';
+import { FIGURE_BASIS_ID, figureBasisRows } from '@/lib/figureBasis';
+import { formatCount, formatPercent, formatPercentagePoints, formatTimestamp } from '@/lib/format';
 import {
   REGISTRY,
   topTailFor,
@@ -11,6 +12,8 @@ import {
   type Measure,
 } from '@/lib/measures';
 import {
+  POVERTY_MEASURES,
+  povertyMetric,
   CORE_METRICS as C,
   MEDICAID_METRICS as MC,
   SCHOOL_MEALS_METRICS as SM,
@@ -23,6 +26,7 @@ import {
 import { STATEWIDE_FILES, metric, metricsFor } from '@/lib/results';
 import { SimpleDataTable } from './PolicyOverview';
 import { asPercent } from './statewide/KindSummary';
+import { BasisBadge } from './FigureBasis';
 import { Callout, CompareTable, ExternalLink } from './ui';
 
 const DASH = '—';
@@ -523,6 +527,90 @@ function ModelAndData({ measure, manifest }: { measure: Measure; manifest: Manif
   );
 }
 
+/** The methodology tab's opening table: each figure's basis and its factor or source. */
+export function FigureBasisTable({
+  measure,
+  year,
+  metrics,
+  manifest,
+}: {
+  measure: Measure;
+  year: number;
+  metrics: Record<string, number> | null;
+  manifest: Manifest | null | undefined;
+}) {
+  const rows = figureBasisRows(measure, metrics, manifest?.spm_resources_adjustment?.applied === true);
+  return (
+    <CompareTable
+      caption={`Basis of each figure, ${year}`}
+      firstColumn="Figure"
+      columns={['Basis', 'Factor or source']}
+      align="left"
+      rows={rows.map((r) => ({
+        label: r.figure,
+        values: [
+          <span key="basis" className="flex flex-wrap gap-1">
+            {r.bases.map((b) => (
+              <BasisBadge key={b} basis={b} />
+            ))}
+          </span>,
+          <span key="source" className="text-gray-700">
+            {r.source}
+          </span>,
+        ],
+      }))}
+    />
+  );
+}
+
+type PovertyFigures = Record<string, number>;
+
+const show = (v: number | null, f: (v: number) => string) => (v === null ? DASH : f(v));
+
+/**
+ * Poverty on the model's own SPM resources (manifest diagnostics) beside the
+ * published figures, which add omitted income back; null without the
+ * diagnostics or for the Medicaid scenario, which shows no poverty figures.
+ */
+export function PovertyBasisTable({
+  measure,
+  year,
+  metrics,
+  manifest,
+}: {
+  measure: Measure;
+  year: number;
+  metrics: Record<string, number> | null;
+  manifest: Manifest | null | undefined;
+}) {
+  if (measure.kind === 'medicaid') return null;
+  const diagnostics = manifest?.diagnostics as Record<string, { poverty_model_spm_resources?: PovertyFigures }> | undefined;
+  const model = diagnostics?.[`${measure.slug}:${year}`]?.poverty_model_spm_resources;
+  if (!model) return null;
+  const pair = (key: string, f: (v: number) => string) => [
+    show(metric(model, key), f),
+    show(metric(metrics, key), f),
+  ];
+  const pp = (v: number) => formatPercentagePoints(v, 2);
+  const rows = [
+    { label: 'Poverty rate under current law', values: pair(povertyMetric('poverty', 'baseline_rate'), (v) => formatPercent(v, 2)) },
+    ...POVERTY_MEASURES.map((p) => ({
+      label: `Change in ${p.label.toLowerCase()} rate`,
+      values: pair(povertyMetric(p.key, 'rate_change'), pp),
+    })),
+    { label: 'People moved out of poverty', values: pair(C.peopleLiftedOutOfPoverty, formatCount) },
+    { label: 'People moved into poverty', values: pair(C.peoplePushedIntoPoverty, formatCount) },
+  ];
+  return (
+    <CompareTable
+      caption={`Poverty on the model's SPM resources and as published, ${year}`}
+      firstColumn="Measure"
+      columns={["Model's SPM resources", 'Published (omitted income added)']}
+      rows={rows}
+    />
+  );
+}
+
 interface Props {
   measure: Measure;
   year: number;
@@ -538,6 +626,20 @@ export default function ValidationMethodology({ measure, year }: Props) {
 
   return (
     <div className="space-y-10">
+      <section id={FIGURE_BASIS_ID} aria-labelledby="figure-basis-heading" className="space-y-4 scroll-mt-32">
+        <h2 id="figure-basis-heading" className="text-2xl font-bold text-gray-900">
+          Which figures are calibrated
+        </h2>
+        <p className="text-sm text-gray-700">
+          Model estimates are PolicyEngine&apos;s output as is. Calibrated figures adjust that
+          output to administrative data after the run. Figures with a forecast input use an
+          official forecast in place of a model input. Adjusted poverty figures add income that
+          the released model leaves out of poverty resources.
+        </p>
+        <FigureBasisTable measure={measure} year={year} metrics={metricsByYear[year] ?? null} manifest={manifest} />
+        <PovertyBasisTable measure={measure} year={year} metrics={metricsByYear[year] ?? null} manifest={manifest} />
+      </section>
+
       <section aria-labelledby="validation-heading" className="space-y-4">
         <h2 id="validation-heading" className="text-2xl font-bold text-gray-900">
           Validation

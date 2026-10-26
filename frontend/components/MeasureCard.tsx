@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { getContent } from '@/content/measures';
+import { headlineBasisNote, measureBasis } from '@/lib/figureBasis';
 import { headlineFor, type Metrics } from '@/lib/metrics';
 import type { Measure } from '@/lib/registry';
 import { lowerFirst } from '@/lib/text';
+import { BasisBadge } from './FigureBasis';
 
 /** "Tax year 2027" / "Tax years 2028 and 2029" */
 export const yearsLabel = (years: number[]): string =>
@@ -25,6 +27,8 @@ export default function MeasureCard({ measure, metrics, loading = false }: Props
   const content = getContent(measure.slug);
   const headline = headlineFor(measure, metrics);
   const conditional = measure.kind_params?.conditional === true;
+  // The card is one link, so its note carries no methodology link of its own.
+  const basisNote = headline.model ? headlineBasisNote(measure, metrics) : null;
 
   return (
     <Link
@@ -49,7 +53,10 @@ export default function MeasureCard({ measure, metrics, loading = false }: Props
 
       <dl className="mt-4 grid grid-cols-2 gap-3 border-t border-gray-100 pt-4">
         <div>
-          <dt className="text-xs text-gray-500">PolicyEngine: {lowerFirst(headline.label)}</dt>
+          <dt className="text-xs text-gray-500">
+            <span className="mr-1">PolicyEngine: {lowerFirst(headline.label)}</span>
+            <BasisBadge basis={measureBasis(measure)} />
+          </dt>
           <dd className="mt-0.5 text-xl font-bold tabular-nums text-gray-900">
             {headline.model ?? (
               <span className="text-sm font-medium text-gray-500">
@@ -67,6 +74,11 @@ export default function MeasureCard({ measure, metrics, loading = false }: Props
             <dd className="text-[11px] leading-4 text-gray-500 mt-0.5">{headline.officialSource}</dd>
           )}
         </div>
+        {basisNote && (
+          <p className="col-span-2 text-[11px] leading-4 text-gray-500" data-testid="headline-basis-note">
+            {basisNote}
+          </p>
+        )}
       </dl>
 
       <div className="mt-auto flex items-center justify-between pt-4 text-sm">

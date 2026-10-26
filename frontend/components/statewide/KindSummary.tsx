@@ -26,8 +26,10 @@ import {
   metricRange,
   type Metrics,
 } from '@/lib/metrics';
+import { mealsModelNote, studentsModelNote } from '@/lib/figureBasis';
 import type { Measure } from '@/lib/registry';
 import { metric } from '@/lib/results';
+import { BasisBadge } from '../FigureBasis';
 import { MetricCard } from '../ui';
 
 const DASH = '—';
@@ -95,6 +97,7 @@ export function KindHeadlineCards({ measure, metrics }: { measure: Measure; metr
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <MetricCard
             label="Change in state income tax revenue"
+            badge={<BasisBadge basis="model" />}
             value={show(metric(m, C.stateBudgetImpact), signedMoney)}
             detail="Positive means the state collects more"
           />
@@ -117,12 +120,14 @@ export function KindHeadlineCards({ measure, metrics }: { measure: Measure; metr
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <MetricCard
             label="Sales tax refunds not paid"
+            badge={<BasisBadge basis="forecast" />}
             value={show(metric(m, C.stateBudgetImpact), money)}
             detail="Revenue the state keeps if the measure passes"
           />
           <AverageChangeCard metrics={m} />
           <MetricCard
             label="Refunds under current law"
+            badge={<BasisBadge basis="forecast" />}
             value={show(metric(m, TR.refundTotalBaseline), money)}
             detail={
               recipients === null
@@ -138,26 +143,29 @@ export function KindHeadlineCards({ measure, metrics }: { measure: Measure; metr
     }
     case 'school_meals': {
       const students = newlyFreeStudents(m);
+      const mealsNote = mealsModelNote(m);
       return (
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <MetricCard
             label="State cost per year"
+            badge={<BasisBadge basis="calibrated" />}
             value={range(m, 'state_cost_adjusted')}
             detail="Low and high participation cases"
+            footnote={mealsNote}
           />
           <MetricCard
             label="Students newly qualifying for free meals"
+            badge={<BasisBadge basis="calibrated" />}
             value={show(students.scaled, formatCount)}
-            detail={
-              students.model !== null && students.scaled !== students.model
-                ? `Scaled to public school enrollment (model count ${formatCount(students.model)})`
-                : 'Students who would pay full or reduced price under current law'
-            }
+            detail="Students who would pay full or reduced price under current law"
+            footnote={studentsModelNote(m)}
           />
           <MetricCard
             label="Value of meals to families per year"
+            badge={<BasisBadge basis="calibrated" />}
             value={range(m, 'meal_value_change_adjusted')}
             detail="Low and high participation cases"
+            footnote={mealsNote}
           />
         </div>
       );

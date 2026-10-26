@@ -3,7 +3,9 @@
 import { useRef } from 'react';
 import { useIsFetching } from '@tanstack/react-query';
 import { getContent } from '@/content/measures';
+import { householdBasisNote } from '@/lib/figureBasis';
 import ExampleHouseholds from './ExampleHouseholds';
+import { BasisNote } from './FigureBasis';
 import HouseholdForm from './HouseholdForm';
 import ImpactAnalysis from './ImpactAnalysis';
 import { Callout } from './ui';
@@ -87,6 +89,9 @@ export default function HouseholdTab({ measure, year, state, setState }: Props) 
   return (
     <div className="space-y-6">
       <p className="text-gray-700">{content.householdNote}</p>
+      <BasisNote basis="model" link={false} className="-mt-3">
+        {householdBasisNote(measure)}
+      </BasisNote>
 
       <ExampleHouseholds
         measure={measure}
