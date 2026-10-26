@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import Providers from '@/components/Providers';
+import { BASE_PATH, IS_PRODUCTION_DEPLOYMENT, SITE_URL } from '@/lib/config';
 
 const GA_ID = 'G-2YHG89FY0N';
 
@@ -12,14 +13,12 @@ const inter = Inter({
   display: 'swap',
 });
 
-const SITE_URL = 'https://policyengine.org/us/co-initiative-195';
-
-const TITLE = 'Colorado Initiative 195 (Amendment 87) impact dashboard';
+const TITLE = '2026 ballot measures: taxes and benefits';
 const DESCRIPTION =
-  'Estimate how Colorado Initiative 195 (Amendment 87), which would replace the 4.4% flat income tax with six graduated brackets starting tax year 2027, would affect your household, statewide revenue, and each congressional district.';
+  "Estimate how six measures on the November 3, 2026 ballot in California, Colorado, North Dakota, South Dakota and Washington would change household taxes and benefits (South Dakota's as a conditional scenario), if they pass, compared with current law.";
 
 export const metadata: Metadata = {
-  title: TITLE,
+  title: { default: TITLE, template: '%s | PolicyEngine' },
   description: DESCRIPTION,
   metadataBase: new URL(SITE_URL),
   alternates: {
@@ -39,14 +38,17 @@ export const metadata: Metadata = {
     description: DESCRIPTION,
   },
   other: {
-    'theme-color': '#2C7A7B', // CSS var not supported in meta tags, matches --theme-color
+    // Meta tags can't read CSS variables: this is --primary (#2C7A7B) from
+    // @policyengine/ui-kit's light theme tokens.
+    'theme-color': '#2C7A7B',
   },
   icons: {
-    icon: '/favicon.svg',
+    icon: `${BASE_PATH}/favicon.svg`,
   },
+  // Only the production deployment is indexed; previews are not.
   robots: {
-    index: true,
-    follow: true,
+    index: IS_PRODUCTION_DEPLOYMENT,
+    follow: IS_PRODUCTION_DEPLOYMENT,
   },
 };
 

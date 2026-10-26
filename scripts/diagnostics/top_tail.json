@@ -1,0 +1,220 @@
+{
+  "dataset_revision": "populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z",
+  "pin": "policyengine-us==2.60.4",
+  "states": {
+    "CO": {
+      "state": "CO",
+      "model_year": 2024,
+      "soi_year": 2023,
+      "model_filers": {
+        "returns": 2807377.0875107283,
+        "agi": 336303854196.9985,
+        "returns_500k_1m": 38968.15086179192,
+        "agi_500k_1m": 29610061961.764236,
+        "records_500k_1m": 909,
+        "returns_1m_plus": 36545.347799380674,
+        "agi_1m_plus": 52533263064.688034,
+        "records_1m_plus": 327,
+        "agi_above_1m": 15987915265.307362
+      },
+      "soi": {
+        "returns": 3086830,
+        "agi": 314115675000,
+        "returns_500k_1m": 38030,
+        "agi_500k_1m": 25370899000,
+        "returns_1m_plus": 15610,
+        "agi_1m_plus": 47266883000,
+        "agi_above_1m": 31656883000
+      },
+      "coverage": {
+        "returns": 0.9094692896954897,
+        "agi": 1.0706369689987565,
+        "returns_500k_1m": 1.0246687052798296,
+        "agi_500k_1m": 1.1670876133228167,
+        "returns_1m_plus": 2.3411497629327784,
+        "agi_1m_plus": 1.1114179681509364,
+        "agi_above_1m": 0.5050375700383187
+      },
+      "band_scale": {
+        "under_500k": 1.0,
+        "500k_1m": 0.8568337017586012,
+        "1m_plus_returns": 0.4271405511227489,
+        "1m_plus_above": 1.9800507117205695
+      },
+      "measures": {
+        "co-amendment-87:2027": {
+          "revenue_change": 1425814456.484043,
+          "revenue_change_by_agi_band": {
+            "under_500k": -533198046.5685613,
+            "500k_1m": 168772799.3096597,
+            "1m_plus": 1790239703.7429447
+          },
+          "revenue_change_1m_plus_above_threshold": 976636674.8732798,
+          "revenue_change_1m_plus_at_threshold": 813603028.8696649,
+          "coverage_scaled_revenue_change": 1892725165.1418705,
+          "model_top_tail_scored_year": {
+            "returns": 3037568.8768333434,
+            "agi": 393362991196.464,
+            "returns_500k_1m": 44288.81142612088,
+            "agi_500k_1m": 28500204963.611862,
+            "records_500k_1m": 1061,
+            "returns_1m_plus": 53029.001256075295,
+            "agi_1m_plus": 77444918127.90729,
+            "records_1m_plus": 391,
+            "agi_above_1m": 24415916871.831993
+          }
+        }
+      }
+    },
+    "CA": {
+      "state": "CA",
+      "model_year": 2024,
+      "soi_year": 2023,
+      "model_filers": {
+        "returns": 17858194.050933957,
+        "agi": 2262462129803.3145,
+        "returns_500k_1m": 287486.32408509584,
+        "agi_500k_1m": 212101643391.20856,
+        "records_500k_1m": 5603,
+        "returns_1m_plus": 279465.9388672375,
+        "agi_1m_plus": 496354879872.4973,
+        "records_1m_plus": 2311,
+        "agi_above_1m": 216888941005.25986
+      },
+      "soi": {
+        "returns": 18482300,
+        "agi": 2050805047000,
+        "returns_500k_1m": 317160,
+        "agi_500k_1m": 213715326000,
+        "returns_1m_plus": 132720,
+        "agi_1m_plus": 400221114000,
+        "agi_above_1m": 267501114000
+      },
+      "coverage": {
+        "returns": 0.9662322357571275,
+        "agi": 1.103206827539719,
+        "returns_500k_1m": 0.9064394125523264,
+        "agi_500k_1m": 0.9924493828355977,
+        "returns_1m_plus": 2.105680672598233,
+        "agi_1m_plus": 1.240201634820539,
+        "agi_above_1m": 0.8107964029086617
+      },
+      "band_scale": {
+        "under_500k": 1.0,
+        "500k_1m": 1.0076080627334656,
+        "1m_plus_returns": 0.47490581692336287,
+        "1m_plus_above": 1.233355249742829
+      },
+      "measures": {
+        "ca-prop-3:2031": {
+          "revenue_change": 10136489129.158733,
+          "revenue_change_by_agi_band": {
+            "under_500k": 17795415.562448997,
+            "500k_1m": 305977655.6317471,
+            "1m_plus": 9812716057.964539
+          },
+          "revenue_change_1m_plus_above_threshold": 10995898757.299757,
+          "revenue_change_1m_plus_at_threshold": -1183182699.3352184,
+          "coverage_scaled_revenue_change": 13326050079.952206,
+          "model_top_tail_scored_year": {
+            "returns": 19876997.20652227,
+            "agi": 3023328871020.8813,
+            "returns_500k_1m": 543159.2784644628,
+            "agi_500k_1m": 352226695121.377,
+            "records_500k_1m": 7559,
+            "returns_1m_plus": 404520.6758419785,
+            "agi_1m_plus": 771050634418.6371,
+            "records_1m_plus": 3772,
+            "agi_above_1m": 366529958576.65857
+          }
+        }
+      }
+    },
+    "WA": {
+      "state": "WA",
+      "model_year": 2024,
+      "soi_year": 2023,
+      "model_filers": {
+        "returns": 3505578.3727801936,
+        "agi": 469527435616.4388,
+        "returns_500k_1m": 62252.63846823838,
+        "agi_500k_1m": 42406312891.72351,
+        "records_500k_1m": 1129,
+        "returns_1m_plus": 53502.632875336654,
+        "agi_1m_plus": 77845543462.00775,
+        "records_1m_plus": 344,
+        "agi_above_1m": 24342910586.671097
+      },
+      "soi": {
+        "returns": 3781890,
+        "agi": 434342159000,
+        "returns_500k_1m": 67020,
+        "agi_500k_1m": 44630153000,
+        "returns_1m_plus": 23370,
+        "agi_1m_plus": 60595722000,
+        "agi_above_1m": 37225722000
+      },
+      "coverage": {
+        "returns": 0.92693821681228,
+        "agi": 1.0810082003032977,
+        "returns_500k_1m": 0.9288665841276988,
+        "agi_500k_1m": 0.9501718018247329,
+        "returns_1m_plus": 2.2893723951791465,
+        "agi_1m_plus": 1.284670615229368,
+        "agi_above_1m": 0.6539271578579751
+      },
+      "band_scale": {
+        "under_500k": 1.0,
+        "500k_1m": 1.0524412512343302,
+        "1m_plus_returns": 0.4368009337868113,
+        "1m_plus_above": 1.5292223116648531
+      },
+      "measures": {
+        "wa-i-645:2028": {
+          "revenue_change": -3660307467.816826,
+          "revenue_change_by_agi_band": {
+            "under_500k": 0.0,
+            "500k_1m": -4381847.257839262,
+            "1m_plus": -3655925620.5589867
+          },
+          "revenue_change_1m_plus_above_threshold": -3737641496.383224,
+          "revenue_change_1m_plus_at_threshold": 81715875.82423735,
+          "coverage_scaled_revenue_change": -5684602835.219159,
+          "model_top_tail_scored_year": {
+            "returns": 3867558.0998895396,
+            "agi": 566004663097.2172,
+            "returns_500k_1m": 95154.8794759637,
+            "agi_500k_1m": 62796609891.59849,
+            "records_500k_1m": 1350,
+            "returns_1m_plus": 60934.05359948485,
+            "agi_1m_plus": 98688008108.40631,
+            "records_1m_plus": 470,
+            "agi_above_1m": 37753954508.921455
+          }
+        },
+        "wa-i-645:2029": {
+          "revenue_change": -3946581071.570098,
+          "revenue_change_by_agi_band": {
+            "under_500k": 0.0,
+            "500k_1m": -5280451.949919611,
+            "1m_plus": -3941300619.620178
+          },
+          "revenue_change_1m_plus_above_threshold": -4025241274.984421,
+          "revenue_change_1m_plus_at_threshold": 83940655.36424255,
+          "coverage_scaled_revenue_change": -6124380776.351934,
+          "model_top_tail_scored_year": {
+            "returns": 3882509.343919709,
+            "agi": 585762074460.4081,
+            "returns_500k_1m": 121026.92235669825,
+            "agi_500k_1m": 76461240730.17308,
+            "records_500k_1m": 1399,
+            "returns_1m_plus": 63678.96341365563,
+            "agi_1m_plus": 104337966191.27603,
+            "records_1m_plus": 529,
+            "agi_above_1m": 40659002777.62041
+          }
+        }
+      }
+    }
+  }
+}

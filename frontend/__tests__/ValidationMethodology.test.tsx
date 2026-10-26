@@ -1,140 +1,106 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { screen, within } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
 import ValidationMethodology from '../components/ValidationMethodology';
-
-const createTestQueryClient = () =>
-  new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
-  });
+import { getMeasure } from '../lib/registry';
+import { fixtureFiles, mockDataFiles, renderWithQuery } from './testUtils';
 
 describe('ValidationMethodology', () => {
-  beforeEach(() => {
-    // Simulate the pre-Modal-run state: no CSVs present yet.
-    global.fetch = vi.fn(() =>
-      Promise.resolve({ ok: false, status: 404 })
-    ) as typeof fetch;
+  it('compares each official estimate with the model in its tax year', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('wa-i-645')} year={2028} />);
+    const table = screen.getByRole('table', { name: 'PolicyEngine and official estimates' });
+    await within(table).findByText('-$3.42B');
+    const rows = within(table).getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(3);
+    expect(rows[0]).toHaveTextContent('-$3.11B');
+    expect(rows[0]).toHaveTextContent(/110% of the official figure/);
+    expect(rows[1]).toHaveTextContent('-$4.43B');
+    expect(rows[1]).toHaveTextContent('-$3.95B');
+    expect(rows[2]).toHaveTextContent('30,000');
   });
 
-  it('shows the four-row model-vs-official comparison', () => {
-    const queryClient = createTestQueryClient();
-    render(
-      <QueryClientProvider client={queryClient}>
-        <ValidationMethodology />
-      </QueryClientProvider>
+  it('places a model range against an official range', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('nd-measure-2')} year={2028} />);
+    const table = screen.getByRole('table', { name: 'PolicyEngine and official estimates' });
+    expect(await within(table).findByText('within the official range')).toBeInTheDocument();
+    expect(table).toHaveTextContent('$124.3M to $134.3M');
+    expect(screen.getByText(/Participation adjustment/)).toBeInTheDocument();
+    // Enrollment and the count already eating free come from the registry (kind_params).
+    expect(screen.getByText(/Participation adjustment/).closest('p')).toHaveTextContent(
+      /public school enrollment \(116,762 students, less the 9,196 at public schools that already serve every meal free on the Department of Public Instruction’s 2026 community eligibility list\)/,
     );
-    // LCS FY 2027-28 full-year figure
-    expect(screen.getByText('$1,981.1M')).toBeInTheDocument();
-    // LCS TY2027 annualized (2 x FY 2026-27 half-year)
-    expect(screen.getByText('≈$1.93B')).toBeInTheDocument();
-    // SOI-coverage-adjusted model estimate
-    expect(screen.getByText('≈$1.9B')).toBeInTheDocument();
   });
 
-  it('quantifies the top-tail attribution', () => {
-    const queryClient = createTestQueryClient();
-    render(
-      <QueryClientProvider client={queryClient}>
-        <ValidationMethodology />
-      </QueryClientProvider>
-    );
-    expect(
-      screen.getByText('Why the model figure is a lower bound on the individual side')
-    ).toBeInTheDocument();
-    // SOI income-mass coverage above the $1M threshold
-    expect(screen.getByText(/24% coverage/)).toBeInTheDocument();
-    expect(screen.getByText(/\$31\.7 billion/)).toBeInTheDocument();
+  it('shows provenance from the manifest and the parameter changes', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('co-prop-nn')} year={2027} />);
+    expect(await screen.findByText('synthetic')).toBeInTheDocument();
+    expect(screen.getByText(/gov\.states\.co\.tax\.income\.credits\.sales_tax_refund\.in_effect = false/)).toBeInTheDocument();
+    expect(screen.getByRole('table', { name: /TABOR refund obligations/ })).toHaveTextContent('$463.7M');
+    expect(screen.getByRole('table', { name: 'Survey households behind the estimates' })).toHaveTextContent('2028');
   });
 
-  it('shows a pending placeholder for the model revenue before the precompute runs', () => {
-    const queryClient = createTestQueryClient();
-    render(
-      <QueryClientProvider client={queryClient}>
-        <ValidationMethodology />
-      </QueryClientProvider>
-    );
-    expect(screen.getByText(/Pending/)).toBeInTheDocument();
+  it('compares top incomes with IRS data for income tax measures', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('co-amendment-87')} year={2027} />);
+    expect(await screen.findByRole('heading', { name: 'Top incomes compared with IRS data' })).toBeInTheDocument();
+    const table = screen.getByRole('table', { name: /Colorado filers: model \(2024 data\) and IRS/ });
+    expect(table).toHaveTextContent('Income above $1 million');
+    expect(table).toHaveTextContent('60%');
+    expect(screen.getByText(/Scaling the change in each income band/)).toHaveTextContent('+$2.24B');
   });
 
-  it('lists the four key modeling limitations', () => {
-    const queryClient = createTestQueryClient();
-    render(
-      <QueryClientProvider client={queryClient}>
-        <ValidationMethodology />
-      </QueryClientProvider>
-    );
-    expect(screen.getByText('Home-sale carve-out unmodeled')).toBeInTheDocument();
-    expect(
-      screen.getByText('Corporate and TABOR sections out of scope')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('Federal revenue effect not modeled')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('District geography is PUMA-based')
-    ).toBeInTheDocument();
+  it('shows South Dakota’s model and calibrated values', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('sd-amendment-i')} year={2028} />);
+    const calibration = await screen.findByRole('table', { name: 'Model and calibrated values' });
+    const losing = within(calibration).getByText('People losing Medicaid').closest('tr')!;
+    expect(losing).toHaveTextContent('54,000');
+    expect(losing).toHaveTextContent('28,017');
+    expect(screen.getByText(/calibration factor of 0\.519/)).toBeInTheDocument();
+    expect(screen.getByText(/enrollment \(29,055 people\)/)).toBeInTheDocument();
+    // Enrollment pairs the model's own count with the administrative one.
+    const enrolled = within(calibration).getByText('Enrolled through expansion under current law').closest('tr')!;
+    expect(enrolled).toHaveTextContent('56,000');
+    expect(enrolled).toHaveTextContent('29,055');
+    expect(screen.getByText(/The model counts 56,000 people enrolled through expansion/)).toBeInTheDocument();
+    // The validation table compares the department's figure with the model's own count.
+    const validation = screen.getByRole('table', { name: 'PolicyEngine and official estimates' });
+    const dss = within(validation).getByRole('link', { name: /Department of Social Services/ }).closest('tr')!;
+    expect(dss).toHaveTextContent('29,055');
+    expect(dss).toHaveTextContent('56,000');
+    expect(dss).toHaveTextContent('Model before calibration; the dashboard scales');
+    const pamphlet = within(validation).getByRole('link', { name: /ballot question pamphlet/ }).closest('tr')!;
+    expect(pamphlet).toHaveTextContent('Model before calibration to the Department');
   });
 
-  it('explains the withholding-proxy circularity break quantitatively', () => {
-    const queryClient = createTestQueryClient();
-    render(
-      <QueryClientProvider client={queryClient}>
-        <ValidationMethodology />
-      </QueryClientProvider>
-    );
-    expect(screen.getByText(/withholding proxy/)).toBeInTheDocument();
-    expect(screen.getByText(/modestly increase/)).toBeInTheDocument();
-    expect(screen.getByText(/up to \$325 less/)).toBeInTheDocument();
+  it('has no IRS comparison for other kinds', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('sd-amendment-i')} year={2028} />);
+    await screen.findByText('synthetic');
+    expect(screen.queryByRole('heading', { name: 'Top incomes compared with IRS data' })).toBeNull();
+    // South Dakota shows no poverty figures, so no note on SPM resources.
+    expect(screen.queryByText(/to SPM resources/)).toBeNull();
   });
 
-  it('names the Populace build P ACS-local dataset revision', () => {
-    const queryClient = createTestQueryClient();
-    render(
-      <QueryClientProvider client={queryClient}>
-        <ValidationMethodology />
-      </QueryClientProvider>
+  it('notes the income added to SPM resources', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('ca-prop-3')} year={2031} />);
+    expect(
+      await screen.findByText(/PolicyEngine adds partnership and S corporation income, farm rental income/),
+    ).toHaveTextContent(/Alaska Permanent Fund dividend to SPM resources, which the released model omits \(policyengine-us#9919\)\./);
+    expect(screen.getByRole('link', { name: 'policyengine-us#9919' })).toHaveAttribute(
+      'href',
+      'https://github.com/PolicyEngine/policyengine-us/issues/9919',
     );
-    expect(
-      screen.getByText('populace-us-2024-buildp-acs-local-592ae5d6-20260819T020303Z')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText('populace_us_2024_acs_local.h5')
-    ).toBeInTheDocument();
   });
 
-  it('links to the fiscal impact statement, measure text, and model PR', () => {
-    const queryClient = createTestQueryClient();
-    render(
-      <QueryClientProvider client={queryClient}>
-        <ValidationMethodology />
-      </QueryClientProvider>
-    );
-    const links = screen.getAllByRole('link');
-    const hrefs = links.map((l) => l.getAttribute('href'));
-    expect(hrefs).toContain('https://leg.colorado.gov/initiative_files/3320/download');
-    expect(hrefs).toContain(
-      'https://www.sos.state.co.us/pubs/elections/Initiatives/titleBoard/filings/2025-2026/195Final.pdf'
-    );
-    expect(hrefs).toContain('https://github.com/PolicyEngine/policyengine-us/pull/9431');
-    expect(hrefs).toContain('https://calibration-diagnostics.vercel.app');
-  });
-
-  it('documents the reform parameter and pin', () => {
-    const queryClient = createTestQueryClient();
-    render(
-      <QueryClientProvider client={queryClient}>
-        <ValidationMethodology />
-      </QueryClientProvider>
-    );
-    expect(
-      screen.getByText('gov.contrib.states.co.progressive_income_tax.in_effect')
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(/policyengine-us==1\.825\.0/)
-    ).toBeInTheDocument();
+  it('marks the model figure pending when results are missing', async () => {
+    mockDataFiles({});
+    renderWithQuery(<ValidationMethodology measure={getMeasure('ca-prop-3')} year={2031} />);
+    const table = screen.getByRole('table', { name: 'PolicyEngine and official estimates' });
+    expect(await within(table).findByText('Pending')).toBeInTheDocument();
+    expect(table).toHaveTextContent('$5B to $15B');
   });
 });

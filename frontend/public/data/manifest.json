@@ -1,0 +1,1137 @@
+{
+  "generated_at_utc": "2026-10-23T19:22:03.896826+00:00",
+  "pin": "policyengine-us==2.60.4",
+  "dataset_repo": "policyengine/populace-us",
+  "dataset_revision": "populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z",
+  "dataset_filename": "populace_us_2024_acs_local.h5",
+  "registry_hash": "58c2dae54eb37534",
+  "spm_resources_adjustment": {
+    "applied": true,
+    "added_to_spm_resources": [
+      "partnership_s_corp_income",
+      "farm_rent_income",
+      "ak_permanent_fund_dividend"
+    ],
+    "not_added": [
+      "debt_relief"
+    ],
+    "description": "Poverty measures add partnership and S corporation income, farm rent income and the Alaska Permanent Fund Dividend to each SPM unit's resources. policyengine-us 2.60.4 counts these in household net income and taxes them, but leaves them out of SPM resources. Census money income counts all three. Cancelled debt (debt_relief), also left out, is not cash income and is not added."
+  },
+  "measure_years": [
+    "co-amendment-87:2027",
+    "co-prop-nn:2027",
+    "co-prop-nn:2028",
+    "ca-prop-3:2031",
+    "wa-i-645:2028",
+    "wa-i-645:2029",
+    "nd-measure-2:2028",
+    "sd-amendment-i:2028"
+  ],
+  "missing_measure_years": [],
+  "complete": true,
+  "failures": {},
+  "files": [
+    "metrics.csv",
+    "distributional_impact.csv",
+    "winners_losers.csv",
+    "income_brackets.csv",
+    "congressional_districts.csv",
+    "measures.json"
+  ],
+  "subsets": {
+    "CA": {
+      "path": "/results/cache/ca_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "subset": {
+        "households": 162907,
+        "district_geoids": [
+          601,
+          602,
+          603,
+          604,
+          605,
+          606,
+          607,
+          608,
+          609,
+          610,
+          611,
+          612,
+          613,
+          614,
+          615,
+          616,
+          617,
+          618,
+          619,
+          620,
+          621,
+          622,
+          623,
+          624,
+          625,
+          626,
+          627,
+          628,
+          629,
+          630,
+          631,
+          632,
+          633,
+          634,
+          635,
+          636,
+          637,
+          638,
+          639,
+          640,
+          641,
+          642,
+          643,
+          644,
+          645,
+          646,
+          647,
+          648,
+          649,
+          650,
+          651,
+          652
+        ],
+        "persons": 401287,
+        "weighted_households": 13857962.027970642
+      },
+      "spm_cleaning": {
+        "spm_adultless_units": 0.0,
+        "spm_independent_minor_units": 0.0,
+        "spm_minors_merged": 0.0,
+        "child_only_households_dropped": 0.0,
+        "child_only_household_records_dropped": 0.0,
+        "nan_inputs_filled": {
+          "person.parent_1_id": 7866,
+          "person.parent_2_id": 7866
+        },
+        "households_after_cleaning": 162907.0
+      },
+      "build_peak_rss_gb": 0.8629608154296875
+    },
+    "CO": {
+      "path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "subset": {
+        "households": 30033,
+        "district_geoids": [
+          801,
+          802,
+          803,
+          804,
+          805,
+          806,
+          807,
+          808
+        ],
+        "persons": 66055,
+        "weighted_households": 2160542.4293909846
+      },
+      "spm_cleaning": {
+        "spm_adultless_units": 0.0,
+        "spm_independent_minor_units": 0.0,
+        "spm_minors_merged": 0.0,
+        "child_only_households_dropped": 0.0,
+        "child_only_household_records_dropped": 0.0,
+        "nan_inputs_filled": {
+          "person.parent_1_id": 3274,
+          "person.parent_2_id": 3274
+        },
+        "households_after_cleaning": 30033.0
+      },
+      "build_peak_rss_gb": 0.8629608154296875
+    },
+    "ND": {
+      "path": "/results/cache/nd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "subset": {
+        "households": 4718,
+        "district_geoids": [
+          3800
+        ],
+        "persons": 10248,
+        "weighted_households": 300935.26444303757
+      },
+      "spm_cleaning": {
+        "spm_adultless_units": 0.0,
+        "spm_independent_minor_units": 0.0,
+        "spm_minors_merged": 0.0,
+        "child_only_households_dropped": 0.0,
+        "child_only_household_records_dropped": 0.0,
+        "nan_inputs_filled": {
+          "person.parent_1_id": 1850,
+          "person.parent_2_id": 1850
+        },
+        "households_after_cleaning": 4718.0
+      },
+      "build_peak_rss_gb": 0.8629608154296875
+    },
+    "SD": {
+      "path": "/results/cache/sd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "subset": {
+        "households": 5270,
+        "district_geoids": [
+          4600
+        ],
+        "persons": 11897,
+        "weighted_households": 361780.70149298816
+      },
+      "spm_cleaning": {
+        "spm_adultless_units": 0.0,
+        "spm_independent_minor_units": 0.0,
+        "spm_minors_merged": 0.0,
+        "child_only_households_dropped": 0.0,
+        "child_only_household_records_dropped": 0.0,
+        "nan_inputs_filled": {
+          "person.parent_1_id": 2288,
+          "person.parent_2_id": 2288
+        },
+        "households_after_cleaning": 5270.0
+      },
+      "build_peak_rss_gb": 0.8629608154296875
+    },
+    "WA": {
+      "path": "/results/cache/wa_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "subset": {
+        "households": 37934,
+        "district_geoids": [
+          5301,
+          5302,
+          5303,
+          5304,
+          5305,
+          5306,
+          5307,
+          5308,
+          5309,
+          5310
+        ],
+        "persons": 86629,
+        "weighted_households": 2805994.6244334592
+      },
+      "spm_cleaning": {
+        "spm_adultless_units": 0.0,
+        "spm_independent_minor_units": 0.0,
+        "spm_minors_merged": 0.0,
+        "child_only_households_dropped": 0.0,
+        "child_only_household_records_dropped": 0.0,
+        "nan_inputs_filled": {
+          "person.parent_1_id": 3743,
+          "person.parent_2_id": 3743
+        },
+        "households_after_cleaning": 37934.0
+      },
+      "build_peak_rss_gb": 0.8629608154296875
+    }
+  },
+  "guards": {
+    "co-amendment-87:2027": {
+      "target_variable": "co_income_tax",
+      "target_sign": 1,
+      "target_change": 1425814456.4840426,
+      "target_baseline_total": 12048392393.928158
+    },
+    "co-prop-nn:2027": {
+      "target_variable": "co_sales_tax_refund",
+      "target_sign": -1,
+      "target_change": -275834622.68702793,
+      "target_baseline_total": 275834622.68702793
+    },
+    "co-prop-nn:2028": {
+      "target_variable": "co_sales_tax_refund",
+      "target_sign": -1,
+      "target_change": -296644226.64986587,
+      "target_baseline_total": 296644226.64986587
+    },
+    "ca-prop-3:2031": {
+      "target_variable": "ca_income_tax",
+      "target_sign": 1,
+      "target_change": 10136489129.158735,
+      "target_baseline_total": 157782859768.58282
+    },
+    "wa-i-645:2028": {
+      "target_variable": "wa_income_tax",
+      "target_sign": -1,
+      "target_change": -3660307467.816826,
+      "target_baseline_total": 4220644525.7200127
+    },
+    "wa-i-645:2029": {
+      "target_variable": "wa_income_tax",
+      "target_sign": -1,
+      "target_change": -3946581071.570099,
+      "target_baseline_total": 4467057688.492226
+    },
+    "nd-measure-2:2028": {
+      "target_variable": "school_meal_net_subsidy",
+      "target_sign": 1,
+      "target_change": 145573114.44918942,
+      "target_baseline_total": 34952049.504280016
+    },
+    "sd-amendment-i:2028": {
+      "target_variable": "medicaid_enrolled",
+      "target_sign": -1,
+      "target_change": -55952.08352656506,
+      "target_baseline_total": 116457.64888099613
+    }
+  },
+  "headline": {
+    "co-amendment-87:2027": {
+      "state_budget_impact": 1425814456.4840426,
+      "target_change": 1425814456.4840426,
+      "effective_sample_households": 233.46104221267578
+    },
+    "co-prop-nn:2027": {
+      "state_budget_impact": 275834622.67359704,
+      "target_change": -275834622.68702793,
+      "effective_sample_households": 233.46104221267578
+    },
+    "co-prop-nn:2028": {
+      "state_budget_impact": 296644225.26599646,
+      "target_change": -296644226.64986587,
+      "effective_sample_households": 233.46103869994025
+    },
+    "ca-prop-3:2031": {
+      "state_budget_impact": 10136489129.158735,
+      "target_change": 10136489129.158735,
+      "effective_sample_households": 1145.792656779088
+    },
+    "wa-i-645:2028": {
+      "state_budget_impact": -3660307467.816826,
+      "target_change": -3660307467.816826,
+      "effective_sample_households": 409.3985021176908
+    },
+    "wa-i-645:2029": {
+      "state_budget_impact": -3946581071.570099,
+      "target_change": -3946581071.570099,
+      "effective_sample_households": 409.3985010330856
+    },
+    "nd-measure-2:2028": {
+      "state_budget_impact": -58599440.94742745,
+      "target_change": 145573114.44918942,
+      "effective_sample_households": 243.20738162723032
+    },
+    "sd-amendment-i:2028": {
+      "people_losing_medicaid": 29054.99976315661,
+      "state_budget_impact": 33188174.103382837,
+      "target_change": -55952.08352656506,
+      "effective_sample_households": 214.49903299029327
+    }
+  },
+  "partial_keys": {
+    "co-amendment-87:2027": {
+      "baseline": "aef1ca153692d35a",
+      "reform": "5f5dce6668d2e382"
+    },
+    "co-prop-nn:2027": {
+      "baseline": "d29d6920276aaacd",
+      "reform": "f24f9557ba56c0ae"
+    },
+    "co-prop-nn:2028": {
+      "baseline": "b761153763547de4",
+      "reform": "5d4e95ae50f9d2e8"
+    },
+    "ca-prop-3:2031": {
+      "baseline": "7b6e78b03970f5aa",
+      "reform": "e6dc415dd8172aa8"
+    },
+    "wa-i-645:2028": {
+      "baseline": "8ebeb74f00817115",
+      "reform": "721da8441927ecad"
+    },
+    "wa-i-645:2029": {
+      "baseline": "d1256e8e30349606",
+      "reform": "b255be14de942e75"
+    },
+    "nd-measure-2:2028": {
+      "baseline": "46313091d7c86fbe",
+      "reform": "c6038a26ccf4eea9"
+    },
+    "sd-amendment-i:2028": {
+      "baseline": "097eebe773e0a05a",
+      "reform": "1ab4903e4b21a258"
+    }
+  },
+  "passes": {
+    "co-amendment-87:2027:baseline": {
+      "slug": "co-amendment-87",
+      "year": 2027,
+      "policy": "baseline",
+      "key": "aef1ca153692d35a",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 30033,
+      "persons": 66055,
+      "seconds": 116.8,
+      "peak_rss_gb": 3.7,
+      "skipped": true
+    },
+    "co-amendment-87:2027:reform": {
+      "slug": "co-amendment-87",
+      "year": 2027,
+      "policy": "reform",
+      "key": "5f5dce6668d2e382",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 30033,
+      "persons": 66055,
+      "seconds": 138.2,
+      "peak_rss_gb": 4.45,
+      "skipped": true
+    },
+    "co-prop-nn:2027:baseline": {
+      "slug": "co-prop-nn",
+      "year": 2027,
+      "policy": "baseline",
+      "key": "d29d6920276aaacd",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 30033,
+      "persons": 66055,
+      "seconds": 144.5,
+      "peak_rss_gb": 4.44,
+      "skipped": true
+    },
+    "co-prop-nn:2027:reform": {
+      "slug": "co-prop-nn",
+      "year": 2027,
+      "policy": "reform",
+      "key": "f24f9557ba56c0ae",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 30033,
+      "persons": 66055,
+      "seconds": 148.4,
+      "peak_rss_gb": 4.46,
+      "skipped": true
+    },
+    "co-prop-nn:2028:baseline": {
+      "slug": "co-prop-nn",
+      "year": 2028,
+      "policy": "baseline",
+      "key": "b761153763547de4",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 30033,
+      "persons": 66055,
+      "seconds": 134.0,
+      "peak_rss_gb": 4.56,
+      "skipped": true
+    },
+    "co-prop-nn:2028:reform": {
+      "slug": "co-prop-nn",
+      "year": 2028,
+      "policy": "reform",
+      "key": "5d4e95ae50f9d2e8",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 30033,
+      "persons": 66055,
+      "seconds": 144.7,
+      "peak_rss_gb": 4.51,
+      "skipped": true
+    },
+    "ca-prop-3:2031:baseline": {
+      "slug": "ca-prop-3",
+      "year": 2031,
+      "policy": "baseline",
+      "key": "7b6e78b03970f5aa",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/ca_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 162907,
+      "persons": 401287,
+      "seconds": 223.4,
+      "peak_rss_gb": 11.93,
+      "skipped": true
+    },
+    "ca-prop-3:2031:reform": {
+      "slug": "ca-prop-3",
+      "year": 2031,
+      "policy": "reform",
+      "key": "e6dc415dd8172aa8",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/ca_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 162907,
+      "persons": 401287,
+      "seconds": 211.3,
+      "peak_rss_gb": 14.76,
+      "skipped": true
+    },
+    "wa-i-645:2028:baseline": {
+      "slug": "wa-i-645",
+      "year": 2028,
+      "policy": "baseline",
+      "key": "8ebeb74f00817115",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/wa_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 37934,
+      "persons": 86629,
+      "seconds": 100.9,
+      "peak_rss_gb": 3.23,
+      "skipped": true
+    },
+    "wa-i-645:2028:reform": {
+      "slug": "wa-i-645",
+      "year": 2028,
+      "policy": "reform",
+      "key": "721da8441927ecad",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/wa_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 37934,
+      "persons": 86629,
+      "seconds": 121.9,
+      "peak_rss_gb": 3.99,
+      "skipped": true
+    },
+    "wa-i-645:2029:baseline": {
+      "slug": "wa-i-645",
+      "year": 2029,
+      "policy": "baseline",
+      "key": "d1256e8e30349606",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/wa_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 37934,
+      "persons": 86629,
+      "seconds": 82.4,
+      "peak_rss_gb": 3.31,
+      "skipped": true
+    },
+    "wa-i-645:2029:reform": {
+      "slug": "wa-i-645",
+      "year": 2029,
+      "policy": "reform",
+      "key": "b255be14de942e75",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/wa_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 37934,
+      "persons": 86629,
+      "seconds": 137.0,
+      "peak_rss_gb": 4.12,
+      "skipped": true
+    },
+    "sd-amendment-i:2028:baseline": {
+      "slug": "sd-amendment-i",
+      "year": 2028,
+      "policy": "baseline",
+      "key": "097eebe773e0a05a",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/sd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 5270,
+      "persons": 11897,
+      "seconds": 112.0,
+      "peak_rss_gb": 2.58,
+      "skipped": true
+    },
+    "sd-amendment-i:2028:reform": {
+      "slug": "sd-amendment-i",
+      "year": 2028,
+      "policy": "reform",
+      "key": "1ab4903e4b21a258",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/sd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 5270,
+      "persons": 11897,
+      "seconds": 112.2,
+      "peak_rss_gb": 2.59,
+      "skipped": true
+    },
+    "nd-measure-2:2028:baseline": {
+      "slug": "nd-measure-2",
+      "year": 2028,
+      "policy": "baseline",
+      "key": "46313091d7c86fbe",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/nd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 4718,
+      "persons": 10248,
+      "seconds": 49.0,
+      "peak_rss_gb": 1.48,
+      "skipped": true
+    },
+    "nd-measure-2:2028:reform": {
+      "slug": "nd-measure-2",
+      "year": 2028,
+      "policy": "reform",
+      "key": "c6038a26ccf4eea9",
+      "pin": "policyengine-us==2.60.4",
+      "dataset_path": "/results/cache/nd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
+      "households": 4718,
+      "persons": 10248,
+      "seconds": 73.3,
+      "peak_rss_gb": 2.05,
+      "skipped": true
+    }
+  },
+  "peak_rss_gb": {
+    "co-amendment-87:2027:baseline": 3.7,
+    "co-amendment-87:2027:reform": 4.45,
+    "co-prop-nn:2027:baseline": 4.44,
+    "co-prop-nn:2027:reform": 4.46,
+    "co-prop-nn:2028:baseline": 4.56,
+    "co-prop-nn:2028:reform": 4.51,
+    "ca-prop-3:2031:baseline": 11.93,
+    "ca-prop-3:2031:reform": 14.76,
+    "wa-i-645:2028:baseline": 3.23,
+    "wa-i-645:2028:reform": 3.99,
+    "wa-i-645:2029:baseline": 3.31,
+    "wa-i-645:2029:reform": 4.12,
+    "sd-amendment-i:2028:baseline": 2.58,
+    "sd-amendment-i:2028:reform": 2.59,
+    "nd-measure-2:2028:baseline": 1.48,
+    "nd-measure-2:2028:reform": 2.05
+  },
+  "diagnostics": {
+    "co-amendment-87:2027": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": -1425815498.9317918,
+      "revenue_change_by_agi_band": {
+        "under_500k": -533198046.5685613,
+        "500k_1m": 168772799.3096597,
+        "1m_plus": 1790239703.7429447
+      },
+      "revenue_change_1m_plus_above_threshold": 976636674.8732798,
+      "revenue_change_1m_plus_at_threshold": 813603028.8696649,
+      "poverty_with_omitted_income": {
+        "poverty_baseline_rate": 9.140629543590183,
+        "poverty_reform_rate": 9.08148919484256,
+        "poverty_rate_change": -0.05914034874762386,
+        "poverty_percent_change": -0.6470052031492263,
+        "child_poverty_baseline_rate": 11.310384104758405,
+        "child_poverty_reform_rate": 11.305736684325883,
+        "child_poverty_rate_change": -0.004647420432522864,
+        "child_poverty_percent_change": -0.04108985503478739,
+        "deep_poverty_baseline_rate": 2.145357204831647,
+        "deep_poverty_reform_rate": 2.145357204831647,
+        "deep_poverty_rate_change": 0.0,
+        "deep_poverty_percent_change": 0.0,
+        "deep_child_poverty_baseline_rate": 2.876482681118809,
+        "deep_child_poverty_reform_rate": 2.876482681118809,
+        "deep_child_poverty_rate_change": 0.0,
+        "deep_child_poverty_percent_change": 0.0,
+        "people_lifted_out_of_poverty": 3488.0957969129086,
+        "people_pushed_into_poverty": 0.0,
+        "children_lifted_out_of_poverty": 65.25366878509521,
+        "children_pushed_into_poverty": 0.0
+      },
+      "poverty_model_spm_resources": {
+        "poverty_baseline_rate": 9.72330514545482,
+        "poverty_reform_rate": 9.668743098183844,
+        "poverty_rate_change": -0.054562047270975356,
+        "poverty_percent_change": -0.5611471249205884,
+        "child_poverty_baseline_rate": 11.809563196717617,
+        "child_poverty_reform_rate": 11.809208327449424,
+        "child_poverty_rate_change": -0.0003548692681931698,
+        "child_poverty_percent_change": -0.0030049313618288873,
+        "deep_poverty_baseline_rate": 2.2634360036504066,
+        "deep_poverty_reform_rate": 2.2720701585381367,
+        "deep_poverty_rate_change": 0.008634154887730006,
+        "deep_poverty_percent_change": 0.3814622933365503,
+        "deep_child_poverty_baseline_rate": 2.977263803964177,
+        "deep_child_poverty_reform_rate": 2.9864978018576864,
+        "deep_child_poverty_rate_change": 0.009233997893509649,
+        "deep_child_poverty_percent_change": 0.3101504771332233,
+        "people_lifted_out_of_poverty": 3506.5899890363216,
+        "people_pushed_into_poverty": 288.52226053818595,
+        "children_lifted_out_of_poverty": 65.25366878509521,
+        "children_pushed_into_poverty": 60.2710075378418
+      },
+      "spm_resources_add_omitted_income": true,
+      "spm_omitted_income_total": 21442126749.071
+    },
+    "co-prop-nn:2027": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": -275834625.6678768,
+      "poverty_with_omitted_income": {
+        "poverty_baseline_rate": 9.136900811036892,
+        "poverty_reform_rate": 9.145294787432245,
+        "poverty_rate_change": 0.008393976395353775,
+        "poverty_percent_change": 0.09186896704858935,
+        "child_poverty_baseline_rate": 11.306232421920427,
+        "child_poverty_reform_rate": 11.314680922749861,
+        "child_poverty_rate_change": 0.00844850082943438,
+        "child_poverty_percent_change": 0.07472428050439242,
+        "deep_poverty_baseline_rate": 2.1448240908139216,
+        "deep_poverty_reform_rate": 2.1454288211322456,
+        "deep_poverty_rate_change": 0.0006047303183240871,
+        "deep_poverty_percent_change": 0.028194867864180087,
+        "deep_child_poverty_baseline_rate": 2.876482681118809,
+        "deep_child_poverty_reform_rate": 2.876482681118809,
+        "deep_child_poverty_rate_change": 0.0,
+        "deep_child_poverty_percent_change": 0.0,
+        "people_lifted_out_of_poverty": 0.0,
+        "people_pushed_into_poverty": 495.07644787430763,
+        "children_lifted_out_of_poverty": 0.0,
+        "children_pushed_into_poverty": 118.62401580810547
+      },
+      "poverty_model_spm_resources": {
+        "poverty_baseline_rate": 9.719576412901528,
+        "poverty_reform_rate": 9.729565097395547,
+        "poverty_rate_change": 0.009988684494018685,
+        "poverty_percent_change": 0.1027687223155111,
+        "child_poverty_baseline_rate": 11.805411513879639,
+        "child_poverty_reform_rate": 11.81536424528646,
+        "child_poverty_rate_change": 0.009952731406821513,
+        "child_poverty_percent_change": 0.08430651820243686,
+        "deep_poverty_baseline_rate": 2.2629028896326813,
+        "deep_poverty_reform_rate": 2.2637208071738066,
+        "deep_poverty_rate_change": 0.0008179175411253681,
+        "deep_poverty_percent_change": 0.03614461516985972,
+        "deep_child_poverty_baseline_rate": 2.977263803964177,
+        "deep_child_poverty_reform_rate": 2.977263803964177,
+        "deep_child_poverty_rate_change": 0.0,
+        "deep_child_poverty_percent_change": 0.0,
+        "people_lifted_out_of_poverty": 0.0,
+        "people_pushed_into_poverty": 589.1322783529758,
+        "children_lifted_out_of_poverty": 0.0,
+        "children_pushed_into_poverty": 139.74467086791992
+      },
+      "spm_resources_add_omitted_income": true,
+      "spm_omitted_income_total": 21442126749.071
+    },
+    "co-prop-nn:2028": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": -296644236.55558455,
+      "poverty_with_omitted_income": {
+        "poverty_baseline_rate": 9.219770826911828,
+        "poverty_reform_rate": 9.226522876811623,
+        "poverty_rate_change": 0.006752049899795054,
+        "poverty_percent_change": 0.0732344656559827,
+        "child_poverty_baseline_rate": 11.71199623226411,
+        "child_poverty_reform_rate": 11.71283968738285,
+        "child_poverty_rate_change": 0.0008434551187406214,
+        "child_poverty_percent_change": 0.007201634136604982,
+        "deep_poverty_baseline_rate": 2.1466403837536863,
+        "deep_poverty_reform_rate": 2.1487683122511223,
+        "deep_poverty_rate_change": 0.002127928497436038,
+        "deep_poverty_percent_change": 0.09912831760460371,
+        "deep_child_poverty_baseline_rate": 2.8877232380372715,
+        "deep_child_poverty_reform_rate": 2.8877232380372715,
+        "deep_child_poverty_rate_change": 0.0,
+        "deep_child_poverty_percent_change": 0.0,
+        "people_lifted_out_of_poverty": 0.0,
+        "people_pushed_into_poverty": 400.07904464006424,
+        "children_lifted_out_of_poverty": 0.0,
+        "children_pushed_into_poverty": 11.89763355255127
+      },
+      "poverty_model_spm_resources": {
+        "poverty_baseline_rate": 9.808243915537416,
+        "poverty_reform_rate": 9.819912415656189,
+        "poverty_rate_change": 0.011668500118773295,
+        "poverty_percent_change": 0.11896625144373718,
+        "child_poverty_baseline_rate": 12.214992885022259,
+        "child_poverty_reform_rate": 12.215836340140998,
+        "child_poverty_rate_change": 0.000843455118738845,
+        "child_poverty_percent_change": 0.006905080720702426,
+        "deep_poverty_baseline_rate": 2.2659655432104686,
+        "deep_poverty_reform_rate": 2.2680934717079047,
+        "deep_poverty_rate_change": 0.002127928497436038,
+        "deep_poverty_percent_change": 0.0939082460371901,
+        "deep_child_poverty_baseline_rate": 2.9885043621990808,
+        "deep_child_poverty_reform_rate": 2.9885043621990808,
+        "deep_child_poverty_rate_change": 0.0,
+        "deep_child_poverty_percent_change": 0.0,
+        "people_lifted_out_of_poverty": 0.0,
+        "people_pushed_into_poverty": 691.3933470845222,
+        "children_lifted_out_of_poverty": 0.0,
+        "children_pushed_into_poverty": 11.89763355255127
+      },
+      "spm_resources_add_omitted_income": true,
+      "spm_omitted_income_total": 21910009307.727272
+    },
+    "ca-prop-3:2031": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": -10136482689.989212,
+      "revenue_change_by_agi_band": {
+        "under_500k": 17795415.562448997,
+        "500k_1m": 305977655.6317471,
+        "1m_plus": 9812716057.964539
+      },
+      "revenue_change_1m_plus_above_threshold": 10995898757.299757,
+      "revenue_change_1m_plus_at_threshold": -1183182699.3352184,
+      "poverty_with_omitted_income": {
+        "poverty_baseline_rate": 18.45654599847188,
+        "poverty_reform_rate": 18.45654599847188,
+        "poverty_rate_change": 0.0,
+        "poverty_percent_change": 0.0,
+        "child_poverty_baseline_rate": 23.339950092804056,
+        "child_poverty_reform_rate": 23.339950092804056,
+        "child_poverty_rate_change": 0.0,
+        "child_poverty_percent_change": 0.0,
+        "deep_poverty_baseline_rate": 4.164328763170095,
+        "deep_poverty_reform_rate": 4.164328763170095,
+        "deep_poverty_rate_change": 0.0,
+        "deep_poverty_percent_change": 0.0,
+        "deep_child_poverty_baseline_rate": 2.6031242509795502,
+        "deep_child_poverty_reform_rate": 2.6031242509795502,
+        "deep_child_poverty_rate_change": 0.0,
+        "deep_child_poverty_percent_change": 0.0,
+        "people_lifted_out_of_poverty": 0.0,
+        "people_pushed_into_poverty": 0.0,
+        "children_lifted_out_of_poverty": 0.0,
+        "children_pushed_into_poverty": 0.0
+      },
+      "poverty_model_spm_resources": {
+        "poverty_baseline_rate": 18.601930368710036,
+        "poverty_reform_rate": 18.606095046052385,
+        "poverty_rate_change": 0.0041646773423487105,
+        "poverty_percent_change": 0.022388414856955047,
+        "child_poverty_baseline_rate": 23.932464993195225,
+        "child_poverty_reform_rate": 23.936324615545516,
+        "child_poverty_rate_change": 0.0038596223502906923,
+        "child_poverty_percent_change": 0.016127140899978788,
+        "deep_poverty_baseline_rate": 4.046273736283175,
+        "deep_poverty_reform_rate": 4.049930573387385,
+        "deep_poverty_rate_change": 0.0036568371042102754,
+        "deep_poverty_percent_change": 0.09037542545426924,
+        "deep_child_poverty_baseline_rate": 2.7496943680588153,
+        "deep_child_poverty_reform_rate": 2.753689242411469,
+        "deep_child_poverty_rate_change": 0.003994874352653888,
+        "deep_child_poverty_percent_change": 0.14528430501438327,
+        "people_lifted_out_of_poverty": 0.0,
+        "people_pushed_into_poverty": 1707.262800693512,
+        "children_lifted_out_of_poverty": 0.0,
+        "children_pushed_into_poverty": 374.30481719970703
+      },
+      "spm_resources_add_omitted_income": true,
+      "spm_omitted_income_total": 135328114721.30292
+    },
+    "wa-i-645:2028": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": 3660307797.141916,
+      "revenue_change_by_agi_band": {
+        "under_500k": 0.0,
+        "500k_1m": -4381847.257839262,
+        "1m_plus": -3655925620.5589867
+      },
+      "revenue_change_1m_plus_above_threshold": -3737641496.383224,
+      "revenue_change_1m_plus_at_threshold": 81715875.82423735,
+      "poverty_with_omitted_income": {
+        "poverty_baseline_rate": 9.82801853364849,
+        "poverty_reform_rate": 9.82801853364849,
+        "poverty_rate_change": 0.0,
+        "poverty_percent_change": 0.0,
+        "child_poverty_baseline_rate": 13.900435947546372,
+        "child_poverty_reform_rate": 13.900435947546372,
+        "child_poverty_rate_change": 0.0,
+        "child_poverty_percent_change": 0.0,
+        "deep_poverty_baseline_rate": 3.044399479729386,
+        "deep_poverty_reform_rate": 3.044399479729386,
+        "deep_poverty_rate_change": 0.0,
+        "deep_poverty_percent_change": 0.0,
+        "deep_child_poverty_baseline_rate": 1.74911952417575,
+        "deep_child_poverty_reform_rate": 1.74911952417575,
+        "deep_child_poverty_rate_change": 0.0,
+        "deep_child_poverty_percent_change": 0.0,
+        "people_lifted_out_of_poverty": 0.0,
+        "people_pushed_into_poverty": 0.0,
+        "children_lifted_out_of_poverty": 0.0,
+        "children_pushed_into_poverty": 0.0
+      },
+      "poverty_model_spm_resources": {
+        "poverty_baseline_rate": 10.253464510128916,
+        "poverty_reform_rate": 10.248241430633605,
+        "poverty_rate_change": -0.005223079495310756,
+        "poverty_percent_change": -0.05093965547109586,
+        "child_poverty_baseline_rate": 15.062019521043974,
+        "child_poverty_reform_rate": 15.057063438349768,
+        "child_poverty_rate_change": -0.004956082694205222,
+        "child_poverty_percent_change": -0.0329045031928209,
+        "deep_poverty_baseline_rate": 3.43911004625234,
+        "deep_poverty_reform_rate": 3.4335713001898305,
+        "deep_poverty_rate_change": -0.005538746062509592,
+        "deep_poverty_percent_change": -0.16105172524343217,
+        "deep_child_poverty_baseline_rate": 2.848632570631946,
+        "deep_child_poverty_reform_rate": 2.8436764879377407,
+        "deep_child_poverty_rate_change": -0.004956082694205222,
+        "deep_child_poverty_percent_change": -0.1739811144933218,
+        "people_lifted_out_of_poverty": 413.8548126220703,
+        "people_pushed_into_poverty": 0.0,
+        "children_lifted_out_of_poverty": 95.30684661865234,
+        "children_pushed_into_poverty": 0.0
+      },
+      "spm_resources_add_omitted_income": true,
+      "spm_omitted_income_total": 22583230775.212196
+    },
+    "wa-i-645:2029": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": 3946580665.3623233,
+      "revenue_change_by_agi_band": {
+        "under_500k": 0.0,
+        "500k_1m": -5280451.949919611,
+        "1m_plus": -3941300619.620178
+      },
+      "revenue_change_1m_plus_above_threshold": -4025241274.984421,
+      "revenue_change_1m_plus_at_threshold": 83940655.36424255,
+      "poverty_with_omitted_income": {
+        "poverty_baseline_rate": 9.830589747226524,
+        "poverty_reform_rate": 9.830589747226524,
+        "poverty_rate_change": 0.0,
+        "poverty_percent_change": 0.0,
+        "child_poverty_baseline_rate": 13.904429325177894,
+        "child_poverty_reform_rate": 13.904429325177894,
+        "child_poverty_rate_change": 0.0,
+        "child_poverty_percent_change": 0.0,
+        "deep_poverty_baseline_rate": 3.059367039500077,
+        "deep_poverty_reform_rate": 3.059367039500077,
+        "deep_poverty_rate_change": 0.0,
+        "deep_poverty_percent_change": 0.0,
+        "deep_child_poverty_baseline_rate": 1.7754713977569363,
+        "deep_child_poverty_reform_rate": 1.7754713977569363,
+        "deep_child_poverty_rate_change": 0.0,
+        "deep_child_poverty_percent_change": 0.0,
+        "people_lifted_out_of_poverty": 0.0,
+        "people_pushed_into_poverty": 0.0,
+        "children_lifted_out_of_poverty": 0.0,
+        "children_pushed_into_poverty": 0.0
+      },
+      "poverty_model_spm_resources": {
+        "poverty_baseline_rate": 10.260480521607656,
+        "poverty_reform_rate": 10.253196054399245,
+        "poverty_rate_change": -0.007284467208410916,
+        "poverty_percent_change": -0.07099538070434887,
+        "child_poverty_baseline_rate": 15.074818753574315,
+        "child_poverty_reform_rate": 15.065615834695075,
+        "child_poverty_rate_change": -0.009202918879239519,
+        "child_poverty_percent_change": -0.061048288736854375,
+        "deep_poverty_baseline_rate": 3.45687489092747,
+        "deep_poverty_reform_rate": 3.451651811434907,
+        "deep_poverty_rate_change": -0.005223079492563176,
+        "deep_poverty_percent_change": -0.1510925230841038,
+        "deep_child_poverty_baseline_rate": 2.877929239485811,
+        "deep_child_poverty_reform_rate": 2.872973156761515,
+        "deep_child_poverty_rate_change": -0.004956082724296262,
+        "deep_child_poverty_percent_change": -0.17221002713679462,
+        "people_lifted_out_of_poverty": 579.4217987060547,
+        "people_pushed_into_poverty": 0.0,
+        "children_lifted_out_of_poverty": 177.6588363647461,
+        "children_pushed_into_poverty": 0.0
+      },
+      "spm_resources_add_omitted_income": true,
+      "spm_omitted_income_total": 24101247217.964783
+    },
+    "nd-measure-2:2028": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": 145572955.21653438,
+      "participation_high_lunch": 0.7492238828036105,
+      "participation_high_breakfast": 0.35919064477550466,
+      "participation_central_lunch": 0.7042238828036106,
+      "participation_central_breakfast": 0.2991906447755047,
+      "meal_value_change_adjusted_central": 58449440.94742745,
+      "school_days": 180.0,
+      "poverty_with_omitted_income": {
+        "poverty_baseline_rate": 5.5881435015454475,
+        "poverty_reform_rate": 5.5881435015454475,
+        "poverty_rate_change": 0.0,
+        "poverty_percent_change": 0.0,
+        "child_poverty_baseline_rate": 7.6761292833400745,
+        "child_poverty_reform_rate": 7.6761292833400745,
+        "child_poverty_rate_change": 0.0,
+        "child_poverty_percent_change": 0.0,
+        "deep_poverty_baseline_rate": 0.9369516290927131,
+        "deep_poverty_reform_rate": 0.9369516290927131,
+        "deep_poverty_rate_change": 0.0,
+        "deep_poverty_percent_change": 0.0,
+        "deep_child_poverty_baseline_rate": 0.43341766121098413,
+        "deep_child_poverty_reform_rate": 0.43341766121098413,
+        "deep_child_poverty_rate_change": 0.0,
+        "deep_child_poverty_percent_change": 0.0,
+        "people_lifted_out_of_poverty": 0.0,
+        "people_pushed_into_poverty": 0.0,
+        "children_lifted_out_of_poverty": 0.0,
+        "children_pushed_into_poverty": 0.0
+      },
+      "poverty_model_spm_resources": {
+        "poverty_baseline_rate": 7.005217605820585,
+        "poverty_reform_rate": 7.005217605820585,
+        "poverty_rate_change": 0.0,
+        "poverty_percent_change": 0.0,
+        "child_poverty_baseline_rate": 10.812718168077966,
+        "child_poverty_reform_rate": 10.812718168077966,
+        "child_poverty_rate_change": 0.0,
+        "child_poverty_percent_change": 0.0,
+        "deep_poverty_baseline_rate": 1.33906200249346,
+        "deep_poverty_reform_rate": 1.33906200249346,
+        "deep_poverty_rate_change": 0.0,
+        "deep_poverty_percent_change": 0.0,
+        "deep_child_poverty_baseline_rate": 1.3651800651716544,
+        "deep_child_poverty_reform_rate": 1.3651800651716544,
+        "deep_child_poverty_rate_change": 0.0,
+        "deep_child_poverty_percent_change": 0.0,
+        "people_lifted_out_of_poverty": 0.0,
+        "people_pushed_into_poverty": 0.0,
+        "children_lifted_out_of_poverty": 0.0,
+        "children_pushed_into_poverty": 0.0
+      },
+      "spm_resources_add_omitted_income": true,
+      "spm_omitted_income_total": 2725783158.344098
+    },
+    "sd-amendment-i:2028": {
+      "poverty_flag_mismatches": 0,
+      "model_net_income_change_total": -610334285.9479458,
+      "poverty_with_omitted_income": {
+        "poverty_baseline_rate": 5.050916100332385,
+        "poverty_reform_rate": 5.050916100332385,
+        "poverty_rate_change": 0.0,
+        "poverty_percent_change": 0.0,
+        "child_poverty_baseline_rate": 5.029746202187769,
+        "child_poverty_reform_rate": 5.029746202187769,
+        "child_poverty_rate_change": 0.0,
+        "child_poverty_percent_change": 0.0,
+        "deep_poverty_baseline_rate": 1.148585362200066,
+        "deep_poverty_reform_rate": 1.148585362200066,
+        "deep_poverty_rate_change": 0.0,
+        "deep_poverty_percent_change": 0.0,
+        "deep_child_poverty_baseline_rate": 0.4863890995223291,
+        "deep_child_poverty_reform_rate": 0.4863890995223291,
+        "deep_child_poverty_rate_change": 0.0,
+        "deep_child_poverty_percent_change": 0.0,
+        "people_lifted_out_of_poverty": 0.0,
+        "people_pushed_into_poverty": 0.0,
+        "children_lifted_out_of_poverty": 0.0,
+        "children_pushed_into_poverty": 0.0
+      },
+      "poverty_model_spm_resources": {
+        "poverty_baseline_rate": 6.80836569948743,
+        "poverty_reform_rate": 6.80836569948743,
+        "poverty_rate_change": 0.0,
+        "poverty_percent_change": 0.0,
+        "child_poverty_baseline_rate": 6.660567668488408,
+        "child_poverty_reform_rate": 6.660567668488408,
+        "child_poverty_rate_change": 0.0,
+        "child_poverty_percent_change": 0.0,
+        "deep_poverty_baseline_rate": 2.639893364709683,
+        "deep_poverty_reform_rate": 2.639893364709683,
+        "deep_poverty_rate_change": 0.0,
+        "deep_poverty_percent_change": 0.0,
+        "deep_child_poverty_baseline_rate": 1.8693066764453474,
+        "deep_child_poverty_reform_rate": 1.8693066764453474,
+        "deep_child_poverty_rate_change": 0.0,
+        "deep_child_poverty_percent_change": 0.0,
+        "people_lifted_out_of_poverty": 0.0,
+        "people_pushed_into_poverty": 0.0,
+        "children_lifted_out_of_poverty": 0.0,
+        "children_pushed_into_poverty": 0.0
+      },
+      "spm_resources_add_omitted_income": true,
+      "spm_omitted_income_total": 5501647485.752063
+    }
+  },
+  "top_tail": {
+    "CA": {
+      "filer_year": 2024,
+      "soi_year": 2023,
+      "model_filers": {
+        "returns": 17858194.050933957,
+        "agi": 2262462129803.3145,
+        "returns_500k_1m": 287486.32408509584,
+        "agi_500k_1m": 212101643391.20856,
+        "records_500k_1m": 5603,
+        "returns_1m_plus": 279465.9388672375,
+        "agi_1m_plus": 496354879872.4973,
+        "records_1m_plus": 2311,
+        "agi_above_1m": 216888941005.25986
+      },
+      "soi": {
+        "returns": 18482300,
+        "agi": 2050805047000,
+        "returns_500k_1m": 317160,
+        "agi_500k_1m": 213715326000,
+        "returns_1m_plus": 132720,
+        "agi_1m_plus": 400221114000,
+        "agi_above_1m": 267501114000.0
+      },
+      "coverage": {
+        "returns": 0.9662322357571275,
+        "agi": 1.103206827539719,
+        "returns_500k_1m": 0.9064394125523264,
+        "agi_500k_1m": 0.9924493828355977,
+        "returns_1m_plus": 2.105680672598233,
+        "agi_1m_plus": 1.240201634820539,
+        "agi_above_1m": 0.8107964029086617
+      },
+      "band_scale": {
+        "500k_1m": 1.0076080627334656,
+        "1m_plus_returns": 0.47490581692336287,
+        "1m_plus_above": 1.233355249742829
+      }
+    },
+    "CO": {
+      "filer_year": 2024,
+      "soi_year": 2023,
+      "model_filers": {
+        "returns": 2807377.0875107283,
+        "agi": 336303854196.9985,
+        "returns_500k_1m": 38968.15086179192,
+        "agi_500k_1m": 29610061961.764236,
+        "records_500k_1m": 909,
+        "returns_1m_plus": 36545.347799380674,
+        "agi_1m_plus": 52533263064.688034,
+        "records_1m_plus": 327,
+        "agi_above_1m": 15987915265.307362
+      },
+      "soi": {
+        "returns": 3086830,
+        "agi": 314115675000,
+        "returns_500k_1m": 38030,
+        "agi_500k_1m": 25370899000,
+        "returns_1m_plus": 15610,
+        "agi_1m_plus": 47266883000,
+        "agi_above_1m": 31656883000.0
+      },
+      "coverage": {
+        "returns": 0.9094692896954897,
+        "agi": 1.0706369689987565,
+        "returns_500k_1m": 1.0246687052798296,
+        "agi_500k_1m": 1.1670876133228167,
+        "returns_1m_plus": 2.3411497629327784,
+        "agi_1m_plus": 1.1114179681509364,
+        "agi_above_1m": 0.5050375700383187
+      },
+      "band_scale": {
+        "500k_1m": 0.8568337017586012,
+        "1m_plus_returns": 0.4271405511227489,
+        "1m_plus_above": 1.9800507117205695
+      }
+    },
+    "WA": {
+      "filer_year": 2024,
+      "soi_year": 2023,
+      "model_filers": {
+        "returns": 3505578.3727801936,
+        "agi": 469527435616.4388,
+        "returns_500k_1m": 62252.63846823838,
+        "agi_500k_1m": 42406312891.72351,
+        "records_500k_1m": 1129,
+        "returns_1m_plus": 53502.632875336654,
+        "agi_1m_plus": 77845543462.00775,
+        "records_1m_plus": 344,
+        "agi_above_1m": 24342910586.671097
+      },
+      "soi": {
+        "returns": 3781890,
+        "agi": 434342159000,
+        "returns_500k_1m": 67020,
+        "agi_500k_1m": 44630153000,
+        "returns_1m_plus": 23370,
+        "agi_1m_plus": 60595722000,
+        "agi_above_1m": 37225722000.0
+      },
+      "coverage": {
+        "returns": 0.92693821681228,
+        "agi": 1.0810082003032977,
+        "returns_500k_1m": 0.9288665841276988,
+        "agi_500k_1m": 0.9501718018247329,
+        "returns_1m_plus": 2.2893723951791465,
+        "agi_1m_plus": 1.284670615229368,
+        "agi_above_1m": 0.6539271578579751
+      },
+      "band_scale": {
+        "500k_1m": 1.0524412512343302,
+        "1m_plus_returns": 0.4368009337868113,
+        "1m_plus_above": 1.5292223116648531
+      }
+    }
+  }
+}

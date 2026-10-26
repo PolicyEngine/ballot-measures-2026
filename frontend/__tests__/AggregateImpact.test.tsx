@@ -1,169 +1,153 @@
-import { render, screen } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import AggregateImpact from '../components/AggregateImpact';
-
-// Mock fetch for CSV loading — plain (no _revert) filenames per
-// scripts/DATA_SCHEMA.md, single year 2027, forward sign convention
-// (positive revenue = revenue increase; negative household change =
-// tax increase).
-const mockMetricsCSV = `year,metric,value
-2027,budgetary_impact,2100000000
-2027,federal_tax_revenue_impact,0
-2027,state_tax_revenue_impact,2000000000
-2027,tax_revenue_impact,2100000000
-2027,households,2300000
-2027,avg_household_net_income_change,-913
-2027,total_cost,-2100000000
-2027,beneficiaries,1500000
-2027,avg_benefit,85
-2027,winners,1500000
-2027,losers,700000
-2027,winners_rate,65.2
-2027,losers_rate,30.4
-2027,poverty_baseline_rate,9.5
-2027,poverty_reform_rate,9.5
-2027,poverty_rate_change,0
-2027,poverty_percent_change,0
-2027,child_poverty_baseline_rate,11.2
-2027,child_poverty_reform_rate,11.2
-2027,child_poverty_rate_change,0
-2027,child_poverty_percent_change,0
-2027,deep_poverty_baseline_rate,3.8
-2027,deep_poverty_reform_rate,3.8
-2027,deep_poverty_rate_change,0
-2027,deep_poverty_percent_change,0
-2027,deep_child_poverty_baseline_rate,4.1
-2027,deep_child_poverty_reform_rate,4.1
-2027,deep_child_poverty_rate_change,0
-2027,deep_child_poverty_percent_change,0`;
-
-const mockDistributionalCSV = `year,decile,average_change,relative_change
-2027,1,45,0.002
-2027,2,60,0.002
-2027,3,70,0.002
-2027,4,80,0.002
-2027,5,85,0.001
-2027,6,90,0.001
-2027,7,95,0.001
-2027,8,100,0.001
-2027,9,60,0
-2027,10,-9500,-0.02`;
-
-const mockWinnersLosersCSV = `year,decile,gain_more_5pct,gain_less_5pct,no_change,lose_less_5pct,lose_more_5pct
-2027,All,0.01,0.64,0.05,0.25,0.05
-2027,1,0.05,0.75,0.2,0,0
-2027,2,0.02,0.78,0.2,0,0
-2027,3,0.01,0.79,0.2,0,0
-2027,4,0.01,0.79,0.2,0,0
-2027,5,0,0.8,0.2,0,0
-2027,6,0,0.8,0.2,0,0
-2027,7,0,0.8,0.2,0,0
-2027,8,0,0.8,0.2,0,0
-2027,9,0,0.75,0.2,0.05,0
-2027,10,0,0.1,0.1,0.5,0.3`;
-
-const mockIncomeBracketsCSV = `year,bracket,households,beneficiaries,total_cost,avg_benefit
-2027,$0 - $25k,300000,250000,20000000,67
-2027,$25k - $50k,350000,300000,35000000,100
-2027,$50k - $75k,320000,280000,40000000,125
-2027,$75k - $100k,280000,240000,35000000,125
-2027,$100k - $200k,500000,300000,10000000,20
-2027,$200k - $500k,350000,100000,-50000000,-143
-2027,$500k - $750k,60000,0,-500000000,-8333
-2027,$750k - $1M,25000,0,-450000000,-18000
-2027,$1M+,30000,0,-1240000000,-41333`;
-
-beforeEach(() => {
-  global.fetch = vi.fn((url: string) => {
-    if (url.includes('metrics.csv')) {
-      return Promise.resolve({ ok: true, text: () => Promise.resolve(mockMetricsCSV) });
-    }
-    if (url.includes('distributional_impact.csv')) {
-      return Promise.resolve({ ok: true, text: () => Promise.resolve(mockDistributionalCSV) });
-    }
-    if (url.includes('winners_losers.csv')) {
-      return Promise.resolve({ ok: true, text: () => Promise.resolve(mockWinnersLosersCSV) });
-    }
-    if (url.includes('income_brackets.csv')) {
-      return Promise.resolve({ ok: true, text: () => Promise.resolve(mockIncomeBracketsCSV) });
-    }
-    return Promise.resolve({ ok: false, status: 404 });
-  }) as typeof fetch;
-});
-
-// Mock ResizeObserver for Recharts
-vi.mock('recharts', async () => {
-  const actual = await vi.importActual<typeof import('recharts')>('recharts');
-  return {
-    ...actual,
-    ResponsiveContainer: ({ children }: { children: React.ReactNode }) => (
-      <div data-testid="responsive-container">{children}</div>
-    ),
-  };
-});
-
-const createTestQueryClient = () =>
-  new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: false,
-      },
-    },
-  });
+import { fireEvent, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+import AggregateImpact, { PrecisionNote } from '../components/AggregateImpact';
+import { PovertySection } from '../components/statewide/sections';
+import { getMeasure } from '../lib/registry';
+import { fixtureFiles, mockDataFiles, renderWithQuery } from './testUtils';
 
 describe('AggregateImpact', () => {
-  it('renders nothing when not triggered', () => {
-    const queryClient = createTestQueryClient();
-    const { container } = render(
-      <QueryClientProvider client={queryClient}>
-        <AggregateImpact triggered={false} />
-      </QueryClientProvider>
-    );
-    expect(container.firstChild).toBeNull();
+  it('shows income tax cards and switches sections', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<AggregateImpact measure={getMeasure('co-amendment-87')} year={2027} />);
+    expect(await screen.findByText('Change in state income tax revenue')).toBeInTheDocument();
+    // The card and the budget table both show the state revenue change.
+    expect(screen.getAllByText('+$1.81B').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('Households gaining / losing')).toBeInTheDocument();
+    expect(screen.getByText('71.5% / 3.2%')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'By income decile' }));
+    expect(screen.getByText('Change in net income by income decile')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Gains and losses' }));
+    expect(screen.getByText('Gains and losses by income decile')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'By income band' }));
+    expect(screen.getByRole('table', { name: /Impact by income band, 2027/ })).toHaveTextContent('$1M+');
+    fireEvent.click(screen.getByRole('tab', { name: 'Poverty' }));
+    expect(screen.getByText('Poverty rates')).toBeInTheDocument();
   });
 
-  it('shows loading state when triggered', () => {
-    const queryClient = createTestQueryClient();
-    render(
-      <QueryClientProvider client={queryClient}>
-        <AggregateImpact triggered={true} />
-      </QueryClientProvider>
-    );
-    expect(screen.getByText('Loading Colorado statewide data...')).toBeInTheDocument();
+  it('notes that the federal deduction uses withholding when federal revenue does not move', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<AggregateImpact measure={getMeasure('wa-i-645')} year={2029} />);
+    expect(screen.getByText(/tax year 2029/)).toBeInTheDocument();
+    expect(await screen.findByText(/uses state income tax withholding in the model/)).toBeInTheDocument();
   });
 
-  it('renders the fiscal cards from the plain-named CSVs', async () => {
-    const queryClient = createTestQueryClient();
-    render(
-      <QueryClientProvider client={queryClient}>
-        <AggregateImpact triggered={true} />
-      </QueryClientProvider>
-    );
+  it('shows people and spending, not net income, for the Medicaid scenario', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<AggregateImpact measure={getMeasure('sd-amendment-i')} year={2028} />);
+    expect(await screen.findByText('People losing Medicaid')).toBeInTheDocument();
+    // Calibrated (unsuffixed) counts, not the _model values.
+    expect(screen.getByText('28,017')).toBeInTheDocument();
+    expect(screen.queryByText('54,000')).toBeNull();
+    expect(screen.getByText('In the coverage gap')).toBeInTheDocument();
     expect(
-      await screen.findByText('Colorado state revenue change')
+      screen.getByText('Income at or above the poverty line (may qualify for marketplace subsidies)'),
     ).toBeInTheDocument();
-    // state_tax_revenue_impact = +$2.0B (revenue increase)
-    expect(screen.getByText('+$2.0B')).toBeInTheDocument();
-    // total_cost = -$2.1B (household-side mirror)
-    expect(screen.getByText('-$2.1B')).toBeInTheDocument();
-    // federal_tax_revenue_impact = 0 by construction (withholding proxy)
-    // renders as a footnoted "Not modeled*", not a bare $0
-    expect(screen.getByText('Not modeled*')).toBeInTheDocument();
+    // The state card carries the methodology tab's federal-share sensitivity.
+    expect(
+      screen.getByText(/Each 10-point drop in the federal share would shift about \$33\.2M a year to the state/),
+    ).toBeInTheDocument();
+    expect(screen.getByText('Gaining a premium tax credit')).toBeInTheDocument();
+    expect(screen.getByText('Change in state Medicaid spending')).toBeInTheDocument();
+    expect(screen.getByText('Change in federal Medicaid spending')).toBeInTheDocument();
+    expect(screen.getByText('Change in premium tax credits')).toBeInTheDocument();
+    expect(screen.getByText(/shown in people and government spending rather than household net income/)).toBeInTheDocument();
+    expect(screen.getByText(/Scaled to the Department of Social Services’ 29,055 expansion enrollees \(×0\.52\)/)).toBeInTheDocument();
+    // No net-income sections.
+    expect(screen.queryByRole('tablist', { name: 'Statewide sections' })).toBeNull();
+    expect(screen.queryByText('Average change in household net income')).toBeNull();
+    expect(screen.getByText(/The scenario in which expansion ends/)).toBeInTheDocument();
   });
 
-  it('shows the unavailable-data panel when CSVs are missing', async () => {
-    global.fetch = vi.fn(() =>
-      Promise.resolve({ ok: false, status: 404 })
-    ) as typeof fetch;
-    const queryClient = createTestQueryClient();
-    render(
-      <QueryClientProvider client={queryClient}>
-        <AggregateImpact triggered={true} />
-      </QueryClientProvider>
+  it('explains why California and Washington have no district breakdown', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<AggregateImpact measure={getMeasure('ca-prop-3')} year={2031} />);
+    const note = await screen.findByTestId('no-districts-note');
+    expect(note).toHaveTextContent('does not break Proposition 3 down by congressional district');
+    expect(note).toHaveTextContent('district figures would be unreliable');
+  });
+
+  it('adds no district note for Colorado or at-large states', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<AggregateImpact measure={getMeasure('co-prop-nn')} year={2027} />);
+    await screen.findByText('Sales tax refunds not paid');
+    expect(screen.queryByTestId('no-districts-note')).toBeNull();
+  });
+
+  it('shows the school meal cost range', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<AggregateImpact measure={getMeasure('nd-measure-2')} year={2028} />);
+    expect(await screen.findByText('State cost per year')).toBeInTheDocument();
+    // The card and the budget details both show the participation-adjusted range.
+    expect(screen.getAllByText('$59.5M to $67M').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('$119M to $134M')).toBeInTheDocument();
+  });
+
+  it('shows poverty movement in both directions and notes tiny changes', () => {
+    const metrics = {
+      poverty_baseline_rate: 9.6,
+      poverty_reform_rate: 9.6003,
+      poverty_rate_change: 0.0003,
+      poverty_percent_change: 0.003,
+      people_lifted_out_of_poverty: 0,
+      people_pushed_into_poverty: 1707,
+      children_lifted_out_of_poverty: 0,
+    };
+    renderWithQuery(
+      <PovertySection
+        data={{ measure: 'ca-prop-3', year: 2031, metrics, deciles: null, winnersLosers: null, incomeBrackets: null }}
+      />,
     );
-    expect(
-      await screen.findByText('Statewide impact data not yet available')
-    ).toBeInTheDocument();
+    const table = screen.getByRole('table', { name: 'People moving across the poverty line' });
+    expect(table).toHaveTextContent('Moved into poverty');
+    expect(table).toHaveTextContent('1,707');
+    // Without a children-moved-into-poverty count, children are not shown one way only.
+    expect(table).not.toHaveTextContent('Children');
+    expect(screen.getByText(/changes by less than 0\.1% of its current-law level/)).toBeInTheDocument();
+  });
+
+  it('shows children moving in both directions once both counts exist', () => {
+    const metrics = {
+      people_lifted_out_of_poverty: 414,
+      people_pushed_into_poverty: 0,
+      children_lifted_out_of_poverty: 95,
+      children_pushed_into_poverty: 0,
+    };
+    renderWithQuery(
+      <PovertySection
+        data={{ measure: 'wa-i-645', year: 2028, metrics, deciles: null, winnersLosers: null, incomeBrackets: null }}
+      />,
+    );
+    const table = screen.getByRole('table', { name: 'People moving across the poverty line' });
+    expect(table).toHaveTextContent('Children moved out of poverty');
+    expect(table).toHaveTextContent('Children moved into poverty');
+    expect(table).toHaveTextContent('95');
+  });
+
+  it('flags estimates that rest on a small effective sample', () => {
+    renderWithQuery(
+      <PrecisionNote metrics={{ affected_sample_households: 447, effective_affected_sample_households: 13.3 }} />,
+    );
+    expect(screen.getByRole('note')).toHaveTextContent('447 sampled households');
+    expect(screen.getByRole('note')).toHaveTextContent('about 13 independent households');
+  });
+
+  it('adds no note for a large effective sample', () => {
+    const { container } = renderWithQuery(
+      <PrecisionNote metrics={{ affected_sample_households: 9000, effective_affected_sample_households: 202 }} />,
+    );
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it('says results are not yet available when metrics.csv is missing', async () => {
+    mockDataFiles({});
+    renderWithQuery(<AggregateImpact measure={getMeasure('ca-prop-3')} year={2031} />);
+    expect(await screen.findByText('Statewide results not yet available')).toBeInTheDocument();
+  });
+
+  it('ignores results in the old single-measure format', async () => {
+    mockDataFiles({ 'metrics.csv': 'year,metric,value\n2031,households,1\n' });
+    renderWithQuery(<AggregateImpact measure={getMeasure('ca-prop-3')} year={2031} />);
+    expect(await screen.findByText('Statewide results not yet available')).toBeInTheDocument();
   });
 });

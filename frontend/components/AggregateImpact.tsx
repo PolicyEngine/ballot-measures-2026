@@ -1,146 +1,99 @@
 'use client';
 
 import { useState } from 'react';
-import { useAggregateImpact } from '@/hooks/useAggregateImpact';
-import { CO_DASHBOARD_YEAR } from '@/lib/household';
-import { formatUSD } from '@/lib/format';
+import { formatCount } from '@/lib/format';
+import { useStatewideResults, type Measure } from '@/lib/measures';
+import { CORE_METRICS } from '@/lib/metrics';
+import { metric, type StatewideResults } from '@/lib/results';
+import DownloadResults from './DownloadResults';
+import { FORECAST_INPUT_NOTE } from '@/lib/figureBasis';
+import { BasisNote } from './FigureBasis';
+import { Callout, Loading, ResultsUnavailable, rovingKeyDown } from './ui';
+import CoverageStatewide from './statewide/CoverageStatewide';
+import { KindHeadlineCards } from './statewide/KindSummary';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-  Cell,
-} from 'recharts';
-import ChartWatermark from './ChartWatermark';
-// App-v2 color tokens using CSS variables
-const COLORS = {
-  gainMore5: 'var(--chart-gain-more-5)',
-  gainLess5: 'var(--chart-gain-less-5)',
-  noChange: 'var(--chart-no-change)',
-  loseLess5: 'var(--chart-lose-less-5)',
-  loseMore5: 'var(--chart-lose-more-5)',
-  positive: 'var(--chart-positive)',
-  negative: 'var(--chart-negative)',
-};
+  BudgetSection,
+  DistributionalSection,
+  IncomeBandsSection,
+  PovertySection,
+  WinnersSection,
+} from './statewide/sections';
 
-// Shared chart margins
-const CHART_MARGIN = { top: 20, right: 20, bottom: 30, left: 60 };
+type Section = 'budget' | 'distributional' | 'winners' | 'bands' | 'poverty';
 
-// Shared axis tick style
-const TICK_STYLE = { fontFamily: 'var(--font-sans)', fontSize: 12 };
+/** Statewide sections for the net-income measures (the Medicaid scenario has its own view). */
+export const STATEWIDE_SECTIONS: { key: Section; label: string }[] = [
+  { key: 'budget', label: 'Budget' },
+  { key: 'distributional', label: 'By income decile' },
+  { key: 'winners', label: 'Gains and losses' },
+  { key: 'bands', label: 'By income band' },
+  { key: 'poverty', label: 'Poverty' },
+];
 
-// Custom tooltip component
-function CustomTooltip({ active, payload, label, formatter }: {
-  active?: boolean;
-  payload?: { name: string; value: number; color?: string }[];
-  label?: string;
-  formatter?: (value: number, name: string) => string;
-}) {
-  if (!active || !payload?.length) return null;
+/** Below this effective sample of affected households, flag the estimate as imprecise. */
+export const SMALL_EFFECTIVE_SAMPLE = 50;
+
+/** Note when the change rests on few survey households (Kish effective sample). */
+export function PrecisionNote({ metrics }: { metrics: Record<string, number> }) {
+  const effective = metric(metrics, CORE_METRICS.effectiveAffectedSampleHouseholds);
+  const sampled = metric(metrics, CORE_METRICS.affectedSampleHouseholds);
+  if (effective === null || effective >= SMALL_EFFECTIVE_SAMPLE) return null;
   return (
-    <div style={{
-      background: 'var(--chart-tooltip-bg)',
-      border: '1px solid var(--chart-tooltip-border)',
-      borderRadius: 4,
-      padding: '8px 12px',
-      fontFamily: 'var(--font-sans)',
-      fontSize: 12,
-    }}>
-      {label && <p style={{ margin: '0 0 4px', fontWeight: 600, color: 'var(--text-heading)' }}>{label}</p>}
-      {payload.map((entry, i) => (
-        <p key={i} style={{ margin: 0, color: entry.color || 'var(--text-body)' }}>
-          {entry.name}: {formatter ? formatter(entry.value, entry.name) : entry.value}
-        </p>
-      ))}
-    </div>
+    <Callout role="note">
+      These figures rest on {sampled === null ? 'a small number of' : formatCount(sampled)} sampled
+      households that the measure affects. Their survey weights vary, so together they carry the
+      statistical weight of about {formatCount(Math.max(1, effective))} independent households (the
+      effective sample size), and the estimates are approximate. The methodology tab compares them
+      with official estimates.
+    </Callout>
   );
 }
 
-interface Props {
-  triggered: boolean;
+/** Why a measure in a state with districts has no district breakdown (CA, WA). */
+export function NoDistrictsNote({ measure, metrics }: { measure: Measure; metrics?: Record<string, number> }) {
+  if (!measure.has_districts || measure.show_districts) return null;
+  const effective = metric(metrics, CORE_METRICS.effectiveAffectedSampleHouseholds);
+  return (
+    <p className="text-sm text-gray-600" data-testid="no-districts-note">
+      This dashboard does not break {measure.designation} down by congressional district: few sample
+      households carry the change
+      {effective !== null ? ` (an effective sample of about ${formatCount(Math.max(1, effective))})` : ''}, so
+      district figures would be unreliable.
+    </p>
+  );
 }
 
-// Statewide aggregates are precomputed for TY 2027 only — the first
-// year the Initiative 195 graduated schedule would apply.
-export default function AggregateImpact({ triggered }: Props) {
-  const selectedYear = CO_DASHBOARD_YEAR;
-  const { data, isLoading, error } = useAggregateImpact(triggered, selectedYear);
-  const [activeSection, setActiveSection] = useState<
-    'fiscal' | 'distributional' | 'winners' | 'poverty'
-  >('fiscal');
-  const [distMode, setDistMode] = useState<'relative' | 'absolute'>('relative');
-
-  if (!triggered) return null;
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <div className="inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="mt-4 text-gray-600">Loading Colorado statewide data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return (
-      <div className="bg-gray-50 border border-gray-200 rounded-lg p-6">
-        <h3 className="text-gray-800 font-semibold mb-2">Statewide impact data not yet available</h3>
-        <p className="text-gray-600 font-medium mb-2">{errorMessage}</p>
-        <p className="text-sm text-gray-500 mt-4">
-          Precomputed data has not been generated yet. Run the Modal
-          precompute (<code>modal run scripts/modal_pipeline.py</code>) to
-          populate the CSVs in <code>frontend/public/data/</code>.
-        </p>
-      </div>
-    );
-  }
-
-  if (!data) return null;
-
-  const formatCurrencyWithSign = (value: number) =>
-    value >= 0 ? `+${formatUSD(value)}` : formatUSD(value);
-  const formatBillions = (value: number) => {
-    const abs = Math.abs(value);
-    const sign = value >= 0 ? '+' : '-';
-    if (abs >= 1e12) return `${sign}$${(abs / 1e12).toFixed(1)}T`;
-    if (abs >= 1e9) return `${sign}$${(abs / 1e9).toFixed(1)}B`;
-    if (abs >= 1e6) return `${sign}$${(abs / 1e6).toFixed(1)}M`;
-    return formatCurrencyWithSign(value);
-  };
-
-  // Section tabs
-  const sections = [
-    { key: 'fiscal' as const, label: 'Budgetary impact' },
-    { key: 'distributional' as const, label: 'Distributional impact' },
-    { key: 'winners' as const, label: 'Winners & losers' },
-    { key: 'poverty' as const, label: 'Poverty impact' },
-  ];
-
+function NetIncomeStatewide({ measure, data }: { measure: Measure; data: StatewideResults }) {
+  const [section, setSection] = useState<Section>('budget');
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-primary">Colorado statewide impact</h2>
-      <p className="text-sm text-gray-600">
-        Estimated impact of the Initiative 195 graduated schedule (reform)
-        relative to current law (4.4% flat tax) in tax year {selectedYear}.
-        All impacts are reform minus baseline: a negative household figure
-        indicates a net-income decrease.
-      </p>
+    <>
+      <KindHeadlineCards measure={measure} metrics={data.metrics} />
+      {measure.kind === 'tabor_refund' && <BasisNote basis="forecast">{FORECAST_INPUT_NOTE}</BasisNote>}
+      <PrecisionNote metrics={data.metrics} />
 
-      {/* Sub-navigation */}
-      <div className="flex flex-wrap gap-2">
-        {sections.map((s) => (
+      <div
+        className="flex flex-wrap gap-2"
+        role="tablist"
+        aria-label="Statewide sections"
+        onKeyDown={(e) =>
+          rovingKeyDown(
+            e,
+            STATEWIDE_SECTIONS.map((s) => s.key),
+            section,
+            setSection,
+          )
+        }
+      >
+        {STATEWIDE_SECTIONS.map((s) => (
           <button
             key={s.key}
-            onClick={() => setActiveSection(s.key)}
+            type="button"
+            role="tab"
+            aria-selected={section === s.key}
+            tabIndex={section === s.key ? 0 : -1}
+            onClick={() => setSection(s.key)}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              activeSection === s.key
+              section === s.key
                 ? 'bg-primary-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
@@ -150,395 +103,71 @@ export default function AggregateImpact({ triggered }: Props) {
         ))}
       </div>
 
-      {/* ===== FISCAL IMPACT ===== */}
-      {activeSection === 'fiscal' && (
-        <div className="space-y-6">
-          {/* Selected year impact - 3 cards */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">
-              Revenue and household impact ({selectedYear})
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className={`rounded-lg p-5 border ${
-                data.budget.state_tax_revenue_impact >= 0 ? 'bg-green-50 border-success' : 'bg-red-50 border-red-300'
-              }`}>
-                <p className="text-sm text-gray-700 mb-2">Colorado state revenue change</p>
-                <p className={`text-2xl font-bold ${
-                  data.budget.state_tax_revenue_impact >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {formatBillions(data.budget.state_tax_revenue_impact)}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Change in Colorado state tax collections
-                </p>
-              </div>
-              {data.budget.federal_tax_revenue_impact === 0 ? (
-                <div className="rounded-lg p-5 border bg-gray-50 border-gray-300">
-                  <p className="text-sm text-gray-700 mb-2">Federal revenue change</p>
-                  <p className="text-2xl font-bold text-gray-500">
-                    Not modeled*
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    *SALT feedback to federal tax is not modeled; see the
-                    validation &amp; methodology tab
-                  </p>
-                </div>
-              ) : (
-                <div className={`rounded-lg p-5 border ${
-                  data.budget.federal_tax_revenue_impact >= 0 ? 'bg-green-50 border-success' : 'bg-red-50 border-red-300'
-                }`}>
-                  <p className="text-sm text-gray-700 mb-2">Federal revenue change</p>
-                  <p className={`text-2xl font-bold ${
-                    data.budget.federal_tax_revenue_impact >= 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {formatBillions(data.budget.federal_tax_revenue_impact)}
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Spillover effect on federal collections
-                  </p>
-                </div>
-              )}
-              <div className={`rounded-lg p-5 border ${
-                data.total_cost >= 0 ? 'bg-green-50 border-success' : 'bg-red-50 border-red-300'
-              }`}>
-                <p className="text-sm text-gray-700 mb-2">Total household impact</p>
-                <p className={`text-2xl font-bold ${
-                  data.total_cost >= 0 ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {formatBillions(data.total_cost)}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  Net change in Colorado household net income
-                </p>
-              </div>
-            </div>
-          </div>
+      {measure.kind === 'school_meals' && (
+        <BasisNote basis="calibrated">
+          Household gains in these sections, including the poverty figures, use the
+          participation-adjusted midpoint of the low and high cases, not the model&apos;s
+          assumption that every student eats both meals every day.
+        </BasisNote>
+      )}
+      {section === 'budget' && <BudgetSection measure={measure} data={data} />}
+      {section === 'distributional' && <DistributionalSection data={data} />}
+      {section === 'winners' && <WinnersSection data={data} />}
+      {section === 'bands' && <IncomeBandsSection data={data} />}
+      {section === 'poverty' && <PovertySection data={data} />}
+    </>
+  );
+}
 
-          {/* Income bracket table */}
-          <div>
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Impact by income band</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-300">
-                    <th className="text-left px-4 py-3 font-medium text-gray-900">Income band</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-900">Households gaining</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-900">Total impact</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-900">Average impact</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {data.by_income_bracket.map((bracket, index) => (
-                    <tr key={index} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-gray-900">{bracket.bracket}</td>
-                      <td className="px-4 py-3 text-gray-700 text-right">{Math.round(bracket.beneficiaries).toLocaleString()}</td>
-                      <td className="px-4 py-3 font-semibold text-right"
-                        style={{ color: bracket.total_cost >= 0 ? COLORS.positive : COLORS.negative }}>
-                        {formatBillions(bracket.total_cost)}
-                      </td>
-                      <td className="px-4 py-3 font-semibold text-right"
-                        style={{ color: bracket.avg_benefit >= 0 ? COLORS.positive : COLORS.negative }}>
-                        {formatCurrencyWithSign(bracket.avg_benefit)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <p className="text-xs text-gray-500 mt-3 italic">
-              Income bands use baseline household adjusted gross income.
-              &quot;Households gaining&quot; counts households whose net income
-              rises; &quot;Total impact&quot; and &quot;Average impact&quot;
-              cover all households in the band, so a negative value indicates
-              the band pays more tax in aggregate.
-            </p>
-          </div>
+interface Props {
+  measure: Measure;
+  year: number;
+}
+
+export default function AggregateImpact({ measure, year }: Props) {
+  const { data, isLoading, error } = useStatewideResults(measure.slug, year);
+  const conditional = measure.kind_params?.conditional === true;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-2xl font-bold text-primary-700">{measure.state_name} statewide impact</h2>
+          <p className="text-sm text-gray-600 mt-1">
+            {conditional
+              ? `The scenario in which expansion ends, compared with current law, ${year}.`
+              : `If ${measure.designation} passes, compared with current law, tax year ${year}.`}
+          </p>
         </div>
+        <DownloadResults slug={measure.slug} file="metrics.csv" label="Download statewide results (CSV)" />
+      </div>
+
+      {isLoading ? (
+        <Loading label={`Loading ${measure.state_name} results…`} />
+      ) : error ? (
+        <ResultsUnavailable
+          title="Statewide results not yet available"
+          detail={error instanceof Error ? error.message : undefined}
+        />
+      ) : !data ? (
+        <ResultsUnavailable
+          title="Statewide results not yet available"
+          detail={`metrics.csv has no rows for ${measure.slug} in ${year}.`}
+        />
+      ) : measure.kind === 'medicaid' ? (
+        <>
+          <CoverageStatewide data={data} />
+          <PrecisionNote metrics={data.metrics} />
+        </>
+      ) : (
+        <NetIncomeStatewide measure={measure} data={data} />
       )}
 
-      {/* ===== DISTRIBUTIONAL IMPACT ===== */}
-      {activeSection === 'distributional' && (() => {
-        const isRelative = distMode === 'relative';
-        const rawValues = isRelative
-          ? Object.values(data.decile.relative).map(v => v * 100)
-          : Object.values(data.decile.average);
-        const maxAbs = Math.max(...rawValues.map(Math.abs));
-        const niceStep = (() => {
-          const rough = maxAbs / 3;
-          const mag = Math.pow(10, Math.floor(Math.log10(rough)));
-          const residual = rough / mag;
-          if (residual <= 1) return mag;
-          if (residual <= 2) return 2 * mag;
-          if (residual <= 5) return 5 * mag;
-          return 10 * mag;
-        })();
-        const niceMax = Math.ceil(maxAbs / niceStep) * niceStep;
-        const symmetricDomain = [-niceMax, niceMax];
-        const niceTicks = Array.from(
-          { length: Math.round(2 * niceMax / niceStep) + 1 },
-          (_, i) => -niceMax + i * niceStep,
-        );
-        const chartData = isRelative
-          ? Object.entries(data.decile.relative).map(([k, v]) => ({ decile: k, value: v * 100 }))
-          : Object.entries(data.decile.average).map(([k, v]) => ({ decile: k, value: v }));
+      <NoDistrictsNote measure={measure} metrics={data?.metrics} />
 
-        return (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <h3 className="text-lg font-semibold text-gray-800">Impact by income decile</h3>
-              <div className="flex gap-1">
-                {(['relative', 'absolute'] as const).map((mode) => (
-                  <button
-                    key={mode}
-                    onClick={() => setDistMode(mode)}
-                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                      distMode === mode
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {mode === 'relative' ? 'Relative' : 'Absolute'}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <p className="text-gray-700">
-              {isRelative
-                ? 'Change in household net income as a percentage of baseline income, by decile.'
-                : 'Average change in household net income in dollars, by decile.'}
-            </p>
-            <ResponsiveContainer width="100%" height={400}>
-                <BarChart data={chartData} margin={CHART_MARGIN}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
-                  <XAxis dataKey="decile" tick={TICK_STYLE} stroke="var(--chart-axis)" label={{ value: 'Income decile', position: 'insideBottom', offset: -15, style: { ...TICK_STYLE, fill: 'var(--chart-axis-label)' } }} />
-                  <YAxis
-                    domain={symmetricDomain}
-                    ticks={niceTicks}
-                    tickFormatter={isRelative
-                      ? (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(1)}%`
-                      : formatCurrencyWithSign}
-                    tick={TICK_STYLE}
-                    stroke="var(--chart-axis)"
-                    width={isRelative ? 60 : 80}
-                    allowDecimals={false}
-                  />
-                  <Tooltip content={<CustomTooltip formatter={isRelative
-                    ? (v) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`
-                    : (v) => formatCurrencyWithSign(v)} />}
-                  />
-                  <ReferenceLine y={0} stroke="var(--chart-axis)" strokeWidth={1} />
-                  <Bar dataKey="value" name={isRelative ? 'Relative impact (% of income)' : 'Average impact'} radius={[2, 2, 0, 0]}>
-                    {rawValues.map((v, i) => (
-                      <Cell key={i} fill={v >= 0 ? COLORS.positive : COLORS.negative} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            <ChartWatermark />
-            <p className="text-xs text-gray-500 mt-3 italic">
-              Distributional impacts are calculated at the household level. A household may contain multiple tax units (e.g., an adult child living with parents who files separately).
-            </p>
-          </div>
-        );
-      })()}
-
-      {/* ===== WINNERS & LOSERS ===== */}
-      {activeSection === 'winners' && (() => {
-        const intra = data.intra_decile;
-        const categories = [
-          { key: 'gain_more_than_5pct', label: 'Gain more than 5%', color: COLORS.gainMore5 },
-          { key: 'gain_less_than_5pct', label: 'Gain less than 5%', color: COLORS.gainLess5 },
-          { key: 'no_change', label: 'No change', color: COLORS.noChange },
-          { key: 'lose_less_than_5pct', label: 'Lose less than 5%', color: COLORS.loseLess5 },
-          { key: 'lose_more_than_5pct', label: 'Lose more than 5%', color: COLORS.loseMore5 },
-        ] as const;
-
-        const stackedData = [
-          {
-            label: 'All',
-            ...Object.fromEntries(categories.map(c => [c.key, (intra.all[c.key] * 100)])),
-          },
-          ...Array.from({ length: 10 }, (_, i) => {
-            const d = 10 - i;
-            return {
-              label: `${d}`,
-              ...Object.fromEntries(categories.map(c => [c.key, (intra.deciles[c.key][d - 1] * 100)])),
-            };
-          }),
-        ];
-
-        return (
-          <div className="space-y-6">
-            {/* Headline */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="rounded-lg p-6 border" style={{ backgroundColor: 'var(--chart-winners-bg)', borderColor: COLORS.positive }}>
-                <p className="text-sm text-gray-700 mb-2">Winners</p>
-                <p className="text-3xl font-bold" style={{ color: COLORS.gainMore5 }}>{data.winners_rate.toFixed(1)}%</p>
-                <p className="text-xs text-gray-600 mt-1">{Math.round(data.winners).toLocaleString()} households gain</p>
-              </div>
-              <div className="bg-gray-50 rounded-lg p-6 border border-gray-300">
-                <p className="text-sm text-gray-700 mb-2">No change</p>
-                <p className="text-3xl font-bold text-gray-600">
-                  {(100 - data.winners_rate - data.losers_rate).toFixed(1)}%
-                </p>
-              </div>
-              <div className="rounded-lg p-6 border" style={{ backgroundColor: 'var(--chart-losers-bg)', borderColor: COLORS.loseMore5 }}>
-                <p className="text-sm text-gray-700 mb-2">Losers</p>
-                <p className="text-3xl font-bold" style={{ color: COLORS.loseMore5 }}>{data.losers_rate.toFixed(1)}%</p>
-                <p className="text-xs text-gray-600 mt-1">{Math.round(data.losers).toLocaleString()} households lose</p>
-              </div>
-            </div>
-
-            {/* Stacked bar chart by decile */}
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">Winners & losers by income decile</h3>
-              <div className="bg-white border rounded-lg p-6">
-                <ResponsiveContainer width="100%" height={400}>
-                    <BarChart data={stackedData} layout="vertical" stackOffset="expand" barSize={24} margin={CHART_MARGIN}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
-                      <XAxis type="number" tickFormatter={(v: number) => `${(v * 100).toFixed(0)}%`} tick={TICK_STYLE} stroke="var(--chart-axis)" />
-                      <YAxis type="category" dataKey="label" tick={TICK_STYLE} stroke="var(--chart-axis)" width={40} />
-                      <Tooltip content={<CustomTooltip formatter={(v) => `${v.toFixed(1)}%`} />} />
-                      {categories.map((c) => (
-                        <Bar key={c.key} dataKey={c.key} stackId="a" fill={c.color} name={c.label} />
-                      ))}
-                    </BarChart>
-                  </ResponsiveContainer>
-                <ChartWatermark />
-                {/* Custom legend */}
-                <div className="flex flex-wrap justify-center gap-4 mt-4">
-                  {categories.map((c) => (
-                    <div key={c.key} className="flex items-center gap-1.5">
-                      <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: c.color }} />
-                      <span style={{ fontFamily: 'var(--font-sans)', fontSize: 12, color: 'var(--text-body)' }}>{c.label}</span>
-                    </div>
-                  ))}
-                </div>
-                <p className="text-xs text-gray-500 mt-3 italic">
-                  Winners and losers are calculated at the household level. Some households in higher income deciles may see changes whose direction depends on the mix of tax units within the household.
-                </p>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* ===== POVERTY IMPACT ===== */}
-      {activeSection === 'poverty' && (() => {
-        const pov = data.poverty;
-        const pctChange = (baseline: number, reform: number) => {
-          if (!baseline || baseline === 0) return 0;
-          return ((reform - baseline) / baseline) * 100;
-        };
-        const povertyData = [
-          {
-            label: 'Overall',
-            value: pctChange(pov.poverty.all.baseline, pov.poverty.all.reform),
-          },
-          {
-            label: 'Child',
-            value: pctChange(pov.poverty.child.baseline, pov.poverty.child.reform),
-          },
-          {
-            label: 'Deep',
-            value: pctChange(pov.deep_poverty.all.baseline, pov.deep_poverty.all.reform),
-          },
-          {
-            label: 'Deep child',
-            value: pctChange(pov.deep_poverty.child.baseline, pov.deep_poverty.child.reform),
-          },
-        ];
-        const povMaxAbs = Math.max(...povertyData.map(d => Math.abs(d.value)), 0.01);
-        const povNiceStep = (() => {
-          const rough = povMaxAbs / 3;
-          const mag = Math.pow(10, Math.floor(Math.log10(rough || 0.01)));
-          const residual = rough / mag;
-          if (residual <= 1) return mag;
-          if (residual <= 2) return 2 * mag;
-          if (residual <= 5) return 5 * mag;
-          return 10 * mag;
-        })();
-        const povNiceMax = Math.ceil(povMaxAbs / povNiceStep) * povNiceStep;
-        // Collapse the y-axis to the side the data actually occupies —
-        // if all four poverty bars share a sign, half of a symmetric
-        // axis is dead space.
-        const hasPositive = povertyData.some((d) => d.value > 0);
-        const hasNegative = povertyData.some((d) => d.value < 0);
-        const povDomain: [number, number] = hasPositive && !hasNegative
-          ? [0, povNiceMax]
-          : hasNegative && !hasPositive
-            ? [-povNiceMax, 0]
-            : [-povNiceMax, povNiceMax];
-        const tickCount = Math.round((povDomain[1] - povDomain[0]) / povNiceStep) + 1;
-        const povTicks = Array.from(
-          { length: tickCount },
-          (_, i) => povDomain[0] + i * povNiceStep,
-        );
-
-        return (
-          <div className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">
-                Change in poverty rates (%)
-              </h3>
-              <p className="text-gray-700 mb-3">
-                Percent change from current law in Supplemental Poverty Measure rates.
-              </p>
-              <ResponsiveContainer width="100%" height={360}>
-                <BarChart data={povertyData} margin={CHART_MARGIN}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
-                  <XAxis
-                    dataKey="label"
-                    tick={TICK_STYLE}
-                    stroke="var(--chart-axis)"
-                    label={{
-                      value: 'Poverty measure',
-                      position: 'insideBottom',
-                      offset: -15,
-                      style: { ...TICK_STYLE, fill: 'var(--chart-axis-label)' },
-                    }}
-                  />
-                  <YAxis
-                    domain={povDomain}
-                    ticks={povTicks}
-                    tickFormatter={(v: number) =>
-                      `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`
-                    }
-                    tick={TICK_STYLE}
-                    stroke="var(--chart-axis)"
-                    width={70}
-                  />
-                  <Tooltip
-                    content={
-                      <CustomTooltip
-                        formatter={(v) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`}
-                      />
-                    }
-                  />
-                  <ReferenceLine y={0} stroke="var(--chart-axis)" strokeWidth={1} />
-                  <Bar
-                    dataKey="value"
-                    name="Change in poverty rate"
-                    radius={[2, 2, 0, 0]}
-                  >
-                    {povertyData.map((d, i) => (
-                      <Cell
-                        key={i}
-                        fill={d.value < 0 ? COLORS.positive : COLORS.negative}
-                      />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-              <ChartWatermark />
-            </div>
-          </div>
-        );
-      })()}
-
-      <p className="text-sm text-gray-500 bg-gray-50 rounded-lg px-4 py-3 border border-gray-200">
-        These estimates are static: they do not capture behavioral responses such as changes in labor supply, tax avoidance, or migration.
-      </p>
+      <Callout>
+        These estimates are static: they hold work, investment and where people live fixed.
+      </Callout>
     </div>
   );
 }

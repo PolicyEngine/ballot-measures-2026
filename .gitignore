@@ -2,8 +2,7 @@
 __pycache__/
 *.py[cod]
 *.egg-info/
-.venv/
-.venv-ga/
+.venv*/
 .pytest_cache/
 
 # PE-US cache artifacts (downloaded by Simulation runs)

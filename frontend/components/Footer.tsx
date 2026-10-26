@@ -1,7 +1,5 @@
-'use client';
-
 /**
- * Footer matching policyengine-app-v2 exactly.
+ * Footer matching policyengine-app-v2 (a server component: no state or handlers).
  * Uses inline SVGs instead of @tabler/icons-react.
  */
 
@@ -103,6 +101,7 @@ export default function Footer() {
     >
       <div style={{ maxWidth: '976px', margin: '0 auto' }}>
         {/* Logo */}
+        {/* eslint-disable-next-line @next/next/no-img-element -- external SVG logo, matches app-v2 */}
         <img
           src="https://policyengine.org/assets/logos/policyengine/white.svg"
           alt="PolicyEngine"
@@ -193,12 +192,11 @@ export default function Footer() {
                   fontSize: '14px',
                   fontWeight: 600,
                   fontFamily: FONT,
-                  letterSpacing: '0.05em',
                   cursor: 'pointer',
                   textDecoration: 'none',
                 }}
               >
-                SUBSCRIBE
+                Subscribe
               </a>
             </div>
           </div>
