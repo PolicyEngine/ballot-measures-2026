@@ -60,7 +60,11 @@ app = modal.App(config.HOUSEHOLD_APP_NAME)
 
 image = (
     modal.Image.debian_slim(python_version="3.13")
-    .pip_install(POLICYENGINE_US_PIN, "fastapi[standard]")
+    # pypi.org directly: Modal's PyPI mirror lags new policyengine-us
+    # releases (it stopped at 2.68.0 when 2.72.4 was pinned).
+    .pip_install(
+        POLICYENGINE_US_PIN, "fastapi[standard]", index_url="https://pypi.org/simple"
+    )
     .add_local_python_source("ballot_calc")
 )
 

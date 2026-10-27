@@ -50,7 +50,9 @@ OUTPUT_PATH = REPO_ROOT / "frontend" / "public" / "data" / "example_households.j
 app = modal.App("bm26-example-households")
 image = (
     modal.Image.debian_slim(python_version="3.13")
-    .pip_install(config.POLICYENGINE_US_PIN)
+    # pypi.org directly: Modal's PyPI mirror lags new policyengine-us
+    # releases (it stopped at 2.68.0 when 2.72.4 was pinned).
+    .pip_install(config.POLICYENGINE_US_PIN, index_url="https://pypi.org/simple")
     .add_local_python_source("ballot_calc")
 )
 
