@@ -61,7 +61,7 @@ from ballot_calc.config import (
 # Exact policyengine-us pin, mirrored from ballot_calc/config.py (and
 # pyproject.toml, scripts/modal_tests.py, scripts/modal_household_api.py);
 # tests/test_registry.py keeps them equal.
-POLICYENGINE_US_PIN = "policyengine-us==2.60.4"
+POLICYENGINE_US_PIN = "policyengine-us==2.72.3"
 
 RESULTS_DIR = "/results"
 MANIFEST_NAME = "manifest.json"

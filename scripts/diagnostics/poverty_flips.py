@@ -36,7 +36,7 @@ from ballot_calc.config import (
     resolve_revision,
 )
 
-POLICYENGINE_US_PIN = "policyengine-us==2.60.4"
+POLICYENGINE_US_PIN = "policyengine-us==2.72.3"
 RESULTS_DIR = "/results"
 from ballot_calc.passes import SPM_OMITTED_SOURCES as OMITTED
 

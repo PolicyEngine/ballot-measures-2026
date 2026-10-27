@@ -30,7 +30,7 @@ if str(REPO_ROOT) not in sys.path:
 from ballot_calc.config import RESULTS_VOLUME_NAME
 
 # Mirrored from ballot_calc/config.py; tests/test_registry.py keeps it equal.
-POLICYENGINE_US_PIN = "policyengine-us==2.60.4"
+POLICYENGINE_US_PIN = "policyengine-us==2.72.3"
 
 APP_NAME = "ballot-measures-2026-tests"
 RESULTS_DIR = "/results"
