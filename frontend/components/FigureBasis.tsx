@@ -24,22 +24,22 @@ export function BasisBadge({ basis }: { basis: FigureBasis }) {
 }
 
 /**
- * "See methodology →": opens the methodology tab (keeping the year and
- * household in the hash) and scrolls to its table of figure bases.
+ * "See methods →": opens the Validation and methods tab (keeping the year
+ * and household in the hash) and scrolls to its table of figure bases.
  */
-export function MethodologyLink({ children = 'See methodology' }: { children?: React.ReactNode }) {
+export function MethodologyLink({ children = 'See methods' }: { children?: React.ReactNode }) {
   const open = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     const params = parseHashParams(window.location.hash);
     // A hashchange the dashboard listens for switches the tab.
-    window.location.hash = buildHashString({ ...params, tab: 'methodology', measure: undefined });
+    window.location.hash = buildHashString({ ...params, tab: 'validation', measure: undefined });
     window.setTimeout(() => {
       document.getElementById(FIGURE_BASIS_ID)?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
     }, 60);
   };
   return (
     <a
-      href="#tab=methodology"
+      href="#tab=validation"
       onClick={open}
       className="whitespace-nowrap text-primary-700 underline underline-offset-2 hover:text-primary-800"
     >

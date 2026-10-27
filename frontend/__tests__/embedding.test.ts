@@ -15,7 +15,12 @@ describe('parseHashParams', () => {
   });
 
   it('accepts the older validation tab name and ignores unknown tabs', () => {
-    expect(parseHashParams('tab=validation').tab).toBe('methodology');
+    expect(parseHashParams('tab=validation').tab).toBe('validation');
+    // Older and NJ-style tab names still open the right tab.
+    expect(parseHashParams('tab=methodology').tab).toBe('validation');
+    expect(parseHashParams('tab=policy').tab).toBe('overview');
+    expect(parseHashParams('tab=impact').tab).toBe('household');
+    expect(parseHashParams('tab=aggregate').tab).toBe('statewide');
     expect(parseHashParams('tab=everything').tab).toBeUndefined();
     expect(parseTab('Districts')).toBe('districts');
   });

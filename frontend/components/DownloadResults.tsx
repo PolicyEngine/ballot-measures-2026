@@ -19,7 +19,7 @@ export default function DownloadResults({ slug, file, label }: Props) {
     <button
       type="button"
       onClick={() => saveText(`${slug}-${file}`, text)}
-      className="px-4 py-2 rounded-lg text-sm font-medium border border-primary-500 text-primary-700 bg-white hover:bg-primary-50"
+      className="px-4 py-2 rounded-lg font-semibold text-white bg-teal-500 hover:bg-teal-600 active:bg-teal-700 transition-colors shadow-sm text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
     >
       {label}
     </button>

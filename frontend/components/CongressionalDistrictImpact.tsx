@@ -4,7 +4,7 @@ import { useState } from 'react';
 import USDistrictChoroplethMap from './USDistrictChoroplethMap';
 import ChartWatermark from './ChartWatermark';
 import DownloadResults from './DownloadResults';
-import { Loading, ResultsUnavailable, toneOf, toneText } from './ui';
+import { Loading, ResultsUnavailable, YearPills, toneOf, toneText } from './ui';
 import { useDistrictResults, type Measure } from '@/lib/measures';
 import { formatCompactUSD, formatCount, formatShare, formatUSDWithSign } from '@/lib/format';
 import type { DistrictRow } from '@/lib/results';
@@ -12,31 +12,32 @@ import type { DistrictRow } from '@/lib/results';
 interface Props {
   measure: Measure;
   year: number;
+  /** Shows FUTA's year pills for measures scored in several years. */
+  onYearChange?: (year: number) => void;
 }
 
-export default function CongressionalDistrictImpact({ measure, year }: Props) {
+export default function CongressionalDistrictImpact({ measure, year, onYearChange }: Props) {
   const { data, isLoading } = useDistrictResults(measure.slug, year);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
   const conditional = measure.kind_params?.conditional === true;
 
   const header = (
-    <div className="flex flex-wrap items-start justify-between gap-3">
+    <>
       <div>
-        <h2 className="text-2xl font-bold text-primary-700">
-          {measure.state_name} congressional districts
-        </h2>
-        <p className="text-sm text-gray-600 mt-1">
-          Average change in household net income{' '}
-          {conditional ? 'in the scenario' : `if ${measure.designation} passes`}, compared with
-          current law, tax year {year}.
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-2xl font-bold text-primary">
+            {measure.state_name} congressional district impacts
+          </h2>
+          <DownloadResults slug={measure.slug} file="congressional_districts.csv" label="Download CSV" />
+        </div>
+        <p className="text-sm text-gray-600 mt-2">
+          Tax year {year}. Average change in household net income{' '}
+          {conditional ? 'in the scenario' : `if ${measure.designation} passes`}, compared with current
+          law, by congressional district. Select a district on the map for details.
         </p>
       </div>
-      <DownloadResults
-        slug={measure.slug}
-        file="congressional_districts.csv"
-        label="Download district results (CSV)"
-      />
-    </div>
+      {onYearChange && <YearPills years={measure.years} value={year} onChange={onYearChange} />}
+    </>
   );
 
   if (isLoading) {
@@ -94,10 +95,10 @@ export default function CongressionalDistrictImpact({ measure, year }: Props) {
       )}
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <caption className="text-left text-lg font-semibold text-gray-900 mb-3">
-            All {measure.state_name} districts
-          </caption>
+        <h3 id="all-districts-heading" className="text-lg font-semibold text-gray-900 mb-3">
+          All {measure.state_name} districts
+        </h3>
+        <table className="w-full text-sm" aria-labelledby="all-districts-heading">
           <thead>
             <tr className="border-b border-gray-200">
               <th scope="col" className="text-left py-2 px-3 font-medium text-gray-600">District</th>
@@ -219,8 +220,8 @@ function DistrictDetailCard({
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {stats.map((s) => (
           <div key={s.label} className="bg-gray-50 rounded-lg p-3">
-            <p className="text-xs text-gray-500 mb-1">{s.label}</p>
-            <p className="text-lg font-bold text-gray-800 tabular-nums">{s.value}</p>
+            <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">{s.label}</p>
+            <p className="text-xl font-bold text-gray-800 tabular-nums">{s.value}</p>
             <p className="text-xs text-gray-500 mt-0.5">{s.detail}</p>
           </div>
         ))}
