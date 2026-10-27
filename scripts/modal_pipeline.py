@@ -61,7 +61,7 @@ from ballot_calc.config import (
 # Exact policyengine-us pin, mirrored from ballot_calc/config.py (and
 # pyproject.toml, scripts/modal_tests.py, scripts/modal_household_api.py);
 # tests/test_registry.py keeps them equal.
-POLICYENGINE_US_PIN = "policyengine-us==2.60.4"
+POLICYENGINE_US_PIN = "policyengine-us==2.72.4"
 
 RESULTS_DIR = "/results"
 MANIFEST_NAME = "manifest.json"
@@ -75,7 +75,14 @@ volume = modal.Volume.from_name(RESULTS_VOLUME_NAME, create_if_missing=True)
 
 image = (
     modal.Image.debian_slim(python_version="3.13")
-    .pip_install(POLICYENGINE_US_PIN, "numpy>=1.24.0", "huggingface_hub")
+    # pypi.org directly: Modal's PyPI mirror lags new policyengine-us
+    # releases (it stopped at 2.68.0 when 2.72.4 was pinned).
+    .pip_install(
+        POLICYENGINE_US_PIN,
+        "numpy>=1.24.0",
+        "huggingface_hub",
+        index_url="https://pypi.org/simple",
+    )
     .add_local_python_source("ballot_calc")
 )
 
@@ -574,6 +581,42 @@ def preflight_check() -> list:
     return records
 
 
+@app.function(image=image, memory=32768, timeout=3600, volumes={RESULTS_DIR: volume})
+def dataset_check(state: str, revision: str = DEFAULT_REVISION) -> dict:
+    """Under the pinned release, does a state's raw subset load without the
+    NaN fill, and does any SPM unit in the cleaned subset lack an adult?
+    Run after a pin bump to see whether the cached cleaning still holds."""
+    import numpy as np
+    from policyengine_us import Microsimulation
+
+    from ballot_calc.subset import clean_filename, subset_filename
+
+    volume.reload()
+    revision = resolve_revision(revision)
+    cache = os.path.join(RESULTS_DIR, "cache")
+    year = 2024
+    out = {"state": state, "pin": POLICYENGINE_US_PIN}
+    try:
+        raw = Microsimulation(
+            dataset=os.path.join(cache, subset_filename(state, revision)),
+            dataset_end_year=year,
+        )
+        adults = np.asarray(raw.calculate("spm_measurement_adults", year))
+        out["raw_loads"] = True
+        out["raw_adultless_spm_units"] = int((adults < 1).sum())
+        del raw
+    except Exception as err:  # noqa: BLE001 - report why it does not load
+        out["raw_loads"] = False
+        out["raw_error"] = repr(err)[:300]
+    clean = Microsimulation(
+        dataset=os.path.join(cache, clean_filename(state, revision)),
+        dataset_end_year=year,
+    )
+    adults = np.asarray(clean.calculate("spm_measurement_adults", year))
+    out["clean_adultless_spm_units"] = int((adults < 1).sum())
+    return out
+
+
 # ---------------------------------------------------------------------------
 # Local entrypoints
 # ---------------------------------------------------------------------------
@@ -602,6 +645,15 @@ def preflight():
     if bad:
         raise SystemExit(f"{bad} preflight checks failed")
     print("Preflight passed.")
+
+
+@app.local_entrypoint()
+def datacheck(revision: str = DEFAULT_REVISION):
+    """modal run scripts/modal_pipeline.py::datacheck"""
+    from ballot_calc.measures import states_used
+
+    for result in dataset_check.map(states_used(), kwargs={"revision": revision}):
+        print(json.dumps(result))
 
 
 @app.local_entrypoint()

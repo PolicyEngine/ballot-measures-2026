@@ -154,10 +154,11 @@ TOP_INCOME_BANDS: tuple[Band, ...] = (
 # taxpayer (joint returns get twice the amount; policyengine-us counts
 # eligible heads and spouses). No temporary income tax rate cut is
 # projected for tax year 2027 or 2028.
-# https://content.leg.colorado.gov/sites/default/files/2026-09/sept2026-forecast-with-cover-for-remediation-and-posting-accessible.pdf
-# Released policyengine-us still carries the tax year 2025 tiers as
-# placeholders for 2027 on; these overrides replace them until a release
-# with the forecast tiers is pinned.
+# https://content.leg.colorado.gov/sites/default/files/2026-09/sept2026-forecast-with-cover-for-remediation-and-posting-accessible.pdf#page=35
+# policyengine-us encodes these tiers as current law since #10407, so
+# Proposition NN needs no baseline overrides. The table stays here so the
+# example-household checks and slow tests can confirm the pinned release
+# carries them.
 CO_SALES_TAX_REFUND_TIERS = {
     # year: [(lower AGI bound, amount per person), ...]; the first bound is
     # the scale's -inf bracket and is left unchanged.
@@ -178,26 +179,6 @@ CO_SALES_TAX_REFUND_TIERS = {
         (358_001, 147),
     ],
 }
-CO_SALES_TAX_REFUND_SCALE = (
-    "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale"
-)
-
-
-def _co_refund_tier_overrides() -> Overrides:
-    overrides: Overrides = {}
-    for year, tiers in CO_SALES_TAX_REFUND_TIERS.items():
-        period = f"{year}-01-01.{year}-12-31"
-        for i, (threshold, amount) in enumerate(tiers):
-            overrides.setdefault(f"{CO_SALES_TAX_REFUND_SCALE}[{i}].amount", {})[
-                period
-            ] = amount
-            if threshold is not None:
-                overrides.setdefault(f"{CO_SALES_TAX_REFUND_SCALE}[{i}].threshold", {})[
-                    period
-                ] = threshold
-    return overrides
-
-
 # ---------------------------------------------------------------------------
 # The measures
 # ---------------------------------------------------------------------------
@@ -286,7 +267,7 @@ CO_PROP_NN = Measure(
     # quantifies; whether refunds would be paid in later years depends on
     # future revenue.
     kind_params={"permanent_change": True, "scored_through": 2028},
-    baseline_overrides=_co_refund_tier_overrides(),
+    baseline_overrides={},
     reform_overrides={
         # The state keeps the FY 2026-27 and FY 2027-28 surpluses, so the
         # six-tier sales tax refund is not paid for tax years 2027 and 2028.

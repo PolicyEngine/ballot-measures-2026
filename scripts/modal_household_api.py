@@ -28,9 +28,9 @@ Endpoints:
     POST /calculate  -> request and response shapes in ballot_calc/household.py;
                         422 with {"detail": message} for an invalid request
 
-Cold starts restore a memory snapshot taken after the nine tax-benefit
-systems (current law, the Proposition NN and South Dakota current-law
-variants, and the six measures passing) are built and warmed with one
+Cold starts restore a memory snapshot taken after the eight tax-benefit
+systems (current law, the South Dakota current-law variant, and the six
+measures passing) are built and warmed with one
 request per measure and year, so a new container answers in seconds rather
 than minutes. Each container serves one request at a time (the calculator
 holds a lock); Modal scales out under load and to zero when idle.
@@ -49,7 +49,7 @@ from ballot_calc import config  # noqa: E402
 
 # Exact policyengine-us pin. Mirrors POLICYENGINE_US_PIN in
 # ballot_calc/config.py, pyproject.toml and scripts/modal_pipeline.py.
-POLICYENGINE_US_PIN = "policyengine-us==2.60.4"
+POLICYENGINE_US_PIN = "policyengine-us==2.72.4"
 if POLICYENGINE_US_PIN != config.POLICYENGINE_US_PIN:
     raise RuntimeError(
         f"{__file__} pins {POLICYENGINE_US_PIN} but ballot_calc/config.py pins "
@@ -60,7 +60,11 @@ app = modal.App(config.HOUSEHOLD_APP_NAME)
 
 image = (
     modal.Image.debian_slim(python_version="3.13")
-    .pip_install(POLICYENGINE_US_PIN, "fastapi[standard]")
+    # pypi.org directly: Modal's PyPI mirror lags new policyengine-us
+    # releases (it stopped at 2.68.0 when 2.72.4 was pinned).
+    .pip_install(
+        POLICYENGINE_US_PIN, "fastapi[standard]", index_url="https://pypi.org/simple"
+    )
     .add_local_python_source("ballot_calc")
 )
 
@@ -84,7 +88,7 @@ def _rss_gb() -> float:
     enable_memory_snapshot=True,
     scaledown_window=15 * 60,
     timeout=300,
-    # Building and warming the nine systems before the snapshot takes
+    # Building and warming the eight systems before the snapshot takes
     # minutes; restores from the snapshot start in seconds.
     startup_timeout=20 * 60,
     max_containers=10,

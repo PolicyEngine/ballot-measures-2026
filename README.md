@@ -41,7 +41,7 @@ estimates and the North Dakota participation inputs. Impact everywhere is
 
 ## How the numbers are made
 
-- **Model**: `policyengine-us==2.60.4` (pinned in `pyproject.toml`,
+- **Model**: `policyengine-us==2.72.4` (pinned in `pyproject.toml`,
   `ballot_calc/config.py` and the Modal scripts; a test keeps them equal).
 - **Data**: the Populace ACS local-area national file
   (`policyengine/populace-us`, `populace_us_2024_acs_local.h5`, revision
@@ -59,7 +59,7 @@ estimates and the North Dakota participation inputs. Impact everywhere is
 - **Guard**: a measure-year's results are written only if its target
   variable moves the expected way by more than 0.1% of its current-law total.
 - **Poverty**: SPM resources get back the partnership and S corporation
-  income, farm rent and Alaska dividend that policyengine-us 2.60.4 leaves
+  income, farm rent and Alaska dividend that the pinned policyengine-us leaves
   out of them while taxing (policyengine-us#9919); see
   `scripts/DATA_SCHEMA.md`.
 - **South Dakota**: the model has about twice the administrative expansion

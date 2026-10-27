@@ -216,7 +216,7 @@ dev = [
 requires-dist = [
     { name = "modal", marker = "extra == 'dev'", specifier = ">=1.0" },
     { name = "numpy", specifier = ">=1.24.0" },
-    { name = "policyengine-us", specifier = "==2.60.4" },
+    { name = "policyengine-us", specifier = "==2.72.4" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.0.0" },
     { name = "pytest-timeout", marker = "extra == 'dev'", specifier = ">=2.0" },
@@ -1752,7 +1752,7 @@ wheels = [
 
 [[package]]
 name = "policyengine-us"
-version = "2.60.4"
+version = "2.72.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "microdf-python" },
@@ -1762,9 +1762,9 @@ dependencies = [
     { name = "tables" },
     { name = "tqdm" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b3/5f/1e46158c068f34ccfa05df7bccac6aef1be42e54e3fecf259a5a9c8ac491/policyengine_us-2.60.4.tar.gz", hash = "sha256:db0e67e122cf58d7f770f43ec4b4a14a9e0a97edfac822b73f22ad87b2239b90", size = 14827187, upload-time = "2026-10-23T09:48:28.412Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c0/e3/45b600df0104683df0e1244b21359f06b583c65ea7f2966934b781fa12e0/policyengine_us-2.72.4.tar.gz", hash = "sha256:e7452c9d782032ce80a6668dbfb0e8f3c1bc8756ce5de53e3e4f4fe4a2fce46f", size = 15623916, upload-time = "2026-10-27T21:01:26.02Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/30/bd/47ec8d8ebe658f9694aee7ad6dff1c70b40c00c4783729766204e91f7d3f/policyengine_us-2.60.4-py3-none-any.whl", hash = "sha256:f95dbc8336e6733db548180680aaaf55b88b2bd8d59f732e8e2ae754dde564bd", size = 18943144, upload-time = "2026-10-23T09:48:24.923Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/d6/fd97e4fdf8947828f744c32ca6b5dc444f3ac96772e6d2706fb2fcb0ceb8/policyengine_us-2.72.4-py3-none-any.whl", hash = "sha256:b35c293d299e275f87b39f8844ff98aca306485ff1f11fcbbdce433ad1064377", size = 19860646, upload-time = "2026-10-27T21:01:22.626Z" },
 ]
 
 [[package]]

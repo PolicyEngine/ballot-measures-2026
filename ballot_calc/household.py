@@ -46,7 +46,8 @@ repository.
 The baseline and reform policies are the registry's ``baseline_policy`` and
 ``reform_policy``, so the household figures use the same overrides as the
 statewide pipeline. Measures that share a policy share a tax-benefit
-system: plain current law serves four measures' baselines.
+system: plain current law serves five measures' baselines (all but South
+Dakota's, which counts health benefits in net income).
 
 This module imports policyengine only inside ``HouseholdCalculator``, so
 the fast tests can exercise input validation, the sweep grid, the
@@ -749,8 +750,8 @@ class HouseholdCalculator:
     """Runs household calculations against pre-built tax-benefit systems.
 
     Building a reformed ``CountryTaxBenefitSystem`` takes seconds, so one
-    system per distinct policy (plain current law, the Proposition NN and
-    South Dakota current-law variants, and the six measures passing) is
+    system per distinct policy (plain current law, the South Dakota
+    current-law variant, and the six measures passing: eight in all) is
     built once and shared across requests. Each request runs one
     simulation per policy: the income sweep, plus a copy of the household
     at the entered income when that income is off the sweep grid.

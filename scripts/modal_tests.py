@@ -30,7 +30,7 @@ if str(REPO_ROOT) not in sys.path:
 from ballot_calc.config import RESULTS_VOLUME_NAME
 
 # Mirrored from ballot_calc/config.py; tests/test_registry.py keeps it equal.
-POLICYENGINE_US_PIN = "policyengine-us==2.60.4"
+POLICYENGINE_US_PIN = "policyengine-us==2.72.4"
 
 APP_NAME = "ballot-measures-2026-tests"
 RESULTS_DIR = "/results"
@@ -41,7 +41,14 @@ volume = modal.Volume.from_name(RESULTS_VOLUME_NAME, create_if_missing=True)
 
 image = (
     modal.Image.debian_slim(python_version="3.13")
-    .pip_install(POLICYENGINE_US_PIN, "numpy>=1.24.0", "pytest", "pytest-timeout")
+    # pypi.org directly: Modal's PyPI mirror lags new policyengine-us releases.
+    .pip_install(
+        POLICYENGINE_US_PIN,
+        "numpy>=1.24.0",
+        "pytest",
+        "pytest-timeout",
+        index_url="https://pypi.org/simple",
+    )
     .add_local_dir(
         str(REPO_ROOT),
         "/repo",

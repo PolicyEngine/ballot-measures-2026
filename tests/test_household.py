@@ -2,7 +2,7 @@
 
 The fast tests cover input validation, the sweep grid, the situation
 builder, the response layout and the policy-to-system mapping without
-importing policyengine. The ``slow`` tests build the nine tax-benefit
+importing policyengine. The ``slow`` tests build the eight tax-benefit
 systems and run one household per measure; they run on Modal
 (scripts/modal_tests.py), not on a laptop.
 """
@@ -452,19 +452,24 @@ class TestPolicies:
             for policy in POLICIES
         }
 
-    def test_nine_distinct_systems(self):
-        """Plain current law (four baselines), the Proposition NN and South
-        Dakota current-law variants, and six reforms."""
+    def test_eight_distinct_systems(self):
+        """Plain current law (five baselines, including Proposition NN's now
+        that policyengine-us carries the forecast refund tiers), the South
+        Dakota current-law variant, and six reforms."""
         keys = self._keys()
-        assert len(set(keys.values())) == 9
+        assert len(set(keys.values())) == 8
         shared = {
             keys[(slug, "baseline")]
-            for slug in ("co-amendment-87", "ca-prop-3", "wa-i-645", "nd-measure-2")
+            for slug in (
+                "co-amendment-87",
+                "co-prop-nn",
+                "ca-prop-3",
+                "wa-i-645",
+                "nd-measure-2",
+            )
         }
         assert len(shared) == 1
-        assert shared.isdisjoint(
-            {keys[("co-prop-nn", "baseline")], keys[("sd-amendment-i", "baseline")]}
-        )
+        assert shared.isdisjoint({keys[("sd-amendment-i", "baseline")]})
 
     def test_reform_differs_from_baseline(self):
         keys = self._keys()

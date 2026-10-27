@@ -36,7 +36,7 @@ from ballot_calc.config import (
     resolve_revision,
 )
 
-POLICYENGINE_US_PIN = "policyengine-us==2.60.4"
+POLICYENGINE_US_PIN = "policyengine-us==2.72.4"
 RESULTS_DIR = "/results"
 from ballot_calc.passes import SPM_OMITTED_SOURCES as OMITTED
 
@@ -66,7 +66,9 @@ app = modal.App(f"{PIPELINE_APP_NAME}-poverty")
 volume = modal.Volume.from_name(RESULTS_VOLUME_NAME)
 image = (
     modal.Image.debian_slim(python_version="3.13")
-    .pip_install(POLICYENGINE_US_PIN, "numpy>=1.24.0")
+    .pip_install(
+        POLICYENGINE_US_PIN, "numpy>=1.24.0", index_url="https://pypi.org/simple"
+    )
     .add_local_python_source("ballot_calc")
 )
 

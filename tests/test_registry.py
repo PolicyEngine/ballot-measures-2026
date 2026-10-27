@@ -20,7 +20,6 @@ from ballot_calc.config import (
 )
 from ballot_calc.export import measures_json, registry_hash
 from ballot_calc.measures import (
-    CO_SALES_TAX_REFUND_SCALE,
     CO_SALES_TAX_REFUND_TIERS,
     KINDS,
     MEASURE_SLUGS,
@@ -141,7 +140,7 @@ def test_official_estimates_point_at_metrics(slug):
 
 
 def test_reform_policy_merges_over_baseline():
-    m = MEASURES["co-prop-nn"]
+    m = MEASURES["sd-amendment-i"]
     policy = m.reform_policy
     assert set(policy) == set(m.baseline_overrides) | set(m.reform_overrides)
     for path, periods in m.reform_overrides.items():
@@ -171,21 +170,10 @@ def test_prop_nn_refund_off_only_2027_and_2028():
     assert m.years == (2027, 2028)
 
 
-def test_prop_nn_baseline_tiers_match_the_forecast():
-    overrides = MEASURES["co-prop-nn"].baseline_overrides
-    expected = {}
-    for year, tiers in CO_SALES_TAX_REFUND_TIERS.items():
-        period = f"{year}-01-01.{year}-12-31"
-        assert len(tiers) == 6
-        for i, (threshold, amount) in enumerate(tiers):
-            expected.setdefault(f"{CO_SALES_TAX_REFUND_SCALE}[{i}].amount", {})[
-                period
-            ] = amount
-            if threshold is not None:
-                expected.setdefault(f"{CO_SALES_TAX_REFUND_SCALE}[{i}].threshold", {})[
-                    period
-                ] = threshold
-    assert overrides == expected
+def test_prop_nn_uses_the_released_forecast_tiers():
+    # policyengine-us#10407 encodes the September 2026 forecast tiers as
+    # current law, so Proposition NN carries no baseline overrides.
+    assert MEASURES["co-prop-nn"].baseline_overrides == {}
     # Sept. 2026 LCS Table 9: $43-$137 (TY2027) and $47-$147 (TY2028).
     assert [a for _, a in CO_SALES_TAX_REFUND_TIERS[2027]] == [43, 58, 67, 79, 85, 137]
     assert [a for _, a in CO_SALES_TAX_REFUND_TIERS[2028]] == [47, 62, 71, 85, 91, 147]

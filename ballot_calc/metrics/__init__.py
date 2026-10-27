@@ -26,7 +26,7 @@ from .core import (
     weighted_sum,
 )
 
-# policyengine-us 2.60.4 leaves partnership and S corporation income, farm
+# policyengine-us (2.60.4 to 2.72.4; #9919) leaves partnership and S corporation income, farm
 # rent and the Alaska dividend out of SPM resources while subtracting the
 # taxes on them, so some households with high incomes count as poor and
 # cross the line when their state income tax changes. The poverty metrics
@@ -43,7 +43,8 @@ SPM_RESOURCES_ADJUSTMENT = {
     "description": (
         "Poverty measures add partnership and S corporation income, farm rent "
         "income and the Alaska Permanent Fund Dividend to each SPM unit's "
-        "resources. policyengine-us 2.60.4 counts these in household net income "
+        "resources. policyengine-us (through 2.72.4, policyengine-us#9919) counts "
+        "these in household net income "
         "and taxes them, but leaves them out of SPM resources. Census money "
         "income counts all three. Cancelled debt (debt_relief), also left out, "
         "is not cash income and is not added."
