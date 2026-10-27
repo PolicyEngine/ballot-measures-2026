@@ -16,6 +16,7 @@ const VOTE_REQUIREMENT: VoteRequirement = {
 
 const content: MeasureContent = {
   slug: 'ca-prop-3',
+  headerPhrase: 'making the top income tax rates permanent',
   description:
     'California Proposition 3 would keep the 10.3%, 11.3% and 12.3% income tax rates on high incomes after 2030, when current law ends them.',
   measureType: 'Citizen-initiated constitutional amendment (Initiative 25-0016)',

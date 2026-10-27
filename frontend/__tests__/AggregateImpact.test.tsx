@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import AggregateImpact, { PrecisionNote } from '../components/AggregateImpact';
 import { PovertySection } from '../components/statewide/sections';
@@ -15,20 +15,45 @@ describe('AggregateImpact', () => {
     expect(screen.getByText('Households gaining / losing')).toBeInTheDocument();
     expect(screen.getByText('71.5% / 3.2%')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('tab', { name: 'By income decile' }));
-    expect(screen.getByText('Change in net income by income decile')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: 'Gains and losses' }));
-    expect(screen.getByText('Gains and losses by income decile')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('tab', { name: 'By income band' }));
+    // The NJ dashboard's header, sections and grouping.
+    expect(screen.getByRole('heading', { name: 'Colorado impact analysis' })).toBeInTheDocument();
+    expect(screen.getByText('Tax year 2027. If Amendment 87 passes, compared with current law.')).toBeInTheDocument();
+    const sections = screen.getByRole('tablist', { name: 'Statewide sections' });
+    expect(within(sections).getAllByRole('tab').map((t) => t.textContent)).toEqual([
+      'Budgetary impact',
+      'Distributional impact',
+      'Winners & losers',
+      'Poverty impact',
+    ]);
+    // Budgetary impact holds the budget table and the income-band table.
+    expect(screen.getByRole('heading', { name: 'Impact by income band' })).toBeInTheDocument();
     expect(screen.getByRole('table', { name: /Impact by income band, 2027/ })).toHaveTextContent('$1M+');
-    fireEvent.click(screen.getByRole('tab', { name: 'Poverty' }));
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Distributional impact' }));
+    expect(screen.getByText('Change in net income by income decile')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Winners & losers' }));
+    expect(screen.getByText('Winners')).toBeInTheDocument();
+    expect(screen.getByText('Losers')).toBeInTheDocument();
+    expect(screen.getByText('Gains and losses by income decile')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('tab', { name: 'Poverty impact' }));
     expect(screen.getByText('Poverty rates')).toBeInTheDocument();
+  });
+
+  it('offers FUTA’s year pills and download button', async () => {
+    mockDataFiles(fixtureFiles());
+    let chosen = 0;
+    renderWithQuery(
+      <AggregateImpact measure={getMeasure('wa-i-645')} year={2028} onYearChange={(y) => (chosen = y)} />,
+    );
+    expect(await screen.findByRole('button', { name: 'Download CSV' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('radio', { name: '2029' }));
+    expect(chosen).toBe(2029);
   });
 
   it('notes that the federal deduction uses withholding when federal revenue does not move', async () => {
     mockDataFiles(fixtureFiles());
     renderWithQuery(<AggregateImpact measure={getMeasure('wa-i-645')} year={2029} />);
-    expect(screen.getByText(/tax year 2029/)).toBeInTheDocument();
+    expect(screen.getByText(/Tax year 2029\./)).toBeInTheDocument();
     expect(await screen.findByText(/uses state income tax withholding in the model/)).toBeInTheDocument();
   });
 
@@ -43,20 +68,30 @@ describe('AggregateImpact', () => {
     expect(
       screen.getByText('Income at or above the poverty line (may qualify for marketplace subsidies)'),
     ).toBeInTheDocument();
-    // The state card carries the methodology tab's federal-share sensitivity.
+    expect(screen.getByText('Gaining a premium tax credit')).toBeInTheDocument();
+    expect(screen.getByText(/shown in people and government spending rather than household net income/)).toBeInTheDocument();
+    expect(screen.getByText(/Scaled to the Department of Social Services’ 29,055 expansion enrollees \(×0\.52\)/)).toBeInTheDocument();
+    // Coverage and budgetary sections only: no net-income sections.
+    const sections = screen.getByRole('tablist', { name: 'Statewide sections' });
+    expect(within(sections).getAllByRole('tab').map((t) => t.textContent)).toEqual([
+      'Coverage impact',
+      'Budgetary impact',
+    ]);
+    expect(screen.queryByText('Average change in household net income')).toBeNull();
+    expect(screen.getByText(/The scenario in which expansion ends, compared with current law\./)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Budgetary impact' }));
+    // The state card carries the methods tab's federal-share sensitivity.
     expect(
       screen.getByText(/Each 10-point drop in the federal share would shift about \$33\.2M a year to the state/),
     ).toBeInTheDocument();
-    expect(screen.getByText('Gaining a premium tax credit')).toBeInTheDocument();
     expect(screen.getByText('Change in state Medicaid spending')).toBeInTheDocument();
     expect(screen.getByText('Change in federal Medicaid spending')).toBeInTheDocument();
     expect(screen.getByText('Change in premium tax credits')).toBeInTheDocument();
-    expect(screen.getByText(/shown in people and government spending rather than household net income/)).toBeInTheDocument();
-    expect(screen.getByText(/Scaled to the Department of Social Services’ 29,055 expansion enrollees \(×0\.52\)/)).toBeInTheDocument();
-    // No net-income sections.
-    expect(screen.queryByRole('tablist', { name: 'Statewide sections' })).toBeNull();
-    expect(screen.queryByText('Average change in household net income')).toBeNull();
-    expect(screen.getByText(/The scenario in which expansion ends/)).toBeInTheDocument();
+    // The budget table leaves out household net income.
+    expect(screen.getByRole('table', { name: /Change in the scenario, 2028/ })).not.toHaveTextContent(
+      'Household net income',
+    );
   });
 
   it('explains why California and Washington have no district breakdown', async () => {

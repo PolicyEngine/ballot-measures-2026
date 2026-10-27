@@ -34,7 +34,6 @@ import {
   SignedBarLabel,
   TICK_STYLE,
   WINNERS_COLORS,
-  WrappedTick,
   niceDomain,
 } from '../chartUtils';
 import { BasisNote } from '../FigureBasis';
@@ -53,6 +52,8 @@ function MissingSection({ file }: { file: string }) {
 
 export function BudgetSection({ measure, data }: { measure: Measure; data: StatewideResults }) {
   const m = data.metrics;
+  // The Medicaid scenario is reported in people and spending, not net income.
+  const netIncomeRows = measure.kind !== 'medicaid';
   const federalBudget = metric(m, C.federalBudgetImpact);
   const incomeTaxNote =
     measure.kind === 'income_tax' && federalBudget !== null && Math.abs(federalBudget) < 0.5;
@@ -66,14 +67,18 @@ export function BudgetSection({ measure, data }: { measure: Measure; data: State
       label: 'Federal budget (revenue minus spending)',
       value: show(federalBudget, signedMoney),
     },
-    {
-      label: 'Household net income, all households',
-      value: show(metric(m, C.netIncomeChangeTotal), signedMoney),
-    },
-    {
-      label: 'Household net income, average per household',
-      value: show(metric(m, C.avgHouseholdNetIncomeChange), formatUSDWithSign),
-    },
+    ...(netIncomeRows
+      ? [
+          {
+            label: 'Household net income, all households',
+            value: show(metric(m, C.netIncomeChangeTotal), signedMoney),
+          },
+          {
+            label: 'Household net income, average per household',
+            value: show(metric(m, C.avgHouseholdNetIncomeChange), formatUSDWithSign),
+          },
+        ]
+      : []),
   ];
   const details = kindDetailRows(measure, m);
 
@@ -99,8 +104,8 @@ export function BudgetSection({ measure, data }: { measure: Measure; data: State
       </div>
       <p className="text-xs text-gray-500">
         Budget lines are signed from the government&apos;s side: a positive budget change means the
-        government collects more or spends less. Household net income is signed from the
-        household&apos;s side.
+        government collects more or spends less.
+        {netIncomeRows ? ' Household net income is signed from the household’s side.' : ''}
         {incomeTaxNote
           ? ' The federal deduction for state and local taxes uses state income tax withholding in the model, so this measure does not change federal income tax.'
           : ''}
@@ -233,7 +238,7 @@ export function WinnersSection({ data }: { data: StatewideResults }) {
             className="rounded-lg p-5 border"
             style={{ backgroundColor: 'var(--chart-winners-bg)', borderColor: SIGN_COLORS.positive }}
           >
-            <p className="text-sm text-gray-700 mb-1">Gain</p>
+            <p className="text-sm text-gray-700 mb-1">Winners</p>
             <p className="text-3xl font-bold" style={{ color: WINNERS_COLORS.gainMore5 }}>
               {formatPercent(winRate)}
             </p>
@@ -252,7 +257,7 @@ export function WinnersSection({ data }: { data: StatewideResults }) {
             className="rounded-lg p-5 border"
             style={{ backgroundColor: 'var(--chart-losers-bg)', borderColor: WINNERS_COLORS.loseMore5 }}
           >
-            <p className="text-sm text-gray-700 mb-1">Lose</p>
+            <p className="text-sm text-gray-700 mb-1">Losers</p>
             <p className="text-3xl font-bold" style={{ color: WINNERS_COLORS.loseMore5 }}>
               {formatPercent(loseRate)}
             </p>
@@ -299,93 +304,61 @@ export function WinnersSection({ data }: { data: StatewideResults }) {
 
 // ── Income bands ────────────────────────────────────────────────────────
 
-export function IncomeBandsSection({ data }: { data: StatewideResults }) {
+function BandsTable({ data }: { data: StatewideResults }) {
+  const bands = data.incomeBrackets ?? [];
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <caption className="sr-only">Impact by income band, {data.year}</caption>
+        <thead>
+          <tr className="border-b border-gray-200">
+            <th scope="col" className="text-left py-2 pr-3 font-medium text-gray-600">Adjusted gross income</th>
+            <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">Households</th>
+            <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">Gaining</th>
+            <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">Losing</th>
+            <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">Average change</th>
+            <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">Total change</th>
+            <th scope="col" className="text-right py-2 pl-3 font-medium text-gray-600">State budget</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {bands.map((b) => (
+            <tr key={b.bracket}>
+              <th scope="row" className="text-left py-2 pr-3 font-normal text-gray-800 whitespace-nowrap">
+                {b.bracket}
+              </th>
+              <td className="text-right py-2 px-3 tabular-nums">{formatCount(b.households)}</td>
+              <td className="text-right py-2 px-3 tabular-nums">{formatCount(b.winners)}</td>
+              <td className="text-right py-2 px-3 tabular-nums">{formatCount(b.losers)}</td>
+              <td className={`text-right py-2 px-3 tabular-nums font-semibold ${toneText(toneOf(b.average_change))}`}>
+                {formatUSDWithSign(b.average_change)}
+              </td>
+              <td className="text-right py-2 px-3 tabular-nums">
+                {formatCompactUSD(b.total_change, { sig3: true, sign: true })}
+              </td>
+              <td className="text-right py-2 pl-3 tabular-nums">
+                {formatCompactUSD(b.state_budget_impact, { sig3: true, sign: true })}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="text-xs text-gray-500 mt-2">
+        Gaining and losing count households whose net income rises or falls by more than $1. Total
+        and average changes cover every household in the band.
+      </p>
+    </div>
+  );
+}
+
+/** The income-band table on the budgetary impact section (NJ's "impact by income bracket"). */
+export function IncomeBandsTable({ data }: { data: StatewideResults }) {
   const bands = data.incomeBrackets;
   if (!bands) return <MissingSection file="income_brackets.csv" />;
-  const chartData = bands.map((b) => ({ label: b.bracket, value: b.average_change }));
-  const axis = niceDomain(chartData.map((d) => d.value));
-
   return (
-    <div className="space-y-10">
-      <ChartFigure
-        title="Average change in household net income by income"
-        caption="Households grouped by baseline adjusted gross income."
-      >
-        <ResponsiveContainer width="100%" height={320}>
-          <BarChart data={chartData} margin={{ ...CHART_MARGIN, bottom: 40 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
-            <XAxis
-              dataKey="label"
-              interval={0}
-              stroke="var(--chart-axis)"
-              tick={<WrappedTick anchor="middle" maxWidth={90} />}
-              height={50}
-            />
-            <YAxis
-              domain={axis.domain}
-              ticks={axis.ticks}
-              tickFormatter={(v: number) => formatUSDWithSign(v)}
-              tick={TICK_STYLE}
-              stroke="var(--chart-axis)"
-              width={84}
-            />
-            <Tooltip
-              cursor={{ fill: 'var(--gray-100)' }}
-              content={<ChartTooltip formatter={(v) => formatUSDWithSign(v)} />}
-            />
-            <ReferenceLine y={0} stroke="var(--chart-axis)" />
-            <Bar dataKey="value" name="Average change" radius={[2, 2, 0, 0]} isAnimationActive={false}>
-              {chartData.map((d, i) => (
-                <Cell key={i} fill={d.value >= 0 ? SIGN_COLORS.positive : SIGN_COLORS.negative} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </ChartFigure>
-
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <caption className="text-left text-sm font-semibold text-gray-800 mb-2">
-            Impact by income band, {data.year}
-          </caption>
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th scope="col" className="text-left py-2 pr-3 font-medium text-gray-600">Adjusted gross income</th>
-              <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">Households</th>
-              <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">Gaining</th>
-              <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">Losing</th>
-              <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">Average change</th>
-              <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">Total change</th>
-              <th scope="col" className="text-right py-2 pl-3 font-medium text-gray-600">State budget</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {bands.map((b) => (
-              <tr key={b.bracket}>
-                <th scope="row" className="text-left py-2 pr-3 font-normal text-gray-800 whitespace-nowrap">
-                  {b.bracket}
-                </th>
-                <td className="text-right py-2 px-3 tabular-nums">{formatCount(b.households)}</td>
-                <td className="text-right py-2 px-3 tabular-nums">{formatCount(b.winners)}</td>
-                <td className="text-right py-2 px-3 tabular-nums">{formatCount(b.losers)}</td>
-                <td className={`text-right py-2 px-3 tabular-nums font-semibold ${toneText(toneOf(b.average_change))}`}>
-                  {formatUSDWithSign(b.average_change)}
-                </td>
-                <td className="text-right py-2 px-3 tabular-nums">
-                  {formatCompactUSD(b.total_change, { sig3: true, sign: true })}
-                </td>
-                <td className="text-right py-2 pl-3 tabular-nums">
-                  {formatCompactUSD(b.state_budget_impact, { sig3: true, sign: true })}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p className="text-xs text-gray-500 mt-2">
-          Gaining and losing count households whose net income rises or falls by more than $1. Total
-          and average changes cover every household in the band.
-        </p>
-      </div>
+    <div>
+      <h3 className="text-xl font-bold text-gray-800 mb-4">Impact by income band</h3>
+      <BandsTable data={data} />
     </div>
   );
 }
@@ -487,7 +460,7 @@ export function PovertySection({ data }: { data: StatewideResults }) {
       <p className="text-xs text-gray-500">
         {tiny ? 'Each poverty rate changes by less than 0.1% of its current-law level. ' : ''}
         Poverty estimates rest on survey households, so small changes can reflect a handful of
-        sampled households; the methodology tab reports effective sample sizes.
+        sampled households; the validation and methods tab reports effective sample sizes.
       </p>
     </div>
   );

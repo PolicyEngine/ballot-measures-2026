@@ -58,8 +58,14 @@ export interface BallotText {
 
 export interface MeasureContent {
   slug: string;
-  /** One sentence for the hero and the page metadata. */
+  /** One sentence for the overview intro, the landing card and the page metadata. */
   description: string;
+  /**
+   * What the measure does, as a phrase for the header band's subtitle:
+   * "See how {headerPhrase} would affect … households and the state budget …".
+   * The short title, worded to fit the sentence.
+   */
+  headerPhrase: string;
   /** How the measure reaches the ballot, e.g. "Citizen-initiated constitutional amendment". */
   measureType: string;
   /** The vote it needs to pass, cited to an official source. */

@@ -30,7 +30,7 @@ import { mealsModelNote, studentsModelNote } from '@/lib/figureBasis';
 import type { Measure } from '@/lib/registry';
 import { metric } from '@/lib/results';
 import { BasisBadge } from '../FigureBasis';
-import { MetricCard } from '../ui';
+import { StatCard } from '../ui';
 
 const DASH = '—';
 
@@ -62,7 +62,7 @@ function AverageChangeCard({ metrics }: { metrics: Metrics }) {
   const avg = metric(metrics, C.avgHouseholdNetIncomeChange);
   const total = metric(metrics, C.netIncomeChangeTotal);
   return (
-    <MetricCard
+    <StatCard
       label="Average change in household net income"
       value={show(avg, (v) => `${formatUSDWithSign(v)}/year`)}
       detail={total === null ? undefined : `Over all households; ${signedMoney(total)} in total`}
@@ -75,7 +75,7 @@ function GainingLosingCard({ metrics }: { metrics: Metrics }) {
   const winners = metric(metrics, C.winnersRate);
   const losers = metric(metrics, C.losersRate);
   return (
-    <MetricCard
+    <StatCard
       label="Households gaining / losing"
       value={
         winners === null || losers === null
@@ -94,15 +94,16 @@ export function KindHeadlineCards({ measure, metrics }: { measure: Measure; metr
       const more = metric(m, IT.taxUnitsPayingMore);
       const less = metric(m, IT.taxUnitsPayingLess);
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <MetricCard
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard
+            highlight
             label="Change in state income tax revenue"
             badge={<BasisBadge basis="model" />}
             value={show(metric(m, C.stateBudgetImpact), signedMoney)}
             detail="Positive means the state collects more"
           />
           <GainingLosingCard metrics={m} />
-          <MetricCard
+          <StatCard
             label="Tax units paying more / less"
             value={
               more === null || less === null
@@ -117,15 +118,16 @@ export function KindHeadlineCards({ measure, metrics }: { measure: Measure; metr
     case 'tabor_refund': {
       const recipients = metric(m, TR.refundRecipientsBaseline);
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <MetricCard
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard
+            highlight
             label="Sales tax refunds not paid"
             badge={<BasisBadge basis="forecast" />}
             value={show(metric(m, C.stateBudgetImpact), money)}
             detail="Revenue the state keeps if the measure passes"
           />
           <AverageChangeCard metrics={m} />
-          <MetricCard
+          <StatCard
             label="Refunds under current law"
             badge={<BasisBadge basis="forecast" />}
             value={show(metric(m, TR.refundTotalBaseline), money)}
@@ -145,22 +147,23 @@ export function KindHeadlineCards({ measure, metrics }: { measure: Measure; metr
       const students = newlyFreeStudents(m);
       const mealsNote = mealsModelNote(m);
       return (
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <MetricCard
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <StatCard
+            highlight
             label="State cost per year"
             badge={<BasisBadge basis="calibrated" />}
             value={range(m, 'state_cost_adjusted')}
             detail="Low and high participation cases"
             footnote={mealsNote}
           />
-          <MetricCard
+          <StatCard
             label="Students newly qualifying for free meals"
             badge={<BasisBadge basis="calibrated" />}
             value={show(students.scaled, formatCount)}
             detail="Students who would pay full or reduced price under current law"
             footnote={studentsModelNote(m)}
           />
-          <MetricCard
+          <StatCard
             label="Value of meals to families per year"
             badge={<BasisBadge basis="calibrated" />}
             value={range(m, 'meal_value_change_adjusted')}

@@ -27,7 +27,7 @@ import { STATEWIDE_FILES, metric, metricsFor } from '@/lib/results';
 import { SimpleDataTable } from './PolicyOverview';
 import { asPercent } from './statewide/KindSummary';
 import { BasisBadge } from './FigureBasis';
-import { Callout, CompareTable, ExternalLink } from './ui';
+import { Callout, CompareTable, ExternalLink, YearPills } from './ui';
 
 const DASH = '—';
 
@@ -409,9 +409,9 @@ export function TopTailComparison({
   const filerYear = state?.filer_year ?? state?.model_year;
   return (
     <section aria-labelledby="top-tail-heading" className="space-y-3">
-      <h3 id="top-tail-heading" className="text-lg font-semibold text-gray-900">
+      <h2 id="top-tail-heading" className="text-2xl font-bold text-gray-900">
         Top incomes compared with IRS data
-      </h3>
+      </h2>
       {state ? (
         <CompareTable
           caption={`${measure.state_name} filers: model (${filerYear ?? 'model'} data) and IRS Statistics of Income (${state.soi_year})`}
@@ -614,9 +614,12 @@ export function PovertyBasisTable({
 interface Props {
   measure: Measure;
   year: number;
+  /** Shows FUTA's year pills for measures scored in several years. */
+  onYearChange?: (year: number) => void;
 }
 
-export default function ValidationMethodology({ measure, year }: Props) {
+/** Validation and methods tab: one section per block, each under an h2, like the FUTA dashboard. */
+export default function ValidationMethodology({ measure, year, onYearChange }: Props) {
   const content = getContent(measure.slug);
   const metricsFile = useResultsCsv(STATEWIDE_FILES.metrics);
   const { data: manifest } = useManifest();
@@ -626,6 +629,8 @@ export default function ValidationMethodology({ measure, year }: Props) {
 
   return (
     <div className="space-y-10">
+      {onYearChange && <YearPills years={measure.years} value={year} onChange={onYearChange} />}
+
       <section id={FIGURE_BASIS_ID} aria-labelledby="figure-basis-heading" className="space-y-4 scroll-mt-32">
         <h2 id="figure-basis-heading" className="text-2xl font-bold text-gray-900">
           Which figures are calibrated
@@ -658,9 +663,9 @@ export default function ValidationMethodology({ measure, year }: Props) {
       <TopTailComparison measure={measure} year={year} manifest={manifest} metrics={metricsByYear[year] ?? null} />
 
       <section aria-labelledby="sample-heading" className="space-y-3">
-        <h3 id="sample-heading" className="text-lg font-semibold text-gray-900">
+        <h2 id="sample-heading" className="text-2xl font-bold text-gray-900">
           Sample sizes
-        </h3>
+        </h2>
         <SampleSizes measure={measure} metricsByYear={metricsByYear} />
         <p className="text-xs text-gray-500">
           The effective sample size accounts for unequal survey weights (Kish): a few heavily
@@ -671,41 +676,46 @@ export default function ValidationMethodology({ measure, year }: Props) {
       </section>
 
       <section aria-labelledby="kind-heading" className="space-y-3">
-        <h3 id="kind-heading" className="text-lg font-semibold text-gray-900">
+        <h2 id="kind-heading" className="text-2xl font-bold text-gray-900">
           Measure-specific methods
-        </h3>
+        </h2>
         <KindMethodology measure={measure} metrics={metricsByYear[year] ?? null} />
       </section>
 
-      <section aria-labelledby="left-out-heading" className="grid gap-6 md:grid-cols-2">
-        <div>
-          <h3 id="left-out-heading" className="text-lg font-semibold text-gray-900 mb-2">
-            What the model leaves out
-          </h3>
-          <ul className="list-disc pl-5 space-y-1.5 text-sm text-gray-700">
-            {content.notModeled.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Caveats</h3>
-          <ul className="list-disc pl-5 space-y-1.5 text-sm text-gray-700">
-            {content.caveats.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-            <li>
-              Estimates are static: they hold work, investment, filing behavior and where people
-              live fixed.
-            </li>
-          </ul>
+      <section aria-labelledby="limits-heading" className="space-y-4">
+        <h2 id="limits-heading" className="text-2xl font-bold text-gray-900">
+          Limitations
+        </h2>
+        <div className="grid gap-6 md:grid-cols-2">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              What the model leaves out
+            </h3>
+            <ul className="list-disc pl-5 space-y-1.5 text-sm text-gray-700">
+              {content.notModeled.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Caveats</h3>
+            <ul className="list-disc pl-5 space-y-1.5 text-sm text-gray-700">
+              {content.caveats.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+              <li>
+                Estimates are static: they hold work, investment, filing behavior and where people
+                live fixed.
+              </li>
+            </ul>
+          </div>
         </div>
       </section>
 
       <section aria-labelledby="data-heading" className="space-y-3">
-        <h3 id="data-heading" className="text-lg font-semibold text-gray-900">
+        <h2 id="data-heading" className="text-2xl font-bold text-gray-900">
           Model and data
-        </h3>
+        </h2>
         <ModelAndData measure={measure} manifest={manifest} />
         <Callout>
           PolicyEngine&apos;s microsimulation model,{' '}
@@ -717,9 +727,9 @@ export default function ValidationMethodology({ measure, year }: Props) {
       </section>
 
       <section aria-labelledby="refs-heading">
-        <h3 id="refs-heading" className="text-lg font-semibold text-gray-900 mb-2">
+        <h2 id="refs-heading" className="text-2xl font-bold text-gray-900 mb-2">
           Sources
-        </h3>
+        </h2>
         <ul className="space-y-1 text-sm">
           {content.references.map((r) => (
             <li key={r.url}>

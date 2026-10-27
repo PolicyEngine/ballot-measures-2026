@@ -7,6 +7,7 @@ const DSS_URL = 'https://dss.sd.gov/docs/medicaid/reports/2025_Medicaid_Report.p
 
 const content: MeasureContent = {
   slug: 'sd-amendment-i',
+  headerPhrase: 'tying the constitutional Medicaid expansion requirement to a 90% federal share',
   description:
     "South Dakota Amendment I concerns Medicaid expansion if the federal government's share of its cost falls below 90%. The Attorney General's explanation and the sponsors' statement disagree on whether expansion would then end automatically; PolicyEngine models a scenario in which the share falls and expansion ends on July 1, 2027.",
   measureType: 'Constitutional amendment referred by the Legislature (House Joint Resolution 5001)',

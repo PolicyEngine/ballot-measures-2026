@@ -8,7 +8,7 @@ import ExampleHouseholds from './ExampleHouseholds';
 import { BasisNote } from './FigureBasis';
 import HouseholdForm from './HouseholdForm';
 import ImpactAnalysis from './ImpactAnalysis';
-import { Callout } from './ui';
+import { Callout, YearPills } from './ui';
 import { formFromRequest, requestKey, validateHouseholdForm, type HouseholdFormValues } from '@/lib/householdForm';
 import type { HouseholdRequest, HouseholdResponse } from '@/lib/householdApi';
 import type { ExampleHousehold, Measure } from '@/lib/measures';
@@ -37,12 +37,14 @@ const DEPENDENTS_NOTES: Record<Measure['kind'], string | undefined> = {
 interface Props {
   measure: Measure;
   year: number;
+  /** Shows FUTA's year pills for measures scored in several years. */
+  onYearChange?: (year: number) => void;
   state: HouseholdTabState;
   setState: React.Dispatch<React.SetStateAction<HouseholdTabState>>;
 }
 
-/** Household tab: example cards, the calculator form, and the results. */
-export default function HouseholdTab({ measure, year, state, setState }: Props) {
+/** Household impact tab, ordered like the NJ dashboard's: examples, the form, then the impact analysis. */
+export default function HouseholdTab({ measure, year, onYearChange, state, setState }: Props) {
   const content = getContent(measure.slug);
   const resultsRef = useRef<HTMLDivElement | null>(null);
   const fetching = useIsFetching({ queryKey: ['householdImpact'] }) > 0;
@@ -88,10 +90,13 @@ export default function HouseholdTab({ measure, year, state, setState }: Props) 
 
   return (
     <div className="space-y-6">
-      <p className="text-gray-700">{content.householdNote}</p>
-      <BasisNote basis="model" link={false} className="-mt-3">
-        {householdBasisNote(measure)}
-      </BasisNote>
+      <div className="space-y-3">
+        <p className="text-gray-700">{content.householdNote}</p>
+        <BasisNote basis="model" link={false}>
+          {householdBasisNote(measure)}
+        </BasisNote>
+      </div>
+      {onYearChange && <YearPills years={measure.years} value={year} onChange={onYearChange} />}
 
       <ExampleHouseholds
         measure={measure}
@@ -113,7 +118,8 @@ export default function HouseholdTab({ measure, year, state, setState }: Props) 
       />
 
       {submitted && (
-        <div ref={resultsRef} className="scroll-mt-4 space-y-4">
+        <div ref={resultsRef} className="scroll-mt-4 space-y-6">
+          <h2 className="text-2xl font-bold text-primary">Impact analysis</h2>
           {inputsChanged && (
             <Callout role="status">
               Your inputs or the selected year have changed. Select calculate impact to update these

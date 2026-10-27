@@ -21,6 +21,7 @@ const VOTE_REQUIREMENT: VoteRequirement = {
 
 const content: MeasureContent = {
   slug: 'wa-i-645',
+  headerPhrase: 'repealing the tax on income over $1 million and barring income taxes by statute',
   description:
     'Washington Initiative 645 would repeal the 9.9% tax on individual income over $1 million that the Legislature enacted in 2026, before it starts in 2028, and prohibit taxes on individual income by statute.',
   measureType: 'Initiative to the people (statute)',

@@ -1,4 +1,4 @@
-import { fireEvent, screen } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import PolicyOverview from '../components/PolicyOverview';
 import { MEASURE_SLUGS, getContent } from '../content/measures';
@@ -12,23 +12,33 @@ beforeEach(() => {
 describe('PolicyOverview', () => {
   it('compares current law with the measure', async () => {
     renderWithQuery(<PolicyOverview measure={getMeasure('co-amendment-87')} />);
-    expect(screen.getByRole('heading', { name: 'What Amendment 87 does' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'What Amendment 87 would do' })).toBeInTheDocument();
+    // The summary moved out of the header band, and NJ's gray "what changes" callout follows it.
+    expect(screen.getByText(/would replace the 4\.4% flat income tax with six rates/)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'What changes if it passes' })).toBeInTheDocument();
     const table = screen.getByRole('table', { name: /Income tax rates on Colorado taxable income/ });
     expect(table).toHaveTextContent('Current law');
     expect(table).toHaveTextContent('If it passes');
     expect(table).toHaveTextContent('8.4%');
     expect(screen.getByRole('heading', { name: 'Who is affected' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Proposition 136' })).toBeInTheDocument();
-    // The headline estimate loads beside the official one.
+    // FUTA's three headline stats: the estimate (with its basis pill), the official one and a third.
     expect(await screen.findByText('+$1.81B')).toBeInTheDocument();
     expect(screen.getByText('+$1.97B')).toBeInTheDocument();
+    const stats = screen.getAllByTestId('stat-card');
+    expect(stats).toHaveLength(3);
+    expect(stats[0]).toHaveTextContent('Model estimate');
+    expect(stats[2]).toHaveTextContent('Tax units paying more / less');
+    // Changed values in the comparison stand out (NJ's bold teal).
+    expect(within(table).getAllByText('8.4%').some((c) => c.className.includes('text-primary-600'))).toBe(true);
   });
 
   it('shows the ballot title as printed, with its source', () => {
     renderWithQuery(<PolicyOverview measure={getMeasure('co-amendment-87')} />);
     fireEvent.click(screen.getByText('Ballot title as it appears on the ballot'));
     expect(screen.getByText(/SHALL STATE TAXES BE INCREASED \$2\.7 BILLION ANNUALLY/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '2026 Blue Book, page 10' })).toHaveAttribute(
+    const details = screen.getByText('Ballot title as it appears on the ballot').closest('details')!;
+    expect(within(details).getByRole('link', { name: '2026 Blue Book, page 10' })).toHaveAttribute(
       'href',
       expect.stringContaining('#page=10'),
     );
@@ -46,7 +56,7 @@ describe('PolicyOverview', () => {
 
   it('cites the vote each measure needs', () => {
     renderWithQuery(<PolicyOverview measure={getMeasure('co-amendment-87')} />);
-    const vote = screen.getByText('Vote needed to pass').closest('div')!;
+    const vote = screen.getByText('Vote needed to pass').closest('tr')!;
     expect(vote).toHaveTextContent(/at least 55% of the votes cast unless it is limited to a repeal/);
     expect(screen.getByRole('link', { name: '2026 Blue Book, page 4 (vote requirements)' })).toHaveAttribute(
       'href',
@@ -57,7 +67,7 @@ describe('PolicyOverview', () => {
       expect.stringContaining('#page=33'),
     );
     // How it reached the ballot no longer carries the threshold.
-    expect(screen.getByText('How it reached the ballot').closest('div')).not.toHaveTextContent('majority');
+    expect(screen.getByText('How it reached the ballot').closest('tr')).not.toHaveTextContent('majority');
   });
 
   it.each(MEASURE_SLUGS)('cites an official source for the vote %s needs', (slug) => {
@@ -107,5 +117,20 @@ describe('PolicyOverview', () => {
     expect(screen.getByRole('table', { name: /tax year 2027/ })).toHaveTextContent('$137');
     expect(screen.getByRole('table', { name: /tax year 2028/ })).toHaveTextContent('$147');
     expect(screen.getByText('Tax years 2027 and 2028')).toBeInTheDocument();
+  });
+
+  it('lists references in NJ’s three boxes', () => {
+    renderWithQuery(<PolicyOverview measure={getMeasure('nd-measure-2')} />);
+    const refs = screen.getByRole('heading', { name: 'References' }).closest('section')!;
+    for (const name of ['Ballot measure text and voter guides', 'Official estimates', 'Calculations']) {
+      expect(within(refs).getByRole('heading', { name })).toBeInTheDocument();
+    }
+    // Official estimate sources come from the registry, one link per source.
+    const estimates = within(refs).getByRole('heading', { name: 'Official estimates' }).parentElement!;
+    for (const e of getMeasure('nd-measure-2').official_estimates) {
+      expect(within(estimates).getByRole('link', { name: e.source })).toHaveAttribute('href', e.url);
+    }
+    expect(within(refs).getByText(/policyengine-us==/)).toBeInTheDocument();
+    expect(within(refs).getByRole('link', { name: /Validation and methods/ })).toHaveAttribute('href', '#tab=validation');
   });
 });

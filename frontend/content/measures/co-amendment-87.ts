@@ -7,6 +7,7 @@ const INITIAL_FIS_URL = 'https://leg.colorado.gov/initiative_files/3320/download
 
 const content: MeasureContent = {
   slug: 'co-amendment-87',
+  headerPhrase: 'a graduated income tax',
   description:
     'Colorado Amendment 87 would replace the 4.4% flat income tax with six rates from 3.7% to 8.4%, starting in tax year 2027.',
   measureType: 'Citizen initiative (Initiative 195) amending the state constitution and statutes',
