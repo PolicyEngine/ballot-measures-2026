@@ -179,7 +179,7 @@ export default function CoverageResults({
   return (
     <div className="space-y-8">
       <div>
-        <h3 className="text-2xl font-bold text-primary-700">
+        <h3 className="text-xl font-bold text-gray-800">
           {exampleLabel ? exampleLabel : 'Your household’s results'}
         </h3>
         <p className="text-sm text-gray-600 mt-1">

@@ -12,6 +12,7 @@ const HB1013_URL = 'https://ndlegis.gov/assembly/69-2025/regular/documents/25-01
 
 const content: MeasureContent = {
   slug: 'nd-measure-2',
+  headerPhrase: 'free school breakfast and lunch for all students',
   description:
     'North Dakota Constitutional Measure No. 2 would require every public school to serve one free breakfast and one free lunch each school day to all enrolled students, starting in the 2027-28 school year.',
   measureType: 'Citizen-initiated constitutional amendment',
@@ -92,7 +93,7 @@ const content: MeasureContent = {
     "The Legislative Council's fiscal impact report, based on Department of Public Instruction figures, puts the measure's cost at $124 million to $134 million for free meals and $300,000 for administration in the 2027-29 biennium: $124.3 million to $134.3 million in total, as the ballot states.",
   ],
   householdNote:
-    'Enter your household to see the value of school meals for your children in 2028 under current law and if Measure No. 2 passes. The calculator assumes each child eats school breakfast and lunch every school day.',
+    'Enter your household to see the value of school meals for your children in 2028 under current law and if Measure No. 2 passes.',
   references: [
     { label: 'North Dakota Secretary of State, 2026 general election measure guide', url: GUIDE_URL },
     { label: 'Measure No. 2 full text', url: TEXT_URL },

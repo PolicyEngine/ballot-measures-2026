@@ -119,9 +119,9 @@ export default function HouseholdForm({
       onSubmit={handleSubmit}
       noValidate
       aria-label="Your household"
-      className="bg-gray-50 rounded-xl p-5 md:p-6 border border-gray-200 shadow-sm"
+      className="bg-gray-50 rounded-xl p-6 md:p-8 border border-gray-200 shadow-sm"
     >
-      <h3 className="text-xl font-bold text-gray-900 mb-4">Your household</h3>
+      <h2 className="text-xl font-bold text-gray-900 mb-6">Your household</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-5 gap-y-4">
         <div>

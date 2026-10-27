@@ -7,11 +7,19 @@
  * 3. postMessage communication to sync state with the parent frame
  */
 
-export const TAB_IDS = ['overview', 'household', 'statewide', 'districts', 'methodology'] as const;
+export const TAB_IDS = ['overview', 'household', 'statewide', 'districts', 'validation'] as const;
 export type TabId = (typeof TAB_IDS)[number];
 
-/** Older links used `tab=validation` for the methodology tab. */
-const TAB_ALIASES: Record<string, TabId> = { validation: 'methodology' };
+/**
+ * Other names that still open a tab: the methods tab's earlier id
+ * (`tab=methodology`) and the NJ dashboard's ids.
+ */
+const TAB_ALIASES: Record<string, TabId> = {
+  methodology: 'validation',
+  policy: 'overview',
+  impact: 'household',
+  aggregate: 'statewide',
+};
 
 export interface HashParams {
   country?: string;

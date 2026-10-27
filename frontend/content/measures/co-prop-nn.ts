@@ -18,6 +18,7 @@ const tierTable = (year: number, tiers: [string, number][]): Comparison => ({
 
 const content: MeasureContent = {
   slug: 'co-prop-nn',
+  headerPhrase: 'raising the state revenue limit and keeping the surplus',
   description:
     'Colorado Proposition NN would permanently raise the state’s TABOR revenue limit by its K-12 education spending, letting the state keep revenue it would otherwise refund; PolicyEngine scores the sales tax refunds projected for tax years 2027 and 2028.',
   measureType: 'Referred by the Legislature (Senate Bill 26-135) as a statute',

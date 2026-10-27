@@ -1,5 +1,7 @@
 /** Small presentational pieces shared across tabs, styled like the NJ and SC dashboards. */
 
+import { useId } from 'react';
+
 export type Tone = 'positive' | 'negative' | 'neutral';
 
 /**
@@ -48,6 +50,103 @@ export function rovingKeyDown<T>(
   if (next !== i) select(values[next]);
   const options = event.currentTarget.querySelectorAll<HTMLElement>('[role="tab"], [role="radio"]');
   options[next]?.focus();
+}
+
+/**
+ * FUTA-style headline stat: an uppercase label, a large value and a short
+ * note. `highlight` is the teal lead card; the rest are gray. A badge (such
+ * as a FigureBasis pill) sits beside the label, outside the uppercase text.
+ */
+export function StatCard({
+  label,
+  value,
+  detail,
+  footnote,
+  badge,
+  highlight = false,
+  size = 'md',
+}: {
+  label: string;
+  value: React.ReactNode;
+  detail?: React.ReactNode;
+  footnote?: React.ReactNode;
+  badge?: React.ReactNode;
+  highlight?: boolean;
+  /** lg: overview headline (text-3xl); md: tab cards (text-2xl). */
+  size?: 'md' | 'lg';
+}) {
+  return (
+    <div
+      data-testid="stat-card"
+      className={`rounded-lg border p-5 ${highlight ? 'bg-teal-50 border-teal-100' : 'bg-gray-50 border-gray-200'}`}
+    >
+      <div className="mb-1 flex flex-wrap items-start justify-between gap-x-2 gap-y-1">
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-500">{label}</p>
+        {badge}
+      </div>
+      <p
+        className={`${size === 'lg' ? 'text-3xl' : 'text-2xl'} font-bold tabular-nums ${
+          highlight ? 'text-teal-600' : 'text-gray-900'
+        }`}
+      >
+        {value}
+      </p>
+      {detail && <p className="text-sm text-gray-500 mt-1">{detail}</p>}
+      {footnote && (
+        <p className="text-xs leading-4 text-gray-500 mt-2 border-t border-gray-200 pt-2" data-testid="card-footnote">
+          {footnote}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * FUTA's year picker: rounded pills, the selected year teal. A radio group
+ * with a roving tabindex, so arrow keys move between years.
+ */
+export function YearPills({
+  years,
+  value,
+  onChange,
+  label = 'Tax year',
+}: {
+  years: readonly number[];
+  value: number;
+  onChange: (year: number) => void;
+  label?: string;
+}) {
+  const id = useId();
+  if (years.length < 2) return null;
+  return (
+    <div>
+      <span id={id} className="sr-only">
+        {label}
+      </span>
+      <div
+        role="radiogroup"
+        aria-labelledby={id}
+        className="flex flex-wrap items-center gap-2"
+        onKeyDown={(e) => rovingKeyDown(e, years, value, onChange)}
+      >
+        {years.map((y) => (
+          <button
+            key={y}
+            type="button"
+            role="radio"
+            aria-checked={y === value}
+            tabIndex={y === value ? 0 : -1}
+            onClick={() => onChange(y)}
+            className={`inline-block px-4 py-1.5 rounded-full text-sm font-medium tabular-nums transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700 ${
+              y === value ? 'bg-teal-500 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            {y}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 /** Tone for a dollar change: rounds to whole dollars first. */

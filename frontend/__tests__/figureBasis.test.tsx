@@ -119,31 +119,39 @@ describe('landing cards', () => {
 describe('statewide labels', () => {
   it('badges North Dakota’s cards and notes the participation-adjusted charts', async () => {
     renderWithQuery(<AggregateImpact measure={getMeasure('nd-measure-2')} year={2028} />);
-    const cost = (await screen.findByText('State cost per year')).closest('div')!;
+    const cost = (await screen.findByText('State cost per year')).closest<HTMLElement>('[data-testid="stat-card"]')!;
     expect(within(cost).getByText('Calibrated')).toBeInTheDocument();
     expect(within(cost).getByTestId('card-footnote')).toHaveTextContent(mealsModelNote(nd)!);
-    const students = screen.getByText('Students newly qualifying for free meals').closest('div')!;
+    const students = screen
+      .getByText('Students newly qualifying for free meals')
+      .closest<HTMLElement>('[data-testid="stat-card"]')!;
     expect(within(students).getByTestId('card-footnote')).toHaveTextContent(studentsModelNote(nd)!);
     expect(screen.getByText(/use the participation-adjusted midpoint of the low and high cases/)).toBeInTheDocument();
   });
 
   it('badges South Dakota’s coverage and cost cards with their model values', async () => {
     renderWithQuery(<AggregateImpact measure={getMeasure('sd-amendment-i')} year={2028} />);
-    const losing = (await screen.findByText('People losing Medicaid')).closest('div')!;
+    const losing = (await screen.findByText('People losing Medicaid')).closest<HTMLElement>('[data-testid="stat-card"]')!;
     expect(within(losing).getByText('Calibrated')).toBeInTheDocument();
     expect(within(losing).getByTestId('card-footnote')).toHaveTextContent(
       `Model before calibration: ${formatCount(sd.people_losing_medicaid_model)} people.`,
     );
-    const state = screen.getByText('Change in state Medicaid spending').closest('div')!;
+    // The coverage section: the scaling note and four people cards.
+    expect(screen.getAllByText('Calibrated')).toHaveLength(5);
+    fireEvent.click(screen.getByRole('tab', { name: 'Budgetary impact' }));
+    const state = screen
+      .getByText('Change in state Medicaid spending')
+      .closest<HTMLElement>('[data-testid="stat-card"]')!;
     expect(within(state).getByTestId('card-footnote')).toHaveTextContent(
       `Model before calibration: ${formatCompactUSD(sd.medicaid_state_cost_change_model, { sig3: true, sign: true })}.`,
     );
-    expect(screen.getAllByText('Calibrated')).toHaveLength(8);
+    // The budget section: the scaling note and three spending cards.
+    expect(screen.getAllByText('Calibrated')).toHaveLength(4);
   });
 
   it('marks Proposition NN’s refund figures as using a forecast input', async () => {
     renderWithQuery(<AggregateImpact measure={getMeasure('co-prop-nn')} year={2027} />);
-    const refunds = (await screen.findByText('Sales tax refunds not paid')).closest('div')!;
+    const refunds = (await screen.findByText('Sales tax refunds not paid')).closest<HTMLElement>('[data-testid="stat-card"]')!;
     expect(within(refunds).getByText('Forecast input')).toBeInTheDocument();
     expect(screen.getByText(FORECAST_INPUT_NOTE)).toBeInTheDocument();
   });
@@ -154,12 +162,12 @@ describe('statewide labels', () => {
       ['nd-measure-2', 2028],
     ] as const) {
       const { unmount } = renderWithQuery(<AggregateImpact measure={getMeasure(slug)} year={year} />);
-      fireEvent.click(await screen.findByRole('tab', { name: 'Poverty' }));
+      fireEvent.click(await screen.findByRole('tab', { name: 'Poverty impact' }));
       const note = await screen.findByText(/add partnership and S corporation income/);
       expect(note.closest('p')).toHaveTextContent('Adjusted');
-      expect(within(note.closest('p')!).getByRole('link', { name: /See methodology/ })).toHaveAttribute(
+      expect(within(note.closest('p')!).getByRole('link', { name: /See methods/ })).toHaveAttribute(
         'href',
-        '#tab=methodology',
+        '#tab=validation',
       );
       unmount();
     }
@@ -217,14 +225,14 @@ describe('household tab and links', () => {
     expect(householdBasisNote(getMeasure('sd-amendment-i'))).toMatch(/model’s Medicaid eligibility and marketplace coverage rules/);
   });
 
-  it('opens the methodology tab from a note', async () => {
+  it('opens the validation and methods tab from a note', async () => {
     renderWithQuery(<MeasureDashboard slug="co-prop-nn" />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Statewide' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Statewide impact' }));
     const link = within(await screen.findByText(FORECAST_INPUT_NOTE)).queryByRole('link') ??
-      within(screen.getByText(FORECAST_INPUT_NOTE).closest('p')!).getByRole('link', { name: /See methodology/ });
+      within(screen.getByText(FORECAST_INPUT_NOTE).closest('p')!).getByRole('link', { name: /See methods/ });
     fireEvent.click(link);
     await waitFor(() =>
-      expect(screen.getByRole('tab', { name: 'Methodology & validation' })).toHaveAttribute('aria-selected', 'true'),
+      expect(screen.getByRole('tab', { name: 'Validation and methods' })).toHaveAttribute('aria-selected', 'true'),
     );
   });
 });

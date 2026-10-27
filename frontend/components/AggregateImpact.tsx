@@ -1,5 +1,13 @@
 'use client';
 
+/**
+ * Statewide impact tab, laid out like the NJ CTC dashboard's: "{State}
+ * impact analysis" with FUTA's download button and year pills, headline
+ * stat cards, then sub-navigation pills (budgetary, distributional,
+ * winners and losers, poverty). The Medicaid scenario has coverage and
+ * budgetary sections instead.
+ */
+
 import { useState } from 'react';
 import { formatCount } from '@/lib/format';
 import { useStatewideResults, type Measure } from '@/lib/measures';
@@ -8,26 +16,31 @@ import { metric, type StatewideResults } from '@/lib/results';
 import DownloadResults from './DownloadResults';
 import { FORECAST_INPUT_NOTE } from '@/lib/figureBasis';
 import { BasisNote } from './FigureBasis';
-import { Callout, Loading, ResultsUnavailable, rovingKeyDown } from './ui';
-import CoverageStatewide from './statewide/CoverageStatewide';
+import { Callout, Loading, ResultsUnavailable, YearPills, rovingKeyDown } from './ui';
+import CoverageStatewide, { PEOPLE_NOT_DOLLARS, type CoverageSection } from './statewide/CoverageStatewide';
 import { KindHeadlineCards } from './statewide/KindSummary';
 import {
   BudgetSection,
   DistributionalSection,
-  IncomeBandsSection,
+  IncomeBandsTable,
   PovertySection,
   WinnersSection,
 } from './statewide/sections';
 
-type Section = 'budget' | 'distributional' | 'winners' | 'bands' | 'poverty';
+type Section = 'budget' | 'distributional' | 'winners' | 'poverty';
 
-/** Statewide sections for the net-income measures (the Medicaid scenario has its own view). */
+/** Statewide sections for the net-income measures, with the NJ dashboard's names. */
 export const STATEWIDE_SECTIONS: { key: Section; label: string }[] = [
-  { key: 'budget', label: 'Budget' },
-  { key: 'distributional', label: 'By income decile' },
-  { key: 'winners', label: 'Gains and losses' },
-  { key: 'bands', label: 'By income band' },
-  { key: 'poverty', label: 'Poverty' },
+  { key: 'budget', label: 'Budgetary impact' },
+  { key: 'distributional', label: 'Distributional impact' },
+  { key: 'winners', label: 'Winners & losers' },
+  { key: 'poverty', label: 'Poverty impact' },
+];
+
+/** The Medicaid scenario's sections. */
+export const COVERAGE_SECTIONS: { key: CoverageSection; label: string }[] = [
+  { key: 'coverage', label: 'Coverage impact' },
+  { key: 'budget', label: 'Budgetary impact' },
 ];
 
 /** Below this effective sample of affected households, flag the estimate as imprecise. */
@@ -43,8 +56,8 @@ export function PrecisionNote({ metrics }: { metrics: Record<string, number> }) 
       These figures rest on {sampled === null ? 'a small number of' : formatCount(sampled)} sampled
       households that the measure affects. Their survey weights vary, so together they carry the
       statistical weight of about {formatCount(Math.max(1, effective))} independent households (the
-      effective sample size), and the estimates are approximate. The methodology tab compares them
-      with official estimates.
+      effective sample size), and the estimates are approximate. The validation and methods tab
+      compares them with official estimates.
     </Callout>
   );
 }
@@ -63,6 +76,49 @@ export function NoDistrictsNote({ measure, metrics }: { measure: Measure; metric
   );
 }
 
+/** NJ's sub-navigation pills (a tablist with arrow keys). */
+function SectionPills<K extends string>({
+  sections,
+  value,
+  onChange,
+}: {
+  sections: { key: K; label: string }[];
+  value: K;
+  onChange: (key: K) => void;
+}) {
+  return (
+    <div
+      className="flex flex-wrap gap-2"
+      role="tablist"
+      aria-label="Statewide sections"
+      onKeyDown={(e) =>
+        rovingKeyDown(
+          e,
+          sections.map((s) => s.key),
+          value,
+          onChange,
+        )
+      }
+    >
+      {sections.map((s) => (
+        <button
+          key={s.key}
+          type="button"
+          role="tab"
+          aria-selected={value === s.key}
+          tabIndex={value === s.key ? 0 : -1}
+          onClick={() => onChange(s.key)}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            value === s.key ? 'bg-primary-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          {s.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function NetIncomeStatewide({ measure, data }: { measure: Measure; data: StatewideResults }) {
   const [section, setSection] = useState<Section>('budget');
   return (
@@ -71,37 +127,7 @@ function NetIncomeStatewide({ measure, data }: { measure: Measure; data: Statewi
       {measure.kind === 'tabor_refund' && <BasisNote basis="forecast">{FORECAST_INPUT_NOTE}</BasisNote>}
       <PrecisionNote metrics={data.metrics} />
 
-      <div
-        className="flex flex-wrap gap-2"
-        role="tablist"
-        aria-label="Statewide sections"
-        onKeyDown={(e) =>
-          rovingKeyDown(
-            e,
-            STATEWIDE_SECTIONS.map((s) => s.key),
-            section,
-            setSection,
-          )
-        }
-      >
-        {STATEWIDE_SECTIONS.map((s) => (
-          <button
-            key={s.key}
-            type="button"
-            role="tab"
-            aria-selected={section === s.key}
-            tabIndex={section === s.key ? 0 : -1}
-            onClick={() => setSection(s.key)}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-              section === s.key
-                ? 'bg-primary-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {s.label}
-          </button>
-        ))}
-      </div>
+      <SectionPills sections={STATEWIDE_SECTIONS} value={section} onChange={setSection} />
 
       {measure.kind === 'school_meals' && (
         <BasisNote basis="calibrated">
@@ -110,11 +136,29 @@ function NetIncomeStatewide({ measure, data }: { measure: Measure; data: Statewi
           assumption that every student eats both meals every day.
         </BasisNote>
       )}
-      {section === 'budget' && <BudgetSection measure={measure} data={data} />}
+      {section === 'budget' && (
+        <div className="space-y-10">
+          <BudgetSection measure={measure} data={data} />
+          <IncomeBandsTable data={data} />
+        </div>
+      )}
       {section === 'distributional' && <DistributionalSection data={data} />}
       {section === 'winners' && <WinnersSection data={data} />}
-      {section === 'bands' && <IncomeBandsSection data={data} />}
       {section === 'poverty' && <PovertySection data={data} />}
+    </>
+  );
+}
+
+/** The Medicaid scenario: people first, then spending; never net income. */
+function CoverageStatewideTabs({ measure, data }: { measure: Measure; data: StatewideResults }) {
+  const [section, setSection] = useState<CoverageSection>('coverage');
+  return (
+    <>
+      <p className="text-sm text-gray-700">{PEOPLE_NOT_DOLLARS}</p>
+      <PrecisionNote metrics={data.metrics} />
+      <SectionPills sections={COVERAGE_SECTIONS} value={section} onChange={setSection} />
+      <CoverageStatewide data={data} section={section} />
+      {section === 'budget' && <BudgetSection measure={measure} data={data} />}
     </>
   );
 }
@@ -122,25 +166,29 @@ function NetIncomeStatewide({ measure, data }: { measure: Measure; data: Statewi
 interface Props {
   measure: Measure;
   year: number;
+  /** Shows FUTA's year pills for measures scored in several years. */
+  onYearChange?: (year: number) => void;
 }
 
-export default function AggregateImpact({ measure, year }: Props) {
+export default function AggregateImpact({ measure, year, onYearChange }: Props) {
   const { data, isLoading, error } = useStatewideResults(measure.slug, year);
   const conditional = measure.kind_params?.conditional === true;
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-2xl font-bold text-primary-700">{measure.state_name} statewide impact</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            {conditional
-              ? `The scenario in which expansion ends, compared with current law, ${year}.`
-              : `If ${measure.designation} passes, compared with current law, tax year ${year}.`}
-          </p>
+      <div>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-2xl font-bold text-primary">{measure.state_name} impact analysis</h2>
+          <DownloadResults slug={measure.slug} file="metrics.csv" label="Download CSV" />
         </div>
-        <DownloadResults slug={measure.slug} file="metrics.csv" label="Download statewide results (CSV)" />
+        <p className="text-sm text-gray-600 mt-2">
+          Tax year {year}.{' '}
+          {conditional
+            ? 'The scenario in which expansion ends, compared with current law.'
+            : `If ${measure.designation} passes, compared with current law.`}
+        </p>
       </div>
+      {onYearChange && <YearPills years={measure.years} value={year} onChange={onYearChange} />}
 
       {isLoading ? (
         <Loading label={`Loading ${measure.state_name} results…`} />
@@ -155,10 +203,7 @@ export default function AggregateImpact({ measure, year }: Props) {
           detail={`metrics.csv has no rows for ${measure.slug} in ${year}.`}
         />
       ) : measure.kind === 'medicaid' ? (
-        <>
-          <CoverageStatewide data={data} />
-          <PrecisionNote metrics={data.metrics} />
-        </>
+        <CoverageStatewideTabs measure={measure} data={data} />
       ) : (
         <NetIncomeStatewide measure={measure} data={data} />
       )}

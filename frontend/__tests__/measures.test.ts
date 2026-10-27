@@ -66,10 +66,10 @@ describe('measure registry (measures.json)', () => {
       'co-prop-nn',
     ]);
     for (const slug of ['co-amendment-87', 'co-prop-nn']) {
-      expect(measureTabs(slug)).toEqual(['overview', 'household', 'statewide', 'districts', 'methodology']);
+      expect(measureTabs(slug)).toEqual(['overview', 'household', 'statewide', 'districts', 'validation']);
     }
     for (const slug of ['ca-prop-3', 'wa-i-645', 'nd-measure-2', 'sd-amendment-i']) {
-      expect(measureTabs(slug)).toEqual(['overview', 'household', 'statewide', 'methodology']);
+      expect(measureTabs(slug)).toEqual(['overview', 'household', 'statewide', 'validation']);
     }
   });
 
