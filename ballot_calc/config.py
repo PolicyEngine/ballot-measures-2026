@@ -7,13 +7,13 @@ one Populace dataset revision, both recorded here and in each run's
 
 from __future__ import annotations
 
-# Exact policyengine-us pin. 2.72.3 carries the September 2026 forecast's
+# Exact policyengine-us pin. 2.72.4 carries the September 2026 forecast's
 # Colorado sales tax refund tiers as current law (#10407, Proposition NN),
 # state school meal coverage (#10238, North Dakota Measure No. 2), the
 # Colorado Initiative 195 contrib (#9431), California Proposition 3 (#9601)
 # and the Washington millionaires tax (#7908). Mirrored in pyproject.toml, scripts/modal_pipeline.py and
 # scripts/modal_household_api.py; tests/test_registry.py keeps them equal.
-POLICYENGINE_US_PIN = "policyengine-us==2.72.3"
+POLICYENGINE_US_PIN = "policyengine-us==2.72.4"
 
 # Populace ACS local-area national file (PUMA-assigned CD-119, county and
 # state geography) on the Hugging Face dataset repo.

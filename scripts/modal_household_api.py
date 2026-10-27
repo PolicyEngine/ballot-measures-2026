@@ -49,7 +49,7 @@ from ballot_calc import config  # noqa: E402
 
 # Exact policyengine-us pin. Mirrors POLICYENGINE_US_PIN in
 # ballot_calc/config.py, pyproject.toml and scripts/modal_pipeline.py.
-POLICYENGINE_US_PIN = "policyengine-us==2.72.3"
+POLICYENGINE_US_PIN = "policyengine-us==2.72.4"
 if POLICYENGINE_US_PIN != config.POLICYENGINE_US_PIN:
     raise RuntimeError(
         f"{__file__} pins {POLICYENGINE_US_PIN} but ballot_calc/config.py pins "
