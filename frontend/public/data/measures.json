@@ -1,7 +1,7 @@
 {
   "election_date": "2026-11-03",
   "pin": "policyengine-us==2.60.4",
-  "registry_hash": "58c2dae54eb37534",
+  "registry_hash": "56bf65ea3ed21f84",
   "measures": [
     {
       "slug": "co-amendment-87",
@@ -144,52 +144,7 @@
       ],
       "headline_year": 2027,
       "headline_metric": "state_budget_impact",
-      "baseline_overrides": {
-        "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale[0].amount": {
-          "2027-01-01.2027-12-31": 43,
-          "2028-01-01.2028-12-31": 47
-        },
-        "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale[1].amount": {
-          "2027-01-01.2027-12-31": 58,
-          "2028-01-01.2028-12-31": 62
-        },
-        "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale[1].threshold": {
-          "2027-01-01.2027-12-31": 57001,
-          "2028-01-01.2028-12-31": 59001
-        },
-        "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale[2].amount": {
-          "2027-01-01.2027-12-31": 67,
-          "2028-01-01.2028-12-31": 71
-        },
-        "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale[2].threshold": {
-          "2027-01-01.2027-12-31": 117001,
-          "2028-01-01.2028-12-31": 120001
-        },
-        "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale[3].amount": {
-          "2027-01-01.2027-12-31": 79,
-          "2028-01-01.2028-12-31": 85
-        },
-        "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale[3].threshold": {
-          "2027-01-01.2027-12-31": 187001,
-          "2028-01-01.2028-12-31": 192001
-        },
-        "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale[4].amount": {
-          "2027-01-01.2027-12-31": 85,
-          "2028-01-01.2028-12-31": 91
-        },
-        "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale[4].threshold": {
-          "2027-01-01.2027-12-31": 265001,
-          "2028-01-01.2028-12-31": 272001
-        },
-        "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale[5].amount": {
-          "2027-01-01.2027-12-31": 137,
-          "2028-01-01.2028-12-31": 147
-        },
-        "gov.states.co.tax.income.credits.sales_tax_refund.amount.scale[5].threshold": {
-          "2027-01-01.2027-12-31": 349001,
-          "2028-01-01.2028-12-31": 358001
-        }
-      },
+      "baseline_overrides": {},
       "reform_overrides": {
         "gov.states.co.tax.income.credits.sales_tax_refund.in_effect": {
           "2027-01-01.2028-12-31": false

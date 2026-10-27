@@ -11,8 +11,10 @@ documented there.
 
 - **Direction.** Every change is (measure passes) − (current law), for one
   tax year. Current law includes each measure's `baseline_overrides` (for
-  Proposition NN, the September 2026 forecast refund tiers); the passes
+  South Dakota, counting health benefits in net income); the passes
   policy merges `reform_overrides` over them (`ballot_calc/measures.py`).
+  Proposition NN's current-law refund tiers come from policyengine-us
+  itself (#10407, the September 2026 forecast).
 - **Household side.** A positive net-income change means the household gains.
 - **Budget side.** Signed from the government's side: a positive
   `*_budget_impact` means the government gains revenue or spends less.

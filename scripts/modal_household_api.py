@@ -28,9 +28,9 @@ Endpoints:
     POST /calculate  -> request and response shapes in ballot_calc/household.py;
                         422 with {"detail": message} for an invalid request
 
-Cold starts restore a memory snapshot taken after the nine tax-benefit
-systems (current law, the Proposition NN and South Dakota current-law
-variants, and the six measures passing) are built and warmed with one
+Cold starts restore a memory snapshot taken after the eight tax-benefit
+systems (current law, the South Dakota current-law variant, and the six
+measures passing) are built and warmed with one
 request per measure and year, so a new container answers in seconds rather
 than minutes. Each container serves one request at a time (the calculator
 holds a lock); Modal scales out under load and to zero when idle.
@@ -84,7 +84,7 @@ def _rss_gb() -> float:
     enable_memory_snapshot=True,
     scaledown_window=15 * 60,
     timeout=300,
-    # Building and warming the nine systems before the snapshot takes
+    # Building and warming the eight systems before the snapshot takes
     # minutes; restores from the snapshot start in seconds.
     startup_timeout=20 * 60,
     max_containers=10,
