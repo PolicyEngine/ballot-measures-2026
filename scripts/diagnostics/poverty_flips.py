@@ -66,7 +66,9 @@ app = modal.App(f"{PIPELINE_APP_NAME}-poverty")
 volume = modal.Volume.from_name(RESULTS_VOLUME_NAME)
 image = (
     modal.Image.debian_slim(python_version="3.13")
-    .pip_install(POLICYENGINE_US_PIN, "numpy>=1.24.0")
+    .pip_install(
+        POLICYENGINE_US_PIN, "numpy>=1.24.0", index_url="https://pypi.org/simple"
+    )
     .add_local_python_source("ballot_calc")
 )
 

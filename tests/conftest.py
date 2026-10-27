@@ -66,7 +66,7 @@ def _population(state: str, n: int = 400, seed: int = 0) -> dict:
 def _finish(arrays: dict) -> dict:
     """Derive the SPM and poverty arrays from household net income.
 
-    SPM resources leave out partnership income, as policyengine-us 2.60.4
+    SPM resources leave out partnership income, as policyengine-us 2.72.4
     does: households above $2M of AGI hold all but $29,000 of their
     current-law net income as partnership income, which the SPM arrays omit
     (``spm_omitted_market_income``), so they look poor (threshold $30,000).

@@ -37,7 +37,8 @@ PASS_SCHEMA_VERSION = 2
 POLICIES = ("baseline", "reform")
 
 # Cash income that household net income counts but SPM resources leave out
-# in policyengine-us 2.60.4: spm_unit_market_income sums the person-level
+# in policyengine-us (2.60.4 to 2.72.4; policyengine-us#9919):
+# spm_unit_market_income sums the person-level
 # market_income, whose component list omits these sources of
 # gov.household.market_income_sources, while the taxes on them are
 # subtracted in full. Census money income counts all three, so the

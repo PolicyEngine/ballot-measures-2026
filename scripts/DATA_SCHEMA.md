@@ -31,7 +31,7 @@ documented there.
 - **Scope.** Each measure is simulated on its state's households only. The
   model scores tax-year liability and benefit values; official estimates are
   usually by state fiscal year (see `official_estimates` in `measures.json`).
-- **Federal revenue.** The federal SALT deduction in policyengine-us 2.60.4
+- **Federal revenue.** The federal SALT deduction in policyengine-us 2.72.4
   reads an imputed `state_withheld_income_tax`, so federal income tax does not
   respond to state income tax changes; `federal_revenue_impact` is 0 for the
   income tax measures by construction.
@@ -90,7 +90,7 @@ metric plus its kind's metrics, in the order below.
 Revenue and spending variables per measure are in `measures.json`
 (`state_revenue_variables`, etc.).
 
-**SPM resources adjustment (all measures).** In policyengine-us 2.60.4,
+**SPM resources adjustment (all measures).** In policyengine-us 2.72.4 (as in 2.60.4),
 SPM resources (`spm_unit_market_income`, which sums the person-level
 `market_income`) leave out four sources that household net income counts
 (`gov.household.market_income_sources`), while the income taxes on them are
@@ -110,10 +110,10 @@ Populace data). Without the adjustment, some households with AGI above
 $500k count as poor and cross the line when their state income tax changes:
 CA Proposition 3 "pushed" 1,707 people into poverty, WA I-645 "lifted" 414
 out, and CO Amendment 87 raised deep poverty 0.38%. With it, none of those
-households move. It also lowers current-law poverty rates: CO 9.72% →
-9.14% (TY2027), CA 18.60% → 18.46% (TY2031), WA 10.25% → 9.83% (TY2028), ND
-7.01% → 5.59% and SD 6.81% → 5.05% (TY2028); farm and S corporation income
-matter most in North Dakota and South Dakota. `manifest.json` records the
+households move. It also lowers current-law poverty rates (policyengine-us
+2.72.4): CO 9.72% → 9.14% (TY2027), CA 18.47% → 18.32% (TY2031), WA 10.20% →
+9.79% (TY2028), ND 6.98% → 5.57% and SD 6.76% → 5.01% (TY2028); farm and S
+corporation income matter most in North Dakota and South Dakota. `manifest.json` records the
 adjustment in `spm_resources_adjustment` (`applied`,
 `added_to_spm_resources`, `not_added`, `description`) and each
 measure-year's poverty figures on the model's own resources in

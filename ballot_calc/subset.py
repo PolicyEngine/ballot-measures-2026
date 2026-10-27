@@ -10,7 +10,7 @@ Every household keeps its weight, so weighted state totals from a subset
 equal state-filtered totals from a national run.
 
 ``clean_spm_composition`` then gives every SPM unit an adult:
-policyengine-us 2.60.x raises when it computes the SPM threshold of a unit
+policyengine-us (through 2.72.4) raises when it computes the SPM threshold of a unit
 without one (the national file has a few child-only units).
 
 The table selection (``select_state_tables``) is plain pandas so the fast

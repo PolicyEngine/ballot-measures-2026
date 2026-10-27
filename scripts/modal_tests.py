@@ -41,7 +41,14 @@ volume = modal.Volume.from_name(RESULTS_VOLUME_NAME, create_if_missing=True)
 
 image = (
     modal.Image.debian_slim(python_version="3.13")
-    .pip_install(POLICYENGINE_US_PIN, "numpy>=1.24.0", "pytest", "pytest-timeout")
+    # pypi.org directly: Modal's PyPI mirror lags new policyengine-us releases.
+    .pip_install(
+        POLICYENGINE_US_PIN,
+        "numpy>=1.24.0",
+        "pytest",
+        "pytest-timeout",
+        index_url="https://pypi.org/simple",
+    )
     .add_local_dir(
         str(REPO_ROOT),
         "/repo",
