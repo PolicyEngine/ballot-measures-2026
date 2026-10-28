@@ -33,7 +33,7 @@ const content: MeasureContent = {
     'Measure No. 2 would require public schools to serve one breakfast and one lunch each school day to every enrolled student at no cost. The state would reimburse schools for costs that federal funding does not cover, at its free-meal rates as of the 2025-26 school year, adjusted for inflation; schools must claim all federal reimbursement available.',
   ],
   whatItDoes: [
-    'Lets nonpublic, Bureau of Indian Education and other tribal schools choose to do the same.',
+    'Lets nonpublic, Bureau of Indian Education and other tribal schools opt in.',
     'Requires the Legislature to identify a funding source, or else appropriate the money from Legacy Fund earnings.',
     'Covers all enrolled students; the Secretary of State’s guide describes this as pre-K through grade 12. The model covers kindergarten through grade 12.',
   ],

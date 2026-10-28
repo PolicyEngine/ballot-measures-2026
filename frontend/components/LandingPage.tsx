@@ -18,6 +18,7 @@ import { metricsFor } from '@/lib/results';
 
 const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
 const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function LandingPage() {
   const router = useRouter();
@@ -67,13 +68,13 @@ export default function LandingPage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      <div className="bg-primary-500 text-white py-8 px-4 shadow-md">
-        <div className="max-w-7xl mx-auto">
-          <h1 className="text-4xl font-bold mb-2">2026 ballot measures: taxes and benefits</h1>
-          <p className="text-lg opacity-90">
-            See how {numberWord(MEASURES.length)} measures on the {formatLongDate(ELECTION_DATE)} ballot
-            in {numberWord(groups.length)} states would change household taxes and benefits (South
-            Dakota’s as a conditional scenario), compared with current law
+      <div className="border-b border-gray-200 bg-white">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <h1 className="text-3xl font-bold text-gray-900">2026 ballot measures: taxes and benefits</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            {capitalize(numberWord(MEASURES.length))} measures in {numberWord(groups.length)} states ·{' '}
+            {formatLongDate(ELECTION_DATE)} · Compared with current law (South Dakota’s as a
+            conditional scenario)
           </p>
         </div>
       </div>

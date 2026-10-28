@@ -17,7 +17,7 @@ describe('LandingPage', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       '2026 ballot measures: taxes and benefits',
     );
-    expect(screen.getByText(/November 3, 2026 ballot in five states/)).toBeInTheDocument();
+    expect(screen.getByText(/Six measures in five states/)).toBeInTheDocument();
     const map = screen.getByRole('region', { name: 'Map of states with measures' });
     // Five highlighted states on the map, each a button.
     expect(within(map).getAllByRole('button').map((b) => b.getAttribute('data-state')).sort()).toEqual([
