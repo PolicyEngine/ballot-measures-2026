@@ -1,8 +1,9 @@
 /**
  * Fetch helpers for the precomputed results in frontend/public/<DATA_DIR>/.
- * A missing file (HTTP error, network failure, empty body, or a body in the
- * wrong format) resolves to null, so each view can show "Results not yet
- * available" instead of crashing.
+ * Only a missing file (HTTP 404, an empty body, or a body in the wrong
+ * format) resolves to null, so a view can say results are not yet
+ * available. Network failures and other HTTP errors throw, so React Query
+ * retries them and the view can offer Retry.
  */
 
 import parseCSV, { csvHeader, type CsvRow } from './parseCSV';
@@ -20,20 +21,17 @@ export async function fetchCsvOrNull(
   filename: string,
   requiredColumn: string = MEASURE_COLUMN,
 ): Promise<CsvRow[] | null> {
-  let res: Response;
-  try {
-    res = await fetch(dataUrl(filename));
-  } catch {
-    return null;
-  }
-  if (!res.ok) return null;
-  let text: string;
-  try {
-    text = await res.text();
-  } catch {
-    return null;
-  }
-  return parseResultsCsv(text, requiredColumn);
+  const res = await fetchDataFile(filename);
+  if (res === null) return null;
+  return parseResultsCsv(await res.text(), requiredColumn);
+}
+
+/** The data file's response; null for a 404; throws on network and other HTTP errors. */
+async function fetchDataFile(filename: string): Promise<Response | null> {
+  const res = await fetch(dataUrl(filename));
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error(`Couldn't load ${filename} (HTTP ${res.status})`);
+  return res;
 }
 
 /** Parse a results CSV, or null when it is empty or lacks `requiredColumn`. */
@@ -49,13 +47,8 @@ export function parseResultsCsv(
 
 /** Parsed JSON, or null when the file is missing or not valid JSON. */
 export async function fetchJsonOrNull<T>(filename: string): Promise<T | null> {
-  let res: Response;
-  try {
-    res = await fetch(dataUrl(filename));
-  } catch {
-    return null;
-  }
-  if (!res.ok) return null;
+  const res = await fetchDataFile(filename);
+  if (res === null) return null;
   try {
     return (await res.json()) as T;
   } catch {

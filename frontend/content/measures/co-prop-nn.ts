@@ -18,7 +18,6 @@ const tierTable = (year: number, tiers: [string, number][]): Comparison => ({
 
 const content: MeasureContent = {
   slug: 'co-prop-nn',
-  headerPhrase: 'raising the state revenue limit and keeping the surplus',
   description:
     'Colorado Proposition NN would permanently raise the state’s TABOR revenue limit by its K-12 education spending, letting the state keep revenue it would otherwise refund; PolicyEngine scores the sales tax refunds projected for tax years 2027 and 2028.',
   measureType: 'Referred by the Legislature (Senate Bill 26-135) as a statute',
@@ -36,11 +35,12 @@ const content: MeasureContent = {
   summary: [
     "Colorado's Taxpayer's Bill of Rights (TABOR) limits how much revenue the state may keep each year and requires it to refund the excess. Under the September 2026 forecast, the state refunds surpluses for the 2026-27 and 2027-28 budget years partly through a six-tier sales tax refund on tax year 2027 and 2028 returns: $43 to $137 per person in 2027 and $47 to $147 in 2028.",
     'Proposition NN would raise the limit by the most the state has spent on K-12 education from certain sources, with no end date. The Blue Book expects revenue to stay below the higher limit for at least five to ten years and says the measure eliminates TABOR refunds for 2026-27 and 2027-28. The state would spend the retained revenue first on property tax exemption reimbursements to local governments, then on K-12 education and programs for children.',
+    'For ten years, the Children’s Account funds K-12 education that grows 2% a year (teacher pay and retention, smaller classes, career and technical courses) and programs for children, prioritizing full-day preschool and child care.',
   ],
   whatItDoes: [
-    'Raises the TABOR revenue limit by the highest amount the state has spent on K-12 education from certain sources, starting with the 2026-27 budget year.',
-    'Requires the retained revenue to reimburse local governments for property tax exemptions first, as current law already does, and deposits the rest in a new Children’s Account.',
-    'For ten years, directs the Children’s Account to K-12 education that grows 2% a year (teacher pay and retention, smaller classes, career and technical courses) and to programs for children, prioritizing full-day preschool and child care.',
+    'Starts with the 2026-27 budget year and has no end date.',
+    'Spends the retained revenue first on property tax exemption reimbursements to local governments, as current law already does, and deposits the rest in a new Children’s Account.',
+    'For ten years, directs the Children’s Account to K-12 education and to programs for children.',
     'Requires an annual independent audit of how the money is spent.',
   ],
   comparisons: [
@@ -61,6 +61,8 @@ const content: MeasureContent = {
       ['Over $358,000', 147],
     ]),
   ],
+  whoIsAffectedSummary:
+    'Under current law, Colorado filers receive the six-tier sales tax refund on their income tax returns; if Proposition NN passes, those refunds are not paid for tax years 2027 and 2028.',
   whoIsAffected: [
     'Under current law, Colorado filers aged 18 or older, and younger filers who owe Colorado income tax or had it withheld, receive the six-tier refund on their income tax return; a joint return receives it for each spouse.',
     'If Proposition NN passes, those refunds are not paid for tax years 2027 and 2028. A single filer with income up to $57,000 receives $43 less in 2027; a joint return with income over $349,000 receives $274 less.',

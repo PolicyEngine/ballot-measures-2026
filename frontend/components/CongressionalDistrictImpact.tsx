@@ -4,7 +4,7 @@ import { useState } from 'react';
 import USDistrictChoroplethMap from './USDistrictChoroplethMap';
 import ChartWatermark from './ChartWatermark';
 import DownloadResults from './DownloadResults';
-import { Loading, ResultsUnavailable, YearPills, toneOf, toneText } from './ui';
+import { LoadError, Loading, ResultsUnavailable, YearPills, toneOf, toneText } from './ui';
 import { useDistrictResults, type Measure } from '@/lib/measures';
 import { formatCompactUSD, formatCount, formatShare, formatUSDWithSign } from '@/lib/format';
 import type { DistrictRow } from '@/lib/results';
@@ -17,7 +17,7 @@ interface Props {
 }
 
 export default function CongressionalDistrictImpact({ measure, year, onYearChange }: Props) {
-  const { data, isLoading } = useDistrictResults(measure.slug, year);
+  const { data, isLoading, error, refetch } = useDistrictResults(measure.slug, year);
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
   const conditional = measure.kind_params?.conditional === true;
 
@@ -28,12 +28,11 @@ export default function CongressionalDistrictImpact({ measure, year, onYearChang
           <h2 className="text-2xl font-bold text-primary">
             {measure.state_name} congressional district impacts
           </h2>
-          <DownloadResults slug={measure.slug} file="congressional_districts.csv" label="Download CSV" />
+          <DownloadResults slug={measure.slug} file="congressional_districts.csv" label="Download district CSV" />
         </div>
         <p className="text-sm text-gray-600 mt-2">
-          Tax year {year}. Average change in household net income{' '}
-          {conditional ? 'in the scenario' : `if ${measure.designation} passes`}, compared with current
-          law, by congressional district. Select a district on the map for details.
+          Tax year {year}. Average change in household net income by district{' '}
+          {conditional ? 'in the scenario' : `if ${measure.designation} passes`}.
         </p>
       </div>
       {onYearChange && <YearPills years={measure.years} value={year} onChange={onYearChange} />}
@@ -45,6 +44,15 @@ export default function CongressionalDistrictImpact({ measure, year, onYearChang
       <div className="space-y-6">
         {header}
         <Loading label="Loading district results…" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        {header}
+        <LoadError what="district results" onRetry={() => void refetch()} />
       </div>
     );
   }
@@ -154,12 +162,6 @@ export default function CongressionalDistrictImpact({ measure, year, onYearChang
         </table>
       </div>
 
-      <p className="text-xs text-gray-500">
-        Districts follow 119th Congress boundaries. Households are assigned to districts through
-        their Public Use Microdata Area, so boundaries are approximate. District and statewide
-        figures come from the same data, so district totals sum to the statewide total. District
-        samples are small, so the dashboard does not report poverty by district.
-      </p>
     </div>
   );
 }

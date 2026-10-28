@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import parseCSV from '../lib/parseCSV';
-import { compareEstimate, headlineFor, metricRange, shortSource } from '../lib/metrics';
+import { compareEstimate, headlineFor, metricRange, shortSource, stateCostCentral } from '../lib/metrics';
 import { metricsFor } from '../lib/results';
 import { getMeasure } from '../lib/registry';
 import { fixtureText } from './testUtils';
@@ -69,12 +69,27 @@ describe('headlineFor', () => {
     expect(h.officialSource).toMatch(/Office of Financial Management, FY 2029/);
   });
 
-  it('shows the two-year cost range for school meals', () => {
-    const h = headlineFor(getMeasure('nd-measure-2'), metricsOf('nd-measure-2', 2028));
+  it('shows one central two-year cost for school meals', () => {
+    const metrics = metricsOf('nd-measure-2', 2028);
+    const h = headlineFor(getMeasure('nd-measure-2'), metrics);
     expect(h.label).toBe('State cost per two-year budget');
+    // The fixtures have no state_cost_biennium_central: twice the annual state budget cost ($63M).
     // Model figures round to three significant digits; official ones keep their precision.
-    expect(h.model).toBe('$119M to $134M');
+    expect(h.model).toBe('$126M');
     expect(h.official).toBe('$124.3M to $134.3M');
+    // The pipeline's central figure wins when it is published.
+    expect(
+      headlineFor(getMeasure('nd-measure-2'), { ...metrics!, state_cost_biennium_central: 114_085_339.99 }).model,
+    ).toBe('$114M');
+  });
+
+  it('takes the central state cost from the pipeline, falling back to the state budget line', () => {
+    expect(
+      stateCostCentral({ state_cost_central: 57e6, state_cost_biennium_central: 114e6, state_budget_impact: -60e6 }),
+    ).toEqual({ annual: 57e6, biennium: 114e6 });
+    expect(stateCostCentral({ state_budget_impact: -63e6 })).toEqual({ annual: 63e6, biennium: 126e6 });
+    expect(stateCostCentral({ state_cost_central: 57e6 })).toEqual({ annual: 57e6, biennium: 114e6 });
+    expect(stateCostCentral({})).toEqual({ annual: null, biennium: null });
   });
 
   it('shows people losing Medicaid beside expansion enrollment for South Dakota', () => {

@@ -16,7 +16,6 @@ const VOTE_REQUIREMENT: VoteRequirement = {
 
 const content: MeasureContent = {
   slug: 'ca-prop-3',
-  headerPhrase: 'making the top income tax rates permanent',
   description:
     'California Proposition 3 would keep the 10.3%, 11.3% and 12.3% income tax rates on high incomes after 2030, when current law ends them.',
   measureType: 'Citizen-initiated constitutional amendment (Initiative 25-0016)',
@@ -37,8 +36,7 @@ const content: MeasureContent = {
     'Proposition 3 would make the three rates permanent. It changes no taxes before 2031, so PolicyEngine scores tax year 2031.',
   ],
   whatItDoes: [
-    'Removes the end date for the 10.3%, 11.3% and 12.3% income tax rates, so they continue from 2031.',
-    'Continues depositing the revenue in the Education Protection Account, which allocates it 89% to K-12 schools and 11% to community colleges.',
+    'Keeps the revenue in the Education Protection Account, which allocates it 89% to K-12 schools and 11% to community colleges.',
     'Leaves the other rates, and the 1% Mental Health Services Act tax on taxable income above $1 million, unchanged.',
   ],
   comparisons: [
@@ -58,6 +56,8 @@ const content: MeasureContent = {
       note: 'Thresholds are 2025 amounts for single filers and rise with inflation each year; joint filers’ thresholds are twice as high (10.3% above $742,958 in 2025) and heads of household start at about $505,000. The $1 million threshold for the additional 1% tax is the same for every filing status.',
     },
   ],
+  whoIsAffectedSummary:
+    "Single filers with taxable income above about $371,000 and joint filers above about $743,000 (2025 thresholds); the Legislative Analyst's Office says the top 2% of taxpayers pay these rates.",
   whoIsAffected: [
     "Single filers with taxable income above about $371,000 and joint filers above about $743,000 (2025 thresholds, indexed for inflation). The Legislative Analyst's Office says the top 2% of taxpayers pay these rates. Under current law their rates on that income fall to 9.3% in 2031; if Proposition 3 passes, the rates stay at 10.3% to 12.3%.",
     'Filers below those thresholds see no change.',

@@ -38,9 +38,19 @@ describe('fetchCsvOrNull', () => {
     expect(await fetchCsvOrNull('metrics.csv')).toBeNull();
   });
 
-  it('returns null when fetch itself fails', async () => {
+  it('throws when fetch itself fails, so the query can retry and offer Retry', async () => {
     global.fetch = vi.fn(() => Promise.reject(new Error('offline'))) as unknown as typeof fetch;
-    expect(await fetchCsvOrNull('metrics.csv')).toBeNull();
+    await expect(fetchCsvOrNull('metrics.csv')).rejects.toThrow('offline');
+  });
+
+  it('throws on a server error, but not on a missing file', async () => {
+    global.fetch = vi.fn(() =>
+      Promise.resolve({ ok: false, status: 503, text: () => Promise.resolve('') } as Response),
+    ) as unknown as typeof fetch;
+    await expect(fetchCsvOrNull('metrics.csv')).rejects.toThrow("Couldn't load metrics.csv (HTTP 503)");
+    await expect(fetchJsonOrNull('manifest.json')).rejects.toThrow("Couldn't load manifest.json (HTTP 503)");
+    mockDataFiles({});
+    await expect(fetchCsvOrNull('metrics.csv')).resolves.toBeNull();
   });
 
   it('returns null for a file without the measure column', async () => {

@@ -130,15 +130,22 @@ describe('Medicaid scenario household results', () => {
     expect(within(table).getByText('Premium tax credit')).toBeInTheDocument();
     expect(within(table).queryByText('Household net income')).toBeNull();
     expect(within(table).getByText(/^Cash income/).closest('tr')).toHaveTextContent('$28,000$27,160-$840');
+    // The shared results table's headers.
+    expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual([
+      'Per year',
+      'Current law',
+      'Scenario',
+      'Change',
+    ]);
     // The chart shows coverage bands by income, then enrollment, the credit and premiums.
     expect(screen.getByText('Health coverage by employment income')).toBeInTheDocument();
     expect(
-      screen.getByRole('img', {
+      screen.getByRole('group', {
         name: 'Current law: No subsidized coverage option (work requirement), up to $6,000; Medicaid, $7,500 to $28,500; Subsidized marketplace coverage, $30,000 to $60,000',
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole('img', {
+      screen.getByRole('group', {
         name: 'Scenario: expansion ends: No subsidized coverage option (income below the poverty line), up to $21,000; Subsidized marketplace coverage, $22,500 to $60,000',
       }),
     ).toBeInTheDocument();
@@ -147,6 +154,38 @@ describe('Medicaid scenario household results', () => {
     expect(screen.getByText('People enrolled in Medicaid by employment income')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Premium you pay' }));
     expect(screen.getByText('Marketplace premium after the credit by employment income')).toBeInTheDocument();
+  });
+
+  it('explains each coverage band and its cutoff on hover and focus', () => {
+    const response = fixtureResponse('sd-amendment-i', 2);
+    renderWithQuery(
+      <ImpactAnalysis measure={getMeasure('sd-amendment-i')} request={null} precomputed={response} exampleLabel="Couple" />,
+    );
+    const medicaid = screen.getByRole('button', {
+      name: 'Medicaid, $7,500 to $28,500. Medicaid ends above $28,500 — the expansion limit, 138% of the poverty line',
+    });
+    fireEvent.mouseEnter(medicaid);
+    const tip = screen.getByTestId('band-tooltip');
+    expect(tip).toHaveAttribute('role', 'tooltip');
+    expect(tip).toHaveTextContent('Medicaid$7,500 to $28,500Medicaid ends above $28,500 — the expansion limit, 138% of the poverty line');
+    expect(medicaid).toHaveAttribute('aria-describedby', tip.id);
+    fireEvent.mouseLeave(medicaid);
+    expect(screen.queryByTestId('band-tooltip')).toBeNull();
+
+    // Keyboard focus shows the same tooltip; the cutoff reasons come from the content file.
+    const gap = screen.getByRole('button', {
+      name: /^No subsidized coverage option \(income below the poverty line\), up to \$21,000\. Coverage gap below \$22,500/,
+    });
+    fireEvent.focus(gap);
+    expect(screen.getByTestId('band-tooltip')).toHaveTextContent(
+      'Coverage gap below $22,500 — under 100% of the poverty line, no marketplace subsidy',
+    );
+    fireEvent.blur(gap);
+    const work = screen.getByRole('button', { name: /^No subsidized coverage option \(work requirement\), up to \$6,000\./ });
+    fireEvent.focus(work);
+    expect(screen.getByTestId('band-tooltip')).toHaveTextContent(
+      'Work requirement below $7,500 — Medicaid’s work requirement, 80 hours a month at the federal minimum wage',
+    );
   });
 
   it('labels the coverage gap when no credit replaces Medicaid', () => {
