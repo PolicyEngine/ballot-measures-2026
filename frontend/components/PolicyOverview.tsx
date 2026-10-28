@@ -8,9 +8,8 @@
  */
 
 import { getContent, type Comparison, type Reference, type SimpleTable } from '@/content/measures';
-import { headlineBasisNote, measureBasis } from '@/lib/figureBasis';
-import { formatCompactCount, formatCount, formatLongDate, formatUSD } from '@/lib/format';
-import { ELECTION_DATE, REGISTRY, useMetrics, type Measure } from '@/lib/measures';
+import { formatCompactCount, formatCount, formatUSD } from '@/lib/format';
+import { REGISTRY, useMetrics, type Measure } from '@/lib/measures';
 import {
   INCOME_TAX_METRICS as IT,
   MEDICAID_METRICS as MC,
@@ -19,7 +18,6 @@ import {
   type Metrics,
 } from '@/lib/metrics';
 import { metric } from '@/lib/results';
-import { BasisBadge, MethodologyLink } from './FigureBasis';
 import { yearsLabel } from './MeasureCard';
 import { newlyFreeStudents } from './statewide/KindSummary';
 import { ExternalLink, StatCard } from './ui';
@@ -49,7 +47,7 @@ function SectionHeading({ children, id }: { children: React.ReactNode; id?: stri
 }
 
 /** Current law beside the measure, NJ table style: changed values in bold teal. */
-export function ComparisonTable({ comparison }: { comparison: Comparison }) {
+export function ComparisonTable({ comparison, showNote = true }: { comparison: Comparison; showNote?: boolean }) {
   const [current, passes] = comparison.columns ?? ['Current law', 'If it passes'];
   return (
     <div className="overflow-x-auto">
@@ -86,7 +84,7 @@ export function ComparisonTable({ comparison }: { comparison: Comparison }) {
           ))}
         </tbody>
       </table>
-      {comparison.note && <p className="text-xs text-gray-500 mt-2">{comparison.note}</p>}
+      {showNote && comparison.note && <p className="text-xs text-gray-500 mt-2">{comparison.note}</p>}
     </div>
   );
 }
@@ -182,8 +180,6 @@ export function thirdStat(measure: Measure, metrics: Metrics): ThirdStat {
 function HeadlineStats({ measure }: { measure: Measure }) {
   const { data: metrics, isLoading } = useMetrics(measure.slug, measure.headline_year);
   const headline = headlineFor(measure, metrics);
-  const basis = measureBasis(measure);
-  const basisNote = headline.model ? headlineBasisNote(measure, metrics) : null;
   const third = thirdStat(measure, metrics);
   const pending = (
     <span className="text-base font-medium text-gray-500">{isLoading ? 'Loading…' : 'Results not yet available'}</span>
@@ -198,27 +194,18 @@ function HeadlineStats({ measure }: { measure: Measure }) {
           highlight
           size="lg"
           label={headline.label}
-          badge={<BasisBadge basis={basis} />}
           value={headline.model ?? pending}
           detail="PolicyEngine estimate"
-          footnote={
-            basisNote ? (
-              <>
-                {basisNote} <MethodologyLink />
-              </>
-            ) : undefined
-          }
         />
         <StatCard
           size="lg"
           label={headline.officialLabel}
           value={headline.official ?? <span className="text-base font-medium text-gray-500">None published</span>}
-          detail={headline.officialSource ?? undefined}
+          detail={headline.officialSource ?? headline.officialShortSource ?? undefined}
         />
         <StatCard
           size="lg"
           label={third.label}
-          badge={basis === 'model' ? undefined : <BasisBadge basis={basis} />}
           value={third.value ?? pending}
           detail={third.detail}
         />
@@ -227,8 +214,8 @@ function HeadlineStats({ measure }: { measure: Measure }) {
   );
 }
 
-/** NJ's three gray reference boxes: the measure's sources, official estimates, calculations. */
-function References({ measure }: { measure: Measure }) {
+/** NJ's three gray reference boxes: the measure's sources, official estimates, calculations (Methods tab). */
+export function References({ measure }: { measure: Measure }) {
   const content = getContent(measure.slug);
   const isPolicyEngine = (r: Reference) => r.url.includes('github.com/PolicyEngine');
   // One link per official source (several estimates can share a document).
@@ -282,13 +269,10 @@ function References({ measure }: { measure: Measure }) {
             >
               policyengine-us
             </a>{' '}
-            (<span className="font-mono text-xs">{REGISTRY.pin}</span>), the same model for the household,
-            statewide and district results.
+            (<span className="font-mono text-xs">{REGISTRY.pin}</span>), the same model for the household
+            {measure.show_districts ? ', statewide and district results.' : ' and statewide results.'}
           </p>
           {engineLinks.length > 0 && <div className="mt-2">{linkList(engineLinks)}</div>}
-          <p className="text-sm text-gray-700 mt-2">
-            <MethodologyLink>Validation and methods</MethodologyLink>
-          </p>
         </div>
       </div>
     </section>
@@ -299,50 +283,38 @@ interface Props {
   measure: Measure;
 }
 
-/** Overview tab: what the measure would do, headline estimates, current law vs. the measure, who is affected. */
+/** The first sentence, for the compact key-facts row (the full text is on Methods). */
+export const firstSentence = (text: string): string => text.split(/(?<=\.)\s+/)[0] ?? text;
+
+/** Overview tab: what the measure would do, headline estimates, current law vs. the measure, key facts. */
 export default function PolicyOverview({ measure }: Props) {
   const content = getContent(measure.slug);
   const conditional = measure.kind_params?.conditional === true;
-  const facts: { label: string; value: string; sources?: Reference[] }[] = [
-    { label: 'Election', value: formatLongDate(ELECTION_DATE) },
-    { label: 'How it reached the ballot', value: content.measureType },
-    {
-      label: 'Vote needed to pass',
-      value: content.voteRequirement.text,
-      sources: content.voteRequirement.sources,
-    },
-    { label: 'When it would take effect', value: content.effectiveDate },
+  const facts = [
+    { label: 'Vote needed', value: firstSentence(content.voteRequirement.text) },
+    { label: 'Takes effect', value: firstSentence(content.effectiveDate) },
     { label: 'Years modeled', value: yearsLabel(measure.years) },
   ];
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-8">
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">What {measure.designation} would do</h2>
-        <div className="space-y-4 text-gray-700">
-          <p>{content.description}</p>
-          {content.summary.map((p) => (
-            <p key={p}>{p}</p>
-          ))}
-        </div>
-        {content.scenario && (
+        <h2 className="text-2xl font-bold text-gray-900 mb-3">What {measure.designation} would do</h2>
+        <p className="text-gray-700">{content.description}</p>
+        {content.scenario && content.scenarioSummary && (
           <section
             aria-labelledby="scenario-heading"
             className="mt-4 rounded-lg border border-gray-200 border-l-4 border-l-primary-500 bg-gray-50 p-4"
           >
-            <h3 id="scenario-heading" className="font-semibold text-gray-800 mb-2">
+            <h3 id="scenario-heading" className="font-semibold text-gray-800 mb-1">
               {content.scenario.title}
             </h3>
-            <div className="space-y-2 text-sm text-gray-600">
-              {content.scenario.body.map((p) => (
-                <p key={p}>{p}</p>
-              ))}
-            </div>
+            <p className="text-sm text-gray-600">{content.scenarioSummary.join(' ')}</p>
           </section>
         )}
         <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
           <h3 className="font-semibold text-gray-800 mb-2">
-            {conditional ? 'What changes under the scenario' : 'What changes if it passes'}
+            What changes if it passes
           </h3>
           <ul className="list-disc space-y-1 pl-5 text-sm text-gray-600">
             {content.whatItDoes.map((item) => (
@@ -359,73 +331,28 @@ export default function PolicyOverview({ measure }: Props) {
           {conditional ? 'Current law and the scenario' : 'Current law and if it passes'}
         </SectionHeading>
         {content.comparisons.map((c) => (
-          <ComparisonTable key={c.caption} comparison={c} />
+          <ComparisonTable key={c.caption} comparison={c} showNote={false} />
         ))}
       </section>
 
       <section aria-labelledby="who-heading">
         <SectionHeading id="who-heading">Who is affected</SectionHeading>
-        <div className="space-y-3 text-gray-700">
-          {content.whoIsAffected.map((p) => (
-            <p key={p}>{p}</p>
-          ))}
-        </div>
-        <SourceLinks sources={content.whoIsAffectedSources} className="mt-2" />
+        <p className="text-gray-700">{content.whoIsAffectedSummary}</p>
       </section>
 
       <section aria-labelledby="facts-heading">
-        <SectionHeading id="facts-heading">Key facts</SectionHeading>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <caption className="sr-only">Key facts</caption>
-            <tbody>
-              {facts.map(({ label, value, sources }) => (
-                <tr key={label} className="border-b border-gray-100 align-top">
-                  <th scope="row" className="w-1/3 text-left py-3 px-4 font-semibold text-gray-900">
-                    {label}
-                  </th>
-                  <td className="py-3 px-4 text-gray-700">
-                    {value}
-                    <SourceLinks sources={sources} className="mt-1" />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <h3 id="facts-heading" className="sr-only">
+          Key facts
+        </h3>
+        <dl className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {facts.map(({ label, value }) => (
+            <div key={label} className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+              <dt className="text-xs font-semibold uppercase tracking-wide text-gray-500">{label}</dt>
+              <dd className="mt-1 text-sm text-gray-800">{value}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
-
-      {content.context.map((section) => (
-        <section key={section.title}>
-          <SectionHeading>{section.title}</SectionHeading>
-          <div className="space-y-3 text-gray-700">
-            {section.body.map((p) => (
-              <p key={p}>{p}</p>
-            ))}
-          </div>
-          <SourceLinks sources={section.sources} className="mt-2" />
-        </section>
-      ))}
-
-      <section aria-labelledby="ballot-heading">
-        <details className="rounded-lg border border-gray-200 bg-white p-4">
-          <summary className="cursor-pointer font-semibold text-gray-900" id="ballot-heading">
-            {content.ballotText.label} as it appears on the ballot
-          </summary>
-          <div className="mt-3 space-y-3 text-sm text-gray-700">
-            {content.ballotText.paragraphs.map((p) => (
-              <p key={p}>{p}</p>
-            ))}
-            {content.ballotText.table && <SimpleDataTable table={content.ballotText.table} />}
-            <p className="text-xs text-gray-500">
-              Source:{' '}
-              <ExternalLink href={content.ballotText.source.url}>{content.ballotText.source.label}</ExternalLink>
-            </p>
-          </div>
-        </details>
-      </section>
-
-      <References measure={measure} />
     </div>
   );
 }

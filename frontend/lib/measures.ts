@@ -146,7 +146,9 @@ export function examplesFor(
 }
 
 const STATIC_FILE_OPTIONS = {
-  retry: false,
+  // A missing file resolves to null; network and server errors retry twice.
+  retry: 2,
+  retryDelay: (attempt: number) => Math.min(300 * 2 ** attempt, 2000),
   staleTime: Infinity,
   gcTime: 30 * 60 * 1000,
 } as const;

@@ -126,3 +126,17 @@ def test_measure_year_uses_the_adjusted_change(passes):
     assert result["diagnostics"]["model_net_income_change_total"] == pytest.approx(
         m["meal_value_change_model"]
     )
+
+
+def test_central_cost_is_the_budget_figure(passes):
+    base, reform = passes("nd-measure-2")
+    m = compute_measure_year(ND, 2028, base, reform)["metrics"]
+    assert m["state_cost_central"] == pytest.approx(-m["state_budget_impact"])
+    assert m["state_cost_central"] == pytest.approx(m["state_spending_impact"])
+    assert m["state_cost_biennium_central"] == pytest.approx(
+        2 * m["state_cost_central"]
+    )
+    assert m["state_cost_adjusted_low"] <= m["state_cost_central"]
+    assert m["state_cost_central"] <= m["state_cost_adjusted_high"]
+    assert m["state_cost_biennium_low"] <= m["state_cost_biennium_central"]
+    assert m["state_cost_biennium_central"] <= m["state_cost_biennium_high"]

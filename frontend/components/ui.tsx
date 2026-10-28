@@ -149,6 +149,69 @@ export function YearPills({
   );
 }
 
+export interface ResultsRow {
+  label: string;
+  baseline: React.ReactNode;
+  reform: React.ReactNode;
+  change: React.ReactNode;
+  tone?: Tone;
+}
+
+/**
+ * The household tables: "Per year | Current law | If it passes | Change",
+ * with the state legislative tracker's header row (gray, small uppercase)
+ * and right-aligned numbers.
+ */
+export function ResultsTable({
+  caption,
+  reformLabel,
+  rows,
+}: {
+  caption: string;
+  /** "If it passes", or "Scenario" for South Dakota. */
+  reformLabel: string;
+  rows: ResultsRow[];
+}) {
+  const head = 'px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-700';
+  return (
+    <div className="overflow-x-auto rounded-xl border border-gray-200">
+      <table className="w-full text-sm">
+        <caption className="sr-only">{caption}</caption>
+        <thead className="border-b border-gray-200 bg-gray-50">
+          <tr>
+            <th scope="col" className={`${head} text-left`}>
+              Per year
+            </th>
+            <th scope="col" className={`${head} text-right`}>
+              Current law
+            </th>
+            <th scope="col" className={`${head} text-right`}>
+              {reformLabel}
+            </th>
+            <th scope="col" className={`${head} text-right`}>
+              Change
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map((row) => (
+            <tr key={row.label}>
+              <th scope="row" className="px-4 py-2 text-left font-normal text-gray-800">
+                {row.label}
+              </th>
+              <td className="px-4 py-2 text-right tabular-nums text-gray-800">{row.baseline}</td>
+              <td className="px-4 py-2 text-right tabular-nums text-gray-800">{row.reform}</td>
+              <td className={`px-4 py-2 text-right tabular-nums font-semibold ${toneText(row.tone ?? 'neutral')}`}>
+                {row.change}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /** Tone for a dollar change: rounds to whole dollars first. */
 export const toneOf = (value: number | null): Tone =>
   value === null || Math.round(value) === 0 ? 'neutral' : value > 0 ? 'positive' : 'negative';
@@ -284,6 +347,22 @@ export function ResultsUnavailable({ title, detail }: { title: string; detail?: 
         This section fills in once the microsimulation pipeline publishes its results.
       </p>
       {detail && <p className="text-xs text-gray-500 mt-2">{detail}</p>}
+    </div>
+  );
+}
+
+/** "Couldn't load results" with a Retry button, for network and server errors. */
+export function LoadError({ what = 'results', onRetry }: { what?: string; onRetry: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4" role="alert">
+      <p className="text-sm text-gray-700">Couldn&apos;t load {what}.</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="rounded-lg border border-primary-500 bg-white px-3 py-1.5 text-sm font-medium text-primary-700 hover:bg-primary-50"
+      >
+        Retry
+      </button>
     </div>
   );
 }

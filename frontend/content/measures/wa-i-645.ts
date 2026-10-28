@@ -21,7 +21,6 @@ const VOTE_REQUIREMENT: VoteRequirement = {
 
 const content: MeasureContent = {
   slug: 'wa-i-645',
-  headerPhrase: 'repealing the tax on income over $1 million and barring income taxes by statute',
   description:
     'Washington Initiative 645 would repeal the 9.9% tax on individual income over $1 million that the Legislature enacted in 2026, before it starts in 2028, and prohibit taxes on individual income by statute.',
   measureType: 'Initiative to the people (statute)',
@@ -44,7 +43,6 @@ const content: MeasureContent = {
     'Initiative 645 would repeal that tax before it takes effect and add a statute prohibiting state and local taxes on individual income. It leaves in place the sales tax exemptions and Working Families Tax Credit expansion enacted alongside the tax.',
   ],
   whatItDoes: [
-    'Repeals the 9.9% tax on individual income over $1 million, so it never takes effect.',
     'Prohibits, by statute, any state or local tax on individual income, on its receipt, or measured by it, and defines “income.”',
   ],
   comparisons: [
@@ -63,8 +61,10 @@ const content: MeasureContent = {
       note: 'Under current law, the $1 million deduction is adjusted for inflation beginning in 2029.',
     },
   ],
+  whoIsAffectedSummary:
+    'Only households with income above the $1 million deduction owe the tax under current law, so only they see a change.',
   whoIsAffected: [
-    'Only households with income above the $1 million deduction owe the tax under current law, so only they see a change. In its implementation cost assumptions for the Department of Revenue, the fiscal impact statement says: “Savings are assumed for tax administration duties for approximately 30,000 taxpayers that will no longer be required.”',
+    'Only households with income above the $1 million deduction owe the tax under current law, so only they see a change. The fiscal impact statement’s count of affected taxpayers is under official estimates.',
     'A household whose income subject to the tax is $2 million owes 9.9% of the $1 million above the deduction, or $99,000, under current law in 2028, and nothing if Initiative 645 passes.',
   ],
   effectiveDate:
@@ -84,7 +84,6 @@ const content: MeasureContent = {
   ],
   householdNote:
     'Enter your household to compare your Washington tax and net income under current law and if Initiative 645 passes. Only income above $1 million is affected.',
-  whoIsAffectedSources: [{ label: 'Fiscal impact statement, page 4', url: `${FISCAL_URL}#page=4` }],
   references: [
     { label: 'Office of Financial Management fiscal impact statement', url: FISCAL_URL },
     { label: 'Explanatory statement (Washington Secretary of State)', url: EXPLANATORY_URL },

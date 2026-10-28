@@ -16,40 +16,40 @@ describe('MeasureDashboard tabs', () => {
     renderWithQuery(<MeasureDashboard slug={slug} />);
     const tablist = screen.getByRole('tablist', { name: 'Measure sections' });
     expect(within(tablist).getAllByRole('tab').map((t) => t.textContent)).toEqual([
-      'Policy overview',
-      'Household impact',
-      'Statewide impact',
-      'Validation and methods',
+      'Overview',
+      'Household',
+      'Statewide',
+      'Methods',
     ]);
   });
 
   it.each(['co-amendment-87', 'co-prop-nn'])('%s has a Districts tab', (slug) => {
     renderWithQuery(<MeasureDashboard slug={slug} />);
-    expect(screen.getByRole('tab', { name: 'Congressional districts' })).toBeInTheDocument();
+    expect(tabNames()).toEqual(['Overview', 'Household', 'Statewide', 'Districts', 'Methods']);
   });
 
-  it('shows the NJ-style header band, a link back and the overview first', () => {
+  it('shows the title block: breadcrumb, title, facts line and the overview first', async () => {
     renderWithQuery(<MeasureDashboard slug="wa-i-645" />);
+    const crumbs = screen.getByRole('navigation', { name: 'Breadcrumb' });
+    expect(within(crumbs).getByRole('link', { name: 'Back to all 2026 ballot measures' })).toHaveAttribute('href', '/');
+    expect(within(crumbs).getByRole('link', { name: '2026 ballot measures' })).toHaveAttribute('href', '/');
+    expect(within(crumbs).getByText('Washington')).toHaveAttribute('aria-current', 'page');
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Washington Initiative 645');
-    // One subtitle sentence in the band, built from the content phrase and the election date.
+    // One facts line from the registry: short title, election date and tax year.
     expect(
       screen.getByText(
-        'See how repealing the tax on income over $1 million and barring income taxes by statute would affect Washington households and the state budget if it passes on November 3, 2026',
+        'Repeal the tax on income over $1 million and bar income taxes by statute · November 3, 2026 · Tax year 2028',
       ),
     ).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: /All 2026 ballot measures/ })).toHaveAttribute('href', '/');
-    expect(screen.getByRole('tab', { name: 'Policy overview' })).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByRole('button', { name: 'Download CSV' })).toBeInTheDocument();
+    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
     // Washington has districts, but few sample households carry the change.
-    expect(tabNames()).not.toContain('Congressional districts');
+    expect(tabNames()).not.toContain('Districts');
   });
 
-  it('describes South Dakota as a scenario in the header band', () => {
+  it('marks South Dakota as a scenario in the facts line', () => {
     renderWithQuery(<MeasureDashboard slug="sd-amendment-i" />);
-    expect(
-      screen.getByText(
-        /would affect South Dakota households and the state budget under a scenario in which the federal share falls below 90% and expansion ends$/,
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText(/· Tax year 2028 · Scenario$/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'A conditional scenario, not a forecast' })).toBeInTheDocument();
   });
 
@@ -58,20 +58,20 @@ describe('MeasureDashboard tabs', () => {
     const tablist = screen.getByRole('tablist', { name: 'Measure sections' });
     const tab = (name: string) => screen.getByRole('tab', { name });
     // Only the selected tab is in the tab order.
-    expect(tab('Policy overview')).toHaveAttribute('tabindex', '0');
-    expect(tab('Household impact')).toHaveAttribute('tabindex', '-1');
+    expect(tab('Overview')).toHaveAttribute('tabindex', '0');
+    expect(tab('Household')).toHaveAttribute('tabindex', '-1');
     fireEvent.keyDown(tablist, { key: 'ArrowRight' });
-    expect(tab('Household impact')).toHaveAttribute('aria-selected', 'true');
-    expect(tab('Household impact')).toHaveFocus();
+    expect(tab('Household')).toHaveAttribute('aria-selected', 'true');
+    expect(tab('Household')).toHaveFocus();
     fireEvent.keyDown(tablist, { key: 'End' });
-    expect(tab('Validation and methods')).toHaveAttribute('aria-selected', 'true');
+    expect(tab('Methods')).toHaveAttribute('aria-selected', 'true');
     fireEvent.keyDown(tablist, { key: 'ArrowRight' });
-    expect(tab('Policy overview')).toHaveAttribute('aria-selected', 'true');
+    expect(tab('Overview')).toHaveAttribute('aria-selected', 'true');
     fireEvent.keyDown(tablist, { key: 'ArrowLeft' });
-    expect(tab('Validation and methods')).toHaveAttribute('aria-selected', 'true');
+    expect(tab('Methods')).toHaveAttribute('aria-selected', 'true');
     fireEvent.keyDown(tablist, { key: 'Home' });
-    expect(tab('Policy overview')).toHaveAttribute('aria-selected', 'true');
-    expect(tab('Policy overview')).toHaveFocus();
+    expect(tab('Overview')).toHaveAttribute('aria-selected', 'true');
+    expect(tab('Overview')).toHaveFocus();
   });
 });
 
@@ -79,7 +79,7 @@ describe('year selector and hash', () => {
   it('appears only for measures scored in several years, off the overview', () => {
     renderWithQuery(<MeasureDashboard slug="wa-i-645" />);
     expect(screen.queryByRole('radiogroup', { name: 'Tax year' })).toBeNull();
-    fireEvent.click(screen.getByRole('tab', { name: 'Statewide impact' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Statewide' }));
     const years = screen.getByRole('radiogroup', { name: 'Tax year' });
     expect(within(years).getAllByRole('radio').map((r) => r.textContent)).toEqual(['2028', '2029']);
     expect(within(years).getByRole('radio', { name: '2028' })).toHaveAttribute('aria-checked', 'true');
@@ -87,7 +87,7 @@ describe('year selector and hash', () => {
 
   it('changes the year with the arrow keys', () => {
     renderWithQuery(<MeasureDashboard slug="wa-i-645" />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Statewide impact' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Statewide' }));
     const years = screen.getByRole('radiogroup', { name: 'Tax year' });
     const radio = (name: string) => within(years).getByRole('radio', { name });
     expect(radio('2028')).toHaveAttribute('tabindex', '0');
@@ -101,13 +101,13 @@ describe('year selector and hash', () => {
 
   it('is absent for single-year measures', () => {
     renderWithQuery(<MeasureDashboard slug="ca-prop-3" />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Statewide impact' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Statewide' }));
     expect(screen.queryByRole('radiogroup', { name: 'Tax year' })).toBeNull();
   });
 
   it('writes the tab and year to the hash', () => {
     renderWithQuery(<MeasureDashboard slug="co-prop-nn" />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Statewide impact' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Statewide' }));
     fireEvent.click(screen.getByRole('radio', { name: '2028' }));
     expect(window.location.hash).toBe('#year=2028&tab=statewide');
   });
@@ -116,28 +116,45 @@ describe('year selector and hash', () => {
     window.location.hash = '#tab=statewide&year=2029';
     renderWithQuery(<MeasureDashboard slug="wa-i-645" />);
     await waitFor(() =>
-      expect(screen.getByRole('tab', { name: 'Statewide impact' })).toHaveAttribute('aria-selected', 'true'),
+      expect(screen.getByRole('tab', { name: 'Statewide' })).toHaveAttribute('aria-selected', 'true'),
     );
     expect(screen.getByRole('radio', { name: '2029' })).toHaveAttribute('aria-checked', 'true');
     expect(await screen.findByText(/Tax year 2029\./)).toBeInTheDocument();
+    // The facts line follows the year.
+    expect(screen.getByText(/· Tax year 2029$/)).toBeInTheDocument();
   });
 
   it('shows the year pills on every tab that depends on the year', () => {
     renderWithQuery(<MeasureDashboard slug="co-prop-nn" />);
-    for (const name of ['Household impact', 'Statewide impact', 'Congressional districts', 'Validation and methods']) {
+    for (const name of ['Household', 'Statewide', 'Districts', 'Methods']) {
       fireEvent.click(screen.getByRole('tab', { name }));
       expect(screen.getByRole('radiogroup', { name: 'Tax year' })).toBeInTheDocument();
     }
-    fireEvent.click(screen.getByRole('tab', { name: 'Policy overview' }));
+    fireEvent.click(screen.getByRole('tab', { name: 'Overview' }));
     expect(screen.queryByRole('radiogroup', { name: 'Tax year' })).toBeNull();
   });
 
-  it('falls back to the overview for a Districts hash on an at-large state', async () => {
+  it('falls back to the overview for a Districts hash on an at-large state, saying why', async () => {
     window.location.hash = '#tab=districts';
     renderWithQuery(<MeasureDashboard slug="nd-measure-2" />);
     await waitFor(() =>
-      expect(screen.getByRole('tab', { name: 'Policy overview' })).toHaveAttribute('aria-selected', 'true'),
+      expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true'),
     );
+    expect(screen.getByTestId('no-districts-note')).toHaveTextContent(
+      'No district breakdown: North Dakota has one at-large congressional district.',
+    );
+    // The note goes away once the reader picks a tab.
+    fireEvent.click(screen.getByRole('tab', { name: 'Statewide' }));
+    expect(screen.queryByTestId('no-districts-note')).toBeNull();
+  });
+
+  it('explains a Districts hash for a measure with too few sample households', async () => {
+    window.location.hash = '#tab=districts';
+    renderWithQuery(<MeasureDashboard slug="ca-prop-3" />);
+    expect(await screen.findByTestId('no-districts-note')).toHaveTextContent(
+      'No district breakdown for Proposition 3: too few sample households carry the change.',
+    );
+    expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('aria-selected', 'true');
   });
 
   it('moves to another measure named in the hash', async () => {
@@ -153,7 +170,7 @@ describe('year selector and hash', () => {
       window.dispatchEvent(new HashChangeEvent('hashchange'));
     });
     await waitFor(() =>
-      expect(screen.getByRole('tab', { name: 'Validation and methods' })).toHaveAttribute(
+      expect(screen.getByRole('tab', { name: 'Methods' })).toHaveAttribute(
         'aria-selected',
         'true',
       ),

@@ -20,8 +20,6 @@ import {
   formatPercentagePoints,
   formatUSDWithSign,
 } from '@/lib/format';
-import { SPM_ADJUSTMENT_NOTE } from '@/lib/figureBasis';
-import { useManifest } from '@/lib/measures';
 import { CORE_METRICS as C, POVERTY_MEASURES, povertyMetric } from '@/lib/metrics';
 import type { Measure } from '@/lib/registry';
 import { metric, type StatewideResults } from '@/lib/results';
@@ -36,9 +34,8 @@ import {
   WINNERS_COLORS,
   niceDomain,
 } from '../chartUtils';
-import { BasisNote } from '../FigureBasis';
 import { CompareTable, toneOf, toneText } from '../ui';
-import { kindDetailRows, show, signedMoney } from './KindSummary';
+import { DASH, kindDetailRows, money, show, signedMoney } from './KindSummary';
 
 function MissingSection({ file }: { file: string }) {
   return (
@@ -50,32 +47,31 @@ function MissingSection({ file }: { file: string }) {
 
 // ── Budget ──────────────────────────────────────────────────────────────
 
+/** "$1.43B gain" or "$57.0M cost" for a signed budget change (government's side). */
+export const budgetText = (v: number) =>
+  Math.round(v) === 0 ? '$0' : `${money(Math.abs(v))} ${v > 0 ? 'gain' : 'cost'}`;
+
 export function BudgetSection({ measure, data }: { measure: Measure; data: StatewideResults }) {
   const m = data.metrics;
   // The Medicaid scenario is reported in people and spending, not net income.
   const netIncomeRows = measure.kind !== 'medicaid';
   const federalBudget = metric(m, C.federalBudgetImpact);
-  const incomeTaxNote =
-    measure.kind === 'income_tax' && federalBudget !== null && Math.abs(federalBudget) < 0.5;
+  const total = metric(m, C.netIncomeChangeTotal);
+  const average = metric(m, C.avgHouseholdNetIncomeChange);
   const rows = [
-    { label: 'State revenue', value: show(metric(m, C.stateRevenueImpact), signedMoney) },
-    { label: 'State spending', value: show(metric(m, C.stateSpendingImpact), signedMoney) },
-    { label: 'State budget (revenue minus spending)', value: show(metric(m, C.stateBudgetImpact), signedMoney) },
-    { label: 'Federal revenue', value: show(metric(m, C.federalRevenueImpact), signedMoney) },
-    { label: 'Federal spending', value: show(metric(m, C.federalSpendingImpact), signedMoney) },
-    {
-      label: 'Federal budget (revenue minus spending)',
-      value: show(federalBudget, signedMoney),
-    },
+    { label: 'State budget', value: show(metric(m, C.stateBudgetImpact), budgetText) },
+    // Federal effects are not modeled for most measures; show the line only when it moves (SD).
+    ...(federalBudget !== null && Math.round(federalBudget) !== 0
+      ? [{ label: 'Federal budget', value: budgetText(federalBudget) }]
+      : []),
     ...(netIncomeRows
       ? [
           {
-            label: 'Household net income, all households',
-            value: show(metric(m, C.netIncomeChangeTotal), signedMoney),
-          },
-          {
-            label: 'Household net income, average per household',
-            value: show(metric(m, C.avgHouseholdNetIncomeChange), formatUSDWithSign),
+            label: 'Household net income',
+            value:
+              total === null
+                ? DASH
+                : `${signedMoney(total)} total${average === null ? '' : `; ${formatUSDWithSign(average)} per household`}`,
           },
         ]
       : []),
@@ -91,25 +87,19 @@ export function BudgetSection({ measure, data }: { measure: Measure; data: State
               ? `Change in the scenario, ${data.year}`
               : `Change if the measure passes, ${data.year}`
           }
-          firstColumn="Budget line"
+          firstColumn="Per year"
           columns={['Change']}
           rows={rows.map((r) => ({ label: r.label, values: [r.value] }))}
         />
-        <CompareTable
-          caption="Details"
-          firstColumn="Measure"
-          columns={['Value']}
-          rows={details.map((r) => ({ label: r.label, values: [r.value] }))}
-        />
+        {details.length > 0 && (
+          <CompareTable
+            caption="Details"
+            firstColumn="Measure"
+            columns={['Value']}
+            rows={details.map((r) => ({ label: r.label, values: [r.value] }))}
+          />
+        )}
       </div>
-      <p className="text-xs text-gray-500">
-        Budget lines are signed from the government&apos;s side: a positive budget change means the
-        government collects more or spends less.
-        {netIncomeRows ? ' Household net income is signed from the household’s side.' : ''}
-        {incomeTaxNote
-          ? ' The federal deduction for state and local taxes uses state income tax withholding in the model, so this measure does not change federal income tax.'
-          : ''}
-      </p>
     </div>
   );
 }
@@ -367,8 +357,6 @@ export function IncomeBandsTable({ data }: { data: StatewideResults }) {
 
 export function PovertySection({ data }: { data: StatewideResults }) {
   const m = data.metrics;
-  const { data: manifest } = useManifest();
-  const spmAdjusted = manifest?.spm_resources_adjustment?.applied === true;
   const rows = POVERTY_MEASURES.map((p) => ({
     ...p,
     baseline: metric(m, povertyMetric(p.key, 'baseline_rate')),
@@ -401,7 +389,6 @@ export function PovertySection({ data }: { data: StatewideResults }) {
 
   return (
     <div className="space-y-8">
-      {spmAdjusted && <BasisNote basis="adjusted">{SPM_ADJUSTMENT_NOTE}</BasisNote>}
       {chartData.length > 0 ? (
         <ChartFigure
           title="Percent change in poverty rates"
@@ -457,11 +444,9 @@ export function PovertySection({ data }: { data: StatewideResults }) {
           rows={movementRows}
         />
       </div>
-      <p className="text-xs text-gray-500">
-        {tiny ? 'Each poverty rate changes by less than 0.1% of its current-law level. ' : ''}
-        Poverty estimates rest on survey households, so small changes can reflect a handful of
-        sampled households; the validation and methods tab reports effective sample sizes.
-      </p>
+      {tiny && (
+        <p className="text-xs text-gray-500">Each poverty rate changes by less than 0.1% of its current-law level.</p>
+      )}
     </div>
   );
 }

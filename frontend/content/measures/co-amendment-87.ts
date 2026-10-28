@@ -7,7 +7,6 @@ const INITIAL_FIS_URL = 'https://leg.colorado.gov/initiative_files/3320/download
 
 const content: MeasureContent = {
   slug: 'co-amendment-87',
-  headerPhrase: 'a graduated income tax',
   description:
     'Colorado Amendment 87 would replace the 4.4% flat income tax with six rates from 3.7% to 8.4%, starting in tax year 2027.',
   measureType: 'Citizen initiative (Initiative 195) amending the state constitution and statutes',
@@ -47,13 +46,12 @@ const content: MeasureContent = {
   },
   summary: [
     'Colorado taxes individual and corporate income at a flat 4.4%, and the state constitution requires a single rate. Amendment 87 would remove that requirement and tax Colorado taxable income at six graduated rates, from 3.7% on the first $25,000 to 8.4% on taxable income above $1 million, starting in tax year 2027.',
-    "The thresholds are the same for every filing status and are not adjusted for inflation. The added revenue goes to a new Colorado Future's account in the General Fund, to supplement spending on K-12 education, health care, and early child care and education; the Legislature decides which programs receive it.",
+    "The thresholds are the same for every filing status and are not adjusted for inflation. The added revenue goes to a new Colorado Future's account in the General Fund, to supplement spending on K-12 education, health care, and early child care and education; the Legislature decides which programs receive it. The Blue Book says the measure has no impact on current TABOR refunds.",
   ],
   whatItDoes: [
-    'Taxes Colorado taxable income at 3.7% up to $25,000, 4.2% from $25,000 to $100,000, 4.4% from $100,000 to $500,000, 7.4% from $500,000 to $750,000, 7.9% from $750,000 to $1 million, and 8.4% above $1 million.',
-    'Applies the same schedule to estates, trusts and C corporations.',
+    'Applies the same rate schedule to estates, trusts and C corporations.',
     'Keeps the 4.4% rate on gains from selling a principal residence above the federal exclusion.',
-    'Lets the state keep and spend the added revenue as a voter-approved revenue change under TABOR. The Blue Book says the measure has no impact on current TABOR refunds.',
+    'Lets the state keep and spend the added revenue as a voter-approved revenue change under TABOR.',
   ],
   comparisons: [
     {
@@ -69,6 +67,8 @@ const content: MeasureContent = {
       note: 'Marginal rates: each rate applies only to the taxable income within its range. Thresholds are the same for every filing status and are not indexed for inflation.',
     },
   ],
+  whoIsAffectedSummary:
+    'According to the Blue Book, taxes fall for filers with Colorado taxable income below $510,834 and rise at $510,834 and above.',
   whoIsAffected: [
     'A filer with at least $100,000 of Colorado taxable income pays $325 less on the first $100,000: 0.7 percentage points less on the first $25,000 ($175) and 0.2 points less on the next $75,000 ($150). Filers with less taxable income save less, such as $70 at $10,000.',
     'Taxable income above $500,000 is taxed at 3.0 to 4.0 percentage points more. According to the Blue Book, taxes fall for filers with Colorado taxable income below $510,834 and rise at $510,834 and above. A filer with $1 million of taxable income pays $15,925 more; at $2 million, $55,925 more.',

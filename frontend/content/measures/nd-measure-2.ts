@@ -12,7 +12,6 @@ const HB1013_URL = 'https://ndlegis.gov/assembly/69-2025/regular/documents/25-01
 
 const content: MeasureContent = {
   slug: 'nd-measure-2',
-  headerPhrase: 'free school breakfast and lunch for all students',
   description:
     'North Dakota Constitutional Measure No. 2 would require every public school to serve one free breakfast and one free lunch each school day to all enrolled students, starting in the 2027-28 school year.',
   measureType: 'Citizen-initiated constitutional amendment',
@@ -34,14 +33,13 @@ const content: MeasureContent = {
     'Measure No. 2 would require public schools to serve one breakfast and one lunch each school day to every enrolled student at no cost. The state would reimburse schools for costs that federal funding does not cover, at its free-meal rates as of the 2025-26 school year, adjusted for inflation; schools must claim all federal reimbursement available.',
   ],
   whatItDoes: [
-    'Requires public school districts, public schools and public charter schools to serve one free breakfast and one free lunch each school day to every enrolled student.',
-    'Lets nonpublic, Bureau of Indian Education and other tribal schools choose to do the same.',
+    'Lets nonpublic, Bureau of Indian Education and other tribal schools opt in.',
     'Requires the Legislature to identify a funding source, or else appropriate the money from Legacy Fund earnings.',
     'Covers all enrolled students; the Secretary of State’s guide describes this as pre-K through grade 12. The model covers kindergarten through grade 12.',
   ],
   comparisons: [
     {
-      caption: 'School meals at North Dakota public schools from the 2027-28 school year',
+      caption: "School meals at North Dakota public schools from the 2027-28 school year, after the state's free meals up to 225% of poverty end on June 30, 2027",
       rows: [
         { label: 'Household income up to 130% of poverty', currentLaw: 'Free', ifPasses: 'Free' },
         { label: '130% to 185% of poverty', currentLaw: 'Reduced price', ifPasses: 'Free' },
@@ -55,6 +53,7 @@ const content: MeasureContent = {
       note: "Current law here assumes the state's free meals up to 225% of poverty end when their appropriation does, on June 30, 2027.",
     },
   ],
+  whoIsAffectedSummary: 'Families above 130% of the poverty line who buy school meals would no longer pay for them.',
   whoIsAffected: [
     'North Dakota public schools enrolled 116,762 students in kindergarten through grade 12 in 2024-25 (National Center for Education Statistics). The Department of Public Instruction’s 2026 community eligibility list counts 9,196 students at 39 public schools in 18 districts that already serve every meal free; PolicyEngine uses this count, leaving out the list’s Bureau of Indian Education, tribal and private schools because the measure covers public schools.',
     'Families above 130% of the poverty line who buy school meals would no longer pay for them. The savings depend on how often a student eats breakfast and lunch at school.',
@@ -87,7 +86,7 @@ const content: MeasureContent = {
   ],
   caveats: [
     "The model's population has more school-age children than public school enrollment, so PolicyEngine scales its counts to enrollment.",
-    'How many students eat school meals determines the cost. The model adjusts for participation using federal data on average daily breakfast and lunch counts, and reports a low and a high case. The unadjusted figure, which assumes every student eats both meals every day, appears under measure-specific methods.',
+    'How many students eat school meals determines the cost. The model adjusts for participation using federal data on average daily breakfast and lunch counts, and reports a low and a high case. The unadjusted figure, which assumes every student eats both meals every day, appears under measure-specific method, above.',
   ],
   officialEstimateProse: [
     "The Legislative Council's fiscal impact report, based on Department of Public Instruction figures, puts the measure's cost at $124 million to $134 million for free meals and $300,000 for administration in the 2027-29 biennium: $124.3 million to $134.3 million in total, as the ballot states.",

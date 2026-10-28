@@ -181,6 +181,8 @@ value + administration ($300,000 per biennium, $150,000 a year).
 | `meal_value_change_adjusted_low`, `_high` | Participation-adjusted meal value (= state meal cost) |
 | `state_cost_adjusted_low`, `_high` | Adjusted meal cost + administration, per year |
 | `state_cost_biennium_low`, `_high` | Twice the annual cost (compare with the official per-biennium range) |
+| `state_cost_central` | The central case: meal cost at the midpoint of the low and high participation rates, plus administration, per year. Equals −`state_budget_impact` (the dashboard's single budget figure) |
+| `state_cost_biennium_central` | Twice `state_cost_central` |
 | `participation_lunch`, `participation_breakfast` | Current participation rates (low case) |
 | `enrollment_scale` | `s` |
 

@@ -81,6 +81,9 @@ export const SCHOOL_MEALS_METRICS = {
   stateCostAdjustedHigh: 'state_cost_adjusted_high',
   stateCostBienniumLow: 'state_cost_biennium_low',
   stateCostBienniumHigh: 'state_cost_biennium_high',
+  /** The participation-adjusted midpoint plus administration (scripts/DATA_SCHEMA.md). */
+  stateCostCentral: 'state_cost_central',
+  stateCostBienniumCentral: 'state_cost_biennium_central',
   participationLunch: 'participation_lunch',
   participationBreakfast: 'participation_breakfast',
   enrollmentScale: 'enrollment_scale',
@@ -116,6 +119,19 @@ export const KIND_METRICS: Record<MeasureKind, readonly string[]> = {
 export type Metrics = Record<string, number> | null | undefined;
 
 /** A metric or its `_low`/`_high` pair, as a range; null when neither exists. */
+/**
+ * North Dakota's central state cost, per year and per two-year budget:
+ * state_cost_central and state_cost_biennium_central, or, before the
+ * pipeline publishes them, minus state_budget_impact and twice that.
+ */
+export function stateCostCentral(metrics: Metrics): { annual: number | null; biennium: number | null } {
+  const budget = metric(metrics, CORE_METRICS.stateBudgetImpact);
+  const annual = metric(metrics, SCHOOL_MEALS_METRICS.stateCostCentral) ?? (budget === null ? null : -budget);
+  const biennium =
+    metric(metrics, SCHOOL_MEALS_METRICS.stateCostBienniumCentral) ?? (annual === null ? null : 2 * annual);
+  return { annual, biennium };
+}
+
 export function metricRange(metrics: Metrics, name: string): { low: number; high: number } | null {
   const single = metric(metrics, name);
   if (single !== null) return { low: single, high: single };
@@ -211,6 +227,8 @@ export interface Headline {
   official: string | null;
   /** Source and period of the official estimate. */
   officialSource: string | null;
+  /** The official estimate's source alone, for one-line card details. */
+  officialShortSource: string | null;
   /** Label for the official figure when it measures something else. */
   officialLabel: string;
 }
@@ -252,6 +270,7 @@ export function headlineFor(m: Measure, metrics: Metrics): Headline {
       model,
       official: estimate ? formatEstimateValue(estimate, estimate.unit, { sign }) : null,
       officialSource: estimate ? `${shortSource(estimate.source)}, ${estimate.period}` : null,
+      officialShortSource: estimate ? shortSource(estimate.source) : null,
       officialLabel,
     };
   };
@@ -276,10 +295,11 @@ export function headlineFor(m: Measure, metrics: Metrics): Headline {
       );
     }
     case 'school_meals': {
-      const r = metricRange(metrics, 'state_cost_biennium');
+      // One central figure; the low and high cases appear on the Methods tab.
+      const { biennium } = stateCostCentral(metrics);
       return withOfficial(
         'State cost per two-year budget',
-        r ? formatUSDRange(r.low, r.high, true, true) : null,
+        biennium === null ? null : formatCompactUSD(biennium, { sig3: true }),
         'state_cost_biennium',
       );
     }

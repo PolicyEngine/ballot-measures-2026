@@ -39,7 +39,7 @@ import {
   type DescribedSeries,
 } from './chartUtils';
 import CoverageResults from './CoverageResults';
-import { MetricCard, toneOf, type Tone } from './ui';
+import { MetricCard, ResultsTable, toneOf, type Tone } from './ui';
 
 interface Props {
   measure: Measure;
@@ -327,54 +327,17 @@ export function HouseholdResults({
         {kindCard}
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <caption className="text-left text-sm font-semibold text-gray-800 mb-2">
-            At your employment income
-          </caption>
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th scope="col" className="text-left py-2 pr-3 font-medium text-gray-600">
-                Annual amount
-              </th>
-              <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">
-                {labels.baseline}
-              </th>
-              <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">
-                {labels.reform}
-              </th>
-              <th scope="col" className="text-right py-2 pl-3 font-medium text-gray-600">
-                Change
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {tableRows.map((row) => {
-              const tone = householdTone(row);
-              return (
-                <tr key={row.key}>
-                  <th scope="row" className="text-left py-2 pr-3 font-normal text-gray-800">
-                    {row.label}
-                  </th>
-                  <td className="text-right py-2 px-3 tabular-nums">{formatRowValue(row, row.baseline)}</td>
-                  <td className="text-right py-2 px-3 tabular-nums">{formatRowValue(row, row.reform)}</td>
-                  <td
-                    className={`text-right py-2 pl-3 tabular-nums font-semibold ${
-                      tone === 'positive' ? 'text-green-600' : tone === 'negative' ? 'text-red-600' : 'text-gray-700'
-                    }`}
-                  >
-                    {formatRowChange(row)}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-        <p className="text-xs text-gray-500 mt-2">
-          Taxes are after refundable credits. Net income is income after taxes plus benefits
-          {measure.kind === 'medicaid' ? ', counting the value of health coverage' : ''}.
-        </p>
-      </div>
+      <ResultsTable
+        caption="At your employment income"
+        reformLabel={measure.kind_params?.conditional === true ? 'Scenario' : 'If it passes'}
+        rows={tableRows.map((row) => ({
+          label: row.label,
+          baseline: formatRowValue(row, row.baseline),
+          reform: formatRowValue(row, row.reform),
+          change: formatRowChange(row),
+          tone: householdTone(row),
+        }))}
+      />
 
       <ChartFigure
         title={chartTitle}

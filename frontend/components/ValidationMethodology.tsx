@@ -1,7 +1,7 @@
 'use client';
 
 import { getContent } from '@/content/measures';
-import { FIGURE_BASIS_ID, figureBasisRows } from '@/lib/figureBasis';
+import { BASIS_LABELS, FIGURE_BASIS_ID, figureBasisRows } from '@/lib/figureBasis';
 import { formatCount, formatPercent, formatPercentagePoints, formatTimestamp } from '@/lib/format';
 import {
   REGISTRY,
@@ -24,12 +24,14 @@ import {
   type EstimateComparison,
 } from '@/lib/metrics';
 import { STATEWIDE_FILES, metric, metricsFor } from '@/lib/results';
-import { SimpleDataTable } from './PolicyOverview';
+import { References, SimpleDataTable, SourceLinks } from './PolicyOverview';
 import { asPercent } from './statewide/KindSummary';
-import { BasisBadge } from './FigureBasis';
 import { Callout, CompareTable, ExternalLink, YearPills } from './ui';
 
 const DASH = '—';
+
+/** Below this effective sample of affected households, the methods notes flag the estimates as approximate. */
+export const SMALL_EFFECTIVE_SAMPLE = 50;
 
 const POSITION_TEXT = {
   below: 'below',
@@ -336,8 +338,8 @@ function KindMethodology({
                 : 'Medicaid'}{' '}
               spending on the expansion group is {usd(Math.abs(total))} a year
               {state !== null ? `, of which the state pays ${usd(Math.abs(state))} at today's 10% share` : ''}.
-              The state spending change on the statewide tab compares the scenario with current
-              law at that 10% share. Each 10-percentage-point drop in the federal share would shift
+              The state savings on the statewide tab compare the scenario with current law at
+              that 10% share. Each 10-percentage-point drop in the federal share would shift
               about {usd(Math.abs(total) * 0.1)} a year of that spending to the state if expansion
               continued.
             </p>
@@ -360,7 +362,8 @@ function KindMethodology({
           <strong>Top incomes.</strong>{' '}
           Changes in tax on high incomes drive this measure&apos;s revenue. The few sampled
           households at the top carry large weights, so the comparison with IRS data and the
-          effective sample sizes above are the best guides to the estimate&apos;s precision.
+          effective sample sizes under model and data are the best guides to the estimate&apos;s
+          precision.
         </p>
       );
   }
@@ -512,22 +515,25 @@ function ModelAndData({ measure, manifest }: { measure: Measure; manifest: Manif
           ].join('\n')}
         </pre>
       </div>
-      {manifest?.spm_resources_adjustment?.applied && measure.kind !== 'medicaid' && (
-        <p>
-          <span className="font-semibold text-gray-900">Poverty measures.</span> PolicyEngine adds
-          partnership and S corporation income, farm rental income and the Alaska Permanent Fund
-          dividend to SPM resources, which the released model omits (
-          <ExternalLink href="https://github.com/PolicyEngine/policyengine-us/issues/9919">
-            policyengine-us#9919
-          </ExternalLink>
-          ).
-        </p>
-      )}
     </div>
   );
 }
 
-/** The methodology tab's opening table: each figure's basis and its factor or source. */
+/** Text with each "policyengine-us#123" turned into a link to the issue. */
+function withIssueLinks(text: string) {
+  return text.split(/(policyengine-us#\d+)/).map((part, i) => {
+    const issue = /^policyengine-us#(\d+)$/.exec(part);
+    return issue ? (
+      <ExternalLink key={i} href={`https://github.com/PolicyEngine/policyengine-us/issues/${issue[1]}`}>
+        {part}
+      </ExternalLink>
+    ) : (
+      part
+    );
+  });
+}
+
+/** The Methods tab's opening table: each figure's basis and its factor or source. */
 export function FigureBasisTable({
   measure,
   year,
@@ -549,13 +555,11 @@ export function FigureBasisTable({
       rows={rows.map((r) => ({
         label: r.figure,
         values: [
-          <span key="basis" className="flex flex-wrap gap-1">
-            {r.bases.map((b) => (
-              <BasisBadge key={b} basis={b} />
-            ))}
+          <span key="basis" className="text-gray-800">
+            {r.bases.map((b) => BASIS_LABELS[b]).join(', ')}
           </span>,
           <span key="source" className="text-gray-700">
-            {r.source}
+            {withIssueLinks(r.source)}
           </span>,
         ],
       }))}
@@ -618,7 +622,7 @@ interface Props {
   onYearChange?: (year: number) => void;
 }
 
-/** Validation and methods tab: one section per block, each under an h2, like the FUTA dashboard. */
+/** Methods tab: the single place for how figures are produced, sources, caveats and calibration. */
 export default function ValidationMethodology({ measure, year, onYearChange }: Props) {
   const content = getContent(measure.slug);
   const metricsFile = useResultsCsv(STATEWIDE_FILES.metrics);
@@ -626,14 +630,46 @@ export default function ValidationMethodology({ measure, year, onYearChange }: P
   const metricsByYear = Object.fromEntries(
     measure.years.map((y) => [y, metricsFor(metricsFile.data, measure.slug, y)]),
   ) as Record<number, Record<string, number> | null>;
+  const metrics = metricsByYear[year] ?? null;
+  const h2 = 'text-2xl font-bold text-gray-900';
+  const h3 = 'text-lg font-semibold text-gray-900 mb-2';
+  const effective = metric(metrics, C.effectiveAffectedSampleHouseholds);
+  const sampled = metric(metrics, C.affectedSampleHouseholds);
+  const notes = [
+    'Every figure compares the measure with current law in the same tax year' +
+      (measure.kind_params?.conditional === true
+        ? '; here, current law against a scenario in which the federal share falls below 90% and expansion ends.'
+        : '.'),
+    'Budget lines are signed from the government’s side: a gain means the government collects more or spends less.' +
+      (measure.kind === 'medicaid' ? '' : ' Household net income is signed from the household’s side.'),
+    ...(measure.kind === 'income_tax'
+      ? [
+          'Federal effects are not modeled: the federal deduction for state and local taxes uses state income tax withholding in the model, so the measure does not change federal income tax.',
+        ]
+      : measure.kind !== 'medicaid'
+        ? ['Federal effects are not modeled.']
+        : []),
+    ...(measure.kind === 'school_meals'
+      ? [
+          'Household gains, the statewide distribution and poverty use the participation-adjusted midpoint of the low and high cases, not the model’s assumption that every student eats both meals every day. The state cost on the other tabs is that midpoint plus administration.',
+        ]
+      : []),
+    'The household calculator models a household with employment income only, using the same model as the statewide results. Single adults with dependents file as head of household; married couples file jointly. Taxes are after refundable credits; net income is income after taxes plus benefits' +
+      (measure.kind === 'medicaid' ? ', counting the value of health coverage.' : '.'),
+    ...(effective !== null && effective < SMALL_EFFECTIVE_SAMPLE
+      ? [
+          `The statewide figures rest on ${sampled === null ? 'a small number of' : formatCount(sampled)} sampled households that the measure affects. Their survey weights vary, so together they carry the statistical weight of about ${formatCount(Math.max(1, effective))} independent households (the effective sample size), and the estimates are approximate.`,
+        ]
+      : []),
+  ];
 
   return (
     <div className="space-y-10">
       {onYearChange && <YearPills years={measure.years} value={year} onChange={onYearChange} />}
 
       <section id={FIGURE_BASIS_ID} aria-labelledby="figure-basis-heading" className="space-y-4 scroll-mt-32">
-        <h2 id="figure-basis-heading" className="text-2xl font-bold text-gray-900">
-          Which figures are calibrated
+        <h2 id="figure-basis-heading" className={h2}>
+          How these figures are produced
         </h2>
         <p className="text-sm text-gray-700">
           Model estimates are PolicyEngine&apos;s output as is. Calibrated figures adjust that
@@ -641,13 +677,18 @@ export default function ValidationMethodology({ measure, year, onYearChange }: P
           official forecast in place of a model input. Adjusted poverty figures add income that
           the released model leaves out of poverty resources.
         </p>
-        <FigureBasisTable measure={measure} year={year} metrics={metricsByYear[year] ?? null} manifest={manifest} />
-        <PovertyBasisTable measure={measure} year={year} metrics={metricsByYear[year] ?? null} manifest={manifest} />
+        <FigureBasisTable measure={measure} year={year} metrics={metrics} manifest={manifest} />
+        <PovertyBasisTable measure={measure} year={year} metrics={metrics} manifest={manifest} />
+        <ul className="list-disc space-y-1.5 pl-5 text-sm text-gray-700">
+          {notes.map((n) => (
+            <li key={n}>{n}</li>
+          ))}
+        </ul>
       </section>
 
       <section aria-labelledby="validation-heading" className="space-y-4">
-        <h2 id="validation-heading" className="text-2xl font-bold text-gray-900">
-          Validation
+        <h2 id="validation-heading" className={h2}>
+          Official estimates
         </h2>
         <ValidationTable measure={measure} metricsByYear={metricsByYear} />
         <div className="space-y-3 text-sm text-gray-700">
@@ -660,37 +701,104 @@ export default function ValidationMethodology({ measure, year, onYearChange }: P
         ))}
       </section>
 
-      <TopTailComparison measure={measure} year={year} manifest={manifest} metrics={metricsByYear[year] ?? null} />
+      <TopTailComparison measure={measure} year={year} manifest={manifest} metrics={metrics} />
 
-      <section aria-labelledby="sample-heading" className="space-y-3">
-        <h2 id="sample-heading" className="text-2xl font-bold text-gray-900">
-          Sample sizes
+      <section aria-labelledby="kind-heading" className="space-y-4">
+        <h2 id="kind-heading" className={h2}>
+          Measure-specific method
         </h2>
-        <SampleSizes measure={measure} metricsByYear={metricsByYear} />
-        <p className="text-xs text-gray-500">
-          The effective sample size accounts for unequal survey weights (Kish): a few heavily
-          weighted households count for less than their raw number. Estimates that rest on small
-          effective samples, such as poverty changes or changes concentrated among very high
-          incomes, are less precise.
-        </p>
+        <KindMethodology measure={measure} metrics={metrics} />
+        {content.scenario && (
+          <div>
+            <h3 className={h3}>{content.scenario.title}</h3>
+            <div className="space-y-2 text-sm text-gray-700">
+              {content.scenario.body.map((p) => (
+                <p key={p}>{p}</p>
+              ))}
+            </div>
+          </div>
+        )}
+        <div>
+          <h3 className={h3}>Background</h3>
+          <div className="space-y-2 text-sm text-gray-700">
+            {content.summary.map((p) => (
+              <p key={p}>{p}</p>
+            ))}
+            {content.comparisons
+              .filter((c) => c.note)
+              .map((c) => (
+                <p key={c.caption}>{c.note}</p>
+              ))}
+          </div>
+        </div>
+        <div>
+          <h3 className={h3}>Who is affected</h3>
+          <div className="space-y-2 text-sm text-gray-700">
+            {content.whoIsAffected.map((p) => (
+              <p key={p}>{p}</p>
+            ))}
+          </div>
+          <SourceLinks sources={content.whoIsAffectedSources} className="mt-2" />
+        </div>
+        {content.context.map((section) => (
+          <div key={section.title}>
+            <h3 className={h3}>{section.title}</h3>
+            <div className="space-y-2 text-sm text-gray-700">
+              {section.body.map((p) => (
+                <p key={p}>{p}</p>
+              ))}
+            </div>
+            <SourceLinks sources={section.sources} className="mt-2" />
+          </div>
+        ))}
       </section>
 
-      <section aria-labelledby="kind-heading" className="space-y-3">
-        <h2 id="kind-heading" className="text-2xl font-bold text-gray-900">
-          Measure-specific methods
+      <section aria-labelledby="sources-heading" className="space-y-4">
+        <h2 id="sources-heading" className={h2}>
+          Sources and ballot text
         </h2>
-        <KindMethodology measure={measure} metrics={metricsByYear[year] ?? null} />
+        <dl className="grid grid-cols-1 gap-4 text-sm md:grid-cols-2">
+          <div>
+            <dt className="font-semibold text-gray-900">How it reached the ballot</dt>
+            <dd className="mt-1 text-gray-700">{content.measureType}</dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-gray-900">Vote needed to pass</dt>
+            <dd className="mt-1 text-gray-700">
+              {content.voteRequirement.text}
+              <SourceLinks sources={content.voteRequirement.sources} className="mt-1" />
+            </dd>
+          </div>
+          <div className="md:col-span-2">
+            <dt className="font-semibold text-gray-900">When it would take effect</dt>
+            <dd className="mt-1 text-gray-700">{content.effectiveDate}</dd>
+          </div>
+        </dl>
+        <details className="rounded-lg border border-gray-200 bg-white p-4">
+          <summary className="cursor-pointer font-semibold text-gray-900">
+            {content.ballotText.label} as it appears on the ballot
+          </summary>
+          <div className="mt-3 space-y-3 text-sm text-gray-700">
+            {content.ballotText.paragraphs.map((p) => (
+              <p key={p}>{p}</p>
+            ))}
+            {content.ballotText.table && <SimpleDataTable table={content.ballotText.table} />}
+            <p className="text-xs text-gray-500">
+              Source:{' '}
+              <ExternalLink href={content.ballotText.source.url}>{content.ballotText.source.label}</ExternalLink>
+            </p>
+          </div>
+        </details>
+        <References measure={measure} />
       </section>
 
       <section aria-labelledby="limits-heading" className="space-y-4">
-        <h2 id="limits-heading" className="text-2xl font-bold text-gray-900">
+        <h2 id="limits-heading" className={h2}>
           Limitations
         </h2>
         <div className="grid gap-6 md:grid-cols-2">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              What the model leaves out
-            </h3>
+            <h3 className={h3}>What the model leaves out</h3>
             <ul className="list-disc pl-5 space-y-1.5 text-sm text-gray-700">
               {content.notModeled.map((item) => (
                 <li key={item}>{item}</li>
@@ -698,7 +806,7 @@ export default function ValidationMethodology({ measure, year, onYearChange }: P
             </ul>
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Caveats</h3>
+            <h3 className={h3}>Caveats</h3>
             <ul className="list-disc pl-5 space-y-1.5 text-sm text-gray-700">
               {content.caveats.map((item) => (
                 <li key={item}>{item}</li>
@@ -712,31 +820,35 @@ export default function ValidationMethodology({ measure, year, onYearChange }: P
         </div>
       </section>
 
-      <section aria-labelledby="data-heading" className="space-y-3">
-        <h2 id="data-heading" className="text-2xl font-bold text-gray-900">
+      <section aria-labelledby="data-heading" className="space-y-4">
+        <h2 id="data-heading" className={h2}>
           Model and data
         </h2>
         <ModelAndData measure={measure} manifest={manifest} />
+        <div>
+          <h3 className={h3}>Sample sizes</h3>
+          <SampleSizes measure={measure} metricsByYear={metricsByYear} />
+          <p className="mt-2 text-xs text-gray-500">
+            The effective sample size accounts for unequal survey weights (Kish): a few heavily
+            weighted households count for less than their raw number. Estimates that rest on small
+            effective samples, such as poverty changes or changes concentrated among very high
+            incomes, are less precise.
+          </p>
+        </div>
+        {measure.show_districts && (
+          <p className="text-sm text-gray-700">
+            Districts follow 119th Congress boundaries. Households are assigned to districts through
+            their Public Use Microdata Area, so boundaries are approximate. District and statewide
+            figures come from the same data, so district totals sum to the statewide total. District
+            samples are small, so the dashboard does not report poverty by district.
+          </p>
+        )}
         <Callout>
           PolicyEngine&apos;s microsimulation model,{' '}
           <ExternalLink href="https://github.com/PolicyEngine/policyengine-us">policyengine-us</ExternalLink>
           , runs on a calibrated sample of US households (Populace), assigned to states and
-          congressional districts. All estimates compare the measure with current law in the same
-          tax year and assume no change in behavior.
+          congressional districts.
         </Callout>
-      </section>
-
-      <section aria-labelledby="refs-heading">
-        <h2 id="refs-heading" className="text-2xl font-bold text-gray-900 mb-2">
-          Sources
-        </h2>
-        <ul className="space-y-1 text-sm">
-          {content.references.map((r) => (
-            <li key={r.url}>
-              <ExternalLink href={r.url}>{r.label}</ExternalLink>
-            </li>
-          ))}
-        </ul>
       </section>
     </div>
   );

@@ -1,8 +1,9 @@
-import { screen, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import ValidationMethodology from '../components/ValidationMethodology';
+import { getContent } from '../content/measures';
 import { getMeasure } from '../lib/registry';
-import { fixtureFiles, mockDataFiles, renderWithQuery } from './testUtils';
+import { fixtureFiles, fixtureText, mockDataFiles, renderWithQuery } from './testUtils';
 
 describe('ValidationMethodology', () => {
   it('compares each official estimate with the model in its tax year', async () => {
@@ -87,10 +88,11 @@ describe('ValidationMethodology', () => {
   it('notes the income added to SPM resources', async () => {
     mockDataFiles(fixtureFiles());
     renderWithQuery(<ValidationMethodology measure={getMeasure('ca-prop-3')} year={2031} />);
-    expect(
-      await screen.findByText(/PolicyEngine adds partnership and S corporation income, farm rental income/),
-    ).toHaveTextContent(/Alaska Permanent Fund dividend to SPM resources, which the released model omits \(policyengine-us#9919\)\./);
-    expect(screen.getByRole('link', { name: 'policyengine-us#9919' })).toHaveAttribute(
+    // Once, in the basis table's poverty row.
+    const notes = await screen.findAllByText(/Poverty figures add partnership and S corporation income, farm rental income/);
+    expect(notes).toHaveLength(1);
+    expect(notes[0]).toHaveTextContent(/Alaska Permanent Fund dividend to SPM resources, which the released model omits \(policyengine-us#9919\)\./);
+    expect(within(notes[0]).getByRole('link', { name: 'policyengine-us#9919' })).toHaveAttribute(
       'href',
       'https://github.com/PolicyEngine/policyengine-us/issues/9919',
     );
@@ -102,5 +104,161 @@ describe('ValidationMethodology', () => {
     const table = screen.getByRole('table', { name: 'PolicyEngine and official estimates' });
     expect(await within(table).findByText('Pending')).toBeInTheDocument();
     expect(table).toHaveTextContent('$5B to $15B');
+  });
+});
+
+describe('Methods tab sections', () => {
+  it('has six sections in order', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('nd-measure-2')} year={2028} />);
+    await screen.findByText('synthetic');
+    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
+      'How these figures are produced',
+      'Official estimates',
+      'Measure-specific method',
+      'Sources and ballot text',
+      'Limitations',
+      'Model and data',
+    ]);
+  });
+
+  it('collects the notes from the other tabs under how the figures are produced', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('nd-measure-2')} year={2028} />);
+    const section = screen.getByRole('heading', { name: 'How these figures are produced' }).closest('section')!;
+    expect(section).toHaveTextContent('Budget lines are signed from the government’s side');
+    expect(section).toHaveTextContent('participation-adjusted midpoint of the low and high cases');
+    expect(section).toHaveTextContent(
+      'Single adults with dependents file as head of household; married couples file jointly.',
+    );
+    expect(section).toHaveTextContent('Taxes are after refundable credits; net income is income after taxes plus benefits.');
+    expect(section).toHaveTextContent('Federal effects are not modeled.');
+    // North Dakota's sample is large enough for no precision note.
+    expect(section).not.toHaveTextContent('effective sample size');
+  });
+
+  it('notes the withholding treatment of the federal deduction for income tax measures', () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('wa-i-645')} year={2029} />);
+    expect(screen.getByText(/uses state income tax withholding in the model/)).toBeInTheDocument();
+  });
+
+  it('flags estimates that rest on a small effective sample', async () => {
+    const metrics = fixtureText('metrics.csv')
+      .replace('wa-i-645,2029,affected_sample_households,211', 'wa-i-645,2029,affected_sample_households,447')
+      .replace('wa-i-645,2029,effective_affected_sample_households,74', 'wa-i-645,2029,effective_affected_sample_households,13.3');
+    mockDataFiles({ ...fixtureFiles(), 'metrics.csv': metrics });
+    renderWithQuery(<ValidationMethodology measure={getMeasure('wa-i-645')} year={2029} />);
+    const note = await screen.findByText(/rest on 447 sampled households/);
+    expect(note).toHaveTextContent('about 13 independent households (the effective sample size)');
+  });
+
+  it('values health coverage in South Dakota’s household definitions and gives its reasoning once', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('sd-amendment-i')} year={2028} />);
+    await screen.findByText('synthetic');
+    expect(screen.getByText(/net income is income after taxes plus benefits, counting the value of health coverage\./)).toBeInTheDocument();
+    // Why the scenario is in people rather than net income: one copy, in the measure-specific method.
+    expect(screen.getAllByText(/rather than (household )?net income|People rather than net income/)).toHaveLength(1);
+    // Both readings of the amendment, in full.
+    expect(screen.getByRole('heading', { name: 'A conditional scenario, not a forecast' })).toBeInTheDocument();
+    expect(screen.getByText(/would NOT automatically end Medicaid expansion/)).toBeInTheDocument();
+  });
+
+  it('states the static caveat once', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('co-amendment-87')} year={2027} />);
+    await screen.findByText('synthetic');
+    expect(screen.getAllByText(/Estimates are static/)).toHaveLength(1);
+    expect(screen.queryByText(/assume no change in behavior/)).toBeNull();
+  });
+
+  it('describes district boundaries only for measures with a district breakdown', async () => {
+    mockDataFiles(fixtureFiles());
+    const { unmount } = renderWithQuery(
+      <ValidationMethodology measure={getMeasure('co-amendment-87')} year={2027} />,
+    );
+    expect(screen.getByText(/Districts follow 119th Congress boundaries/)).toBeInTheDocument();
+    unmount();
+    renderWithQuery(<ValidationMethodology measure={getMeasure('ca-prop-3')} year={2031} />);
+    expect(screen.queryByText(/Districts follow 119th Congress boundaries/)).toBeNull();
+  });
+
+  it('shows the ballot title as printed, with its source', () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('co-amendment-87')} year={2027} />);
+    fireEvent.click(screen.getByText('Ballot title as it appears on the ballot'));
+    expect(screen.getByText(/SHALL STATE TAXES BE INCREASED \$2\.7 BILLION ANNUALLY/)).toBeInTheDocument();
+    const details = screen.getByText('Ballot title as it appears on the ballot').closest('details')!;
+    expect(within(details).getByRole('link', { name: '2026 Blue Book, page 10' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('#page=10'),
+    );
+  });
+
+  it('cites the vote each measure needs, in full', () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('co-amendment-87')} year={2027} />);
+    const vote = screen.getByText('Vote needed to pass').closest('div')!;
+    expect(vote).toHaveTextContent(/at least 55% of the votes cast unless it is limited to a repeal/);
+    expect(within(vote).getByRole('link', { name: '2026 Blue Book, page 4 (vote requirements)' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('#page=4'),
+    );
+    expect(within(vote).getByRole('link', { name: '2026 Blue Book, page 33 (Amendment 87)' })).toHaveAttribute(
+      'href',
+      expect.stringContaining('#page=33'),
+    );
+    // How it reached the ballot does not carry the threshold.
+    expect(screen.getByText('How it reached the ballot').closest('div')).not.toHaveTextContent('majority');
+    // Context sections moved here from the overview.
+    expect(screen.getByRole('heading', { name: 'Proposition 136' })).toBeInTheDocument();
+  });
+
+  it('cites the Blue Book for the measures Proposition NN interacts with', () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('co-prop-nn')} year={2027} />);
+    expect(screen.getByRole('link', { name: /page 67 \(Proposition 137/ })).toHaveAttribute(
+      'href',
+      expect.stringContaining('#page=67'),
+    );
+    expect(screen.getByText(/does not score later years/)).toBeInTheDocument();
+  });
+
+  it('quotes the Washington fiscal impact statement once, without commentary', () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('wa-i-645')} year={2028} />);
+    const quote = screen.getByText(
+      /“Savings are assumed for tax administration duties for approximately 30,000 taxpayers that will no longer be required\.”/,
+    );
+    // In the official estimates table, beside its page-4 source.
+    const row = quote.closest('tr')!;
+    expect(within(row).getByRole('link', { name: /Office of Financial Management/ })).toHaveAttribute(
+      'href',
+      expect.stringContaining('#page=4'),
+    );
+  });
+
+  it('lists references in NJ’s three boxes', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('nd-measure-2')} year={2028} />);
+    const refs = screen.getByRole('heading', { name: 'References' }).closest('section')!;
+    for (const name of ['Ballot measure text and voter guides', 'Official estimates', 'Calculations']) {
+      expect(within(refs).getByRole('heading', { name })).toBeInTheDocument();
+    }
+    // Official estimate sources come from the registry, one link per source.
+    const estimates = within(refs).getByRole('heading', { name: 'Official estimates' }).parentElement!;
+    for (const e of getMeasure('nd-measure-2').official_estimates) {
+      expect(within(estimates).getByRole('link', { name: e.source })).toHaveAttribute('href', e.url);
+    }
+    expect(await within(refs).findByText(/policyengine-us==/)).toBeInTheDocument();
+    // North Dakota has no district breakdown, so the calculations box does not mention districts.
+    expect(within(refs).getByRole('heading', { name: 'Calculations' }).parentElement).not.toHaveTextContent(/district/i);
+  });
+
+  it('gives the full who-is-affected text with its sources', () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('nd-measure-2')} year={2028} />);
+    for (const p of getContent('nd-measure-2').whoIsAffected) expect(screen.getByText(p)).toBeInTheDocument();
   });
 });

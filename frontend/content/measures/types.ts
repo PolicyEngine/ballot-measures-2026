@@ -60,12 +60,6 @@ export interface MeasureContent {
   slug: string;
   /** One sentence for the overview intro, the landing card and the page metadata. */
   description: string;
-  /**
-   * What the measure does, as a phrase for the header band's subtitle:
-   * "See how {headerPhrase} would affect … households and the state budget …".
-   * The short title, worded to fit the sentence.
-   */
-  headerPhrase: string;
   /** How the measure reaches the ballot, e.g. "Citizen-initiated constitutional amendment". */
   measureType: string;
   /** The vote it needs to pass, cited to an official source. */
@@ -78,7 +72,9 @@ export interface MeasureContent {
   whatItDoes: string[];
   /** Current law vs. if the measure passes (one table per topic or year). */
   comparisons: Comparison[];
-  /** Who the change reaches. */
+  /** Who the change reaches, in one or two sentences for the overview. */
+  whoIsAffectedSummary: string;
+  /** Who the change reaches, in full (Methods tab). */
   whoIsAffected: string[];
   /** Sources for the figures in whoIsAffected. */
   whoIsAffectedSources?: Reference[];
@@ -86,8 +82,24 @@ export interface MeasureContent {
   effectiveDate: string;
   /** Interactions with other measures or laws. */
   context: ContentSection[];
-  /** For measures modeled as a scenario rather than a certain outcome (SD). */
+  /** For measures modeled as a scenario rather than a certain outcome (SD); the full text is on the Methods tab. */
   scenario?: ContentSection;
+  /** The scenario box on the overview: two sentences, plus one on the competing readings. */
+  scenarioSummary?: string[];
+  /**
+   * Why coverage changes at each income cutoff, for the household tab's
+   * coverage bands (Medicaid measure). The income levels come from the data.
+   */
+  coverageCutoffs?: {
+    /** Where Medicaid ends, e.g. "the expansion limit, 138% of the poverty line". */
+    medicaidLimit: string;
+    /** Below the premium tax credit's floor. */
+    belowPovertyLine: string;
+    /** Medicaid's work requirement. */
+    workRequirement: string;
+    /** Above the premium tax credit's ceiling. */
+    aboveSubsidyLimit: string;
+  };
   /** Provisions the model does not capture. */
   notModeled: string[];
   /** Caveats on the model's estimates. */

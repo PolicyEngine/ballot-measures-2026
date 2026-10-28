@@ -61,8 +61,9 @@ export const dataUrl = (filename: string): string => `${BASE_PATH}/${DATA_DIR}/$
 /** URL of a static asset in frontend/public/ that does not depend on DATA_DIR. */
 export const assetUrl = (path: string): string => `${BASE_PATH}/${path.replace(/^\/+/, '')}`;
 
-/** 119th Congress district boundaries (national file, filtered per state). */
-export const DISTRICTS_GEOJSON_URL = assetUrl('data/geojson/congressional_districts.geojson');
+/** 119th Congress district boundaries for one state (scripts/cut-district-boundaries.mjs). */
+export const districtsGeojsonUrl = (stateCode: string): string =>
+  assetUrl(`data/geojson/${stateCode.toLowerCase()}_districts.json`);
 
 /** Modal household calculator (scripts/modal_household_api.py). Set
  *  NEXT_PUBLIC_HOUSEHOLD_API_URL per Vercel environment (the preview app

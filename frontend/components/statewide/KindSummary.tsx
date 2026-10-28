@@ -14,7 +14,6 @@ import {
   formatPercent,
   formatShare,
   formatUSD,
-  formatUSDRange,
   formatUSDWithSign,
 } from '@/lib/format';
 import {
@@ -23,13 +22,11 @@ import {
   MEDICAID_METRICS as MC,
   SCHOOL_MEALS_METRICS as SM,
   TABOR_REFUND_METRICS as TR,
-  metricRange,
+  stateCostCentral,
   type Metrics,
 } from '@/lib/metrics';
-import { mealsModelNote, studentsModelNote } from '@/lib/figureBasis';
 import type { Measure } from '@/lib/registry';
 import { metric } from '@/lib/results';
-import { BasisBadge } from '../FigureBasis';
 import { StatCard } from '../ui';
 
 const DASH = '—';
@@ -50,10 +47,6 @@ const show = (value: number | null, f: (v: number) => string) => (value === null
 // Model estimates: three significant digits.
 const money = (v: number) => formatCompactUSD(v, { sig3: true });
 const signedMoney = (v: number) => formatCompactUSD(v, { sig3: true, sign: true });
-const range = (metrics: Metrics, name: string) => {
-  const r = metricRange(metrics, name);
-  return r ? formatUSDRange(r.low, r.high, true, true) : DASH;
-};
 
 /** Average change in household net income. Statewide headline cards stay
  *  neutral for every measure; gain and loss colors mark individual
@@ -98,7 +91,6 @@ export function KindHeadlineCards({ measure, metrics }: { measure: Measure; metr
           <StatCard
             highlight
             label="Change in state income tax revenue"
-            badge={<BasisBadge basis="model" />}
             value={show(metric(m, C.stateBudgetImpact), signedMoney)}
             detail="Positive means the state collects more"
           />
@@ -122,14 +114,12 @@ export function KindHeadlineCards({ measure, metrics }: { measure: Measure; metr
           <StatCard
             highlight
             label="Sales tax refunds not paid"
-            badge={<BasisBadge basis="forecast" />}
             value={show(metric(m, C.stateBudgetImpact), money)}
             detail="Revenue the state keeps if the measure passes"
           />
           <AverageChangeCard metrics={m} />
           <StatCard
             label="Refunds under current law"
-            badge={<BasisBadge basis="forecast" />}
             value={show(metric(m, TR.refundTotalBaseline), money)}
             detail={
               recipients === null
@@ -145,30 +135,24 @@ export function KindHeadlineCards({ measure, metrics }: { measure: Measure; metr
     }
     case 'school_meals': {
       const students = newlyFreeStudents(m);
-      const mealsNote = mealsModelNote(m);
+      const { annual, biennium } = stateCostCentral(m);
       return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <StatCard
             highlight
             label="State cost per year"
-            badge={<BasisBadge basis="calibrated" />}
-            value={range(m, 'state_cost_adjusted')}
-            detail="Low and high participation cases"
-            footnote={mealsNote}
+            value={show(annual, money)}
+            detail={biennium === null ? undefined : `${money(biennium)} per two-year budget`}
           />
           <StatCard
             label="Students newly qualifying for free meals"
-            badge={<BasisBadge basis="calibrated" />}
             value={show(students.scaled, formatCount)}
             detail="Students who would pay full or reduced price under current law"
-            footnote={studentsModelNote(m)}
           />
           <StatCard
             label="Value of meals to families per year"
-            badge={<BasisBadge basis="calibrated" />}
-            value={range(m, 'meal_value_change_adjusted')}
-            detail="Low and high participation cases"
-            footnote={mealsNote}
+            value={show(metric(m, C.netIncomeChangeTotal), money)}
+            detail="Meals newly served free"
           />
         </div>
       );
@@ -223,27 +207,7 @@ export function kindDetailRows(measure: Measure, metrics: Metrics): DetailRow[] 
         { label: 'Average refund per recipient', value: show(metric(m, TR.avgRefundBaseline), formatUSD) },
       ];
     case 'school_meals':
-      return [
-        {
-          label: 'Value of meals if every student ate both meals every day',
-          value: show(metric(m, SM.mealValueChangeModel), money),
-        },
-        { label: 'Value of meals, participation-adjusted', value: range(m, 'meal_value_change_adjusted') },
-        { label: 'State cost per year, participation-adjusted', value: range(m, 'state_cost_adjusted') },
-        { label: 'State cost per two-year budget', value: range(m, 'state_cost_biennium') },
-        {
-          label: 'Lunch participation (share of enrolled students on a typical day)',
-          value: show(metric(m, SM.participationLunch), (v) => formatPercent(asPercent(v))),
-        },
-        {
-          label: 'Breakfast participation',
-          value: show(metric(m, SM.participationBreakfast), (v) => formatPercent(asPercent(v))),
-        },
-        {
-          label: 'Public students outside schools that serve every meal free, per model K-12 child (enrollment scaling)',
-          value: show(metric(m, SM.enrollmentScale), (v) => v.toFixed(2)),
-        },
-      ];
+      return [];
     case 'medicaid':
       return [
         {

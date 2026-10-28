@@ -162,6 +162,8 @@ describe('measure content', () => {
         c.description,
         ...c.summary,
         ...c.whatItDoes,
+        c.whoIsAffectedSummary,
+        ...(c.scenarioSummary ?? []),
         ...c.whoIsAffected,
         ...c.notModeled,
         ...c.caveats,

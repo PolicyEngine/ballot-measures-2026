@@ -11,6 +11,7 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { getContent } from '@/content/measures';
 import { coverageChanges, coverageOutcome, coverageSegments } from '@/lib/coverage';
 import { filingStatusLabel } from '@/lib/householdForm';
 import type { HouseholdResponse, NumericPointKey, PolicySweep } from '@/lib/householdApi';
@@ -18,7 +19,7 @@ import type { Measure } from '@/lib/registry';
 import { formatCount, formatIncomeTick, formatUSD, formatUSDWithSign } from '@/lib/format';
 import { CHART_MARGIN, ChartFigure, PillToggle, SweepChartDescription, TICK_STYLE, niceStep } from './chartUtils';
 import CoverageBands, { coverageLegend } from './CoverageBands';
-import { MetricCard, toneOf } from './ui';
+import { MetricCard, ResultsTable, toneOf } from './ui';
 
 type CoverageView = 'coverage' | 'enrolled' | 'ptc' | 'premium';
 type LineView = Exclude<CoverageView, 'coverage'>;
@@ -218,51 +219,9 @@ export default function CoverageResults({
         />
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <caption className="text-left text-sm font-semibold text-gray-800 mb-2">At your employment income</caption>
-          <thead>
-            <tr className="border-b border-gray-200">
-              <th scope="col" className="text-left py-2 pr-3 font-medium text-gray-600">
-                Annual amount
-              </th>
-              <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">
-                Current law
-              </th>
-              <th scope="col" className="text-right py-2 px-3 font-medium text-gray-600">
-                {SCENARIO}
-              </th>
-              <th scope="col" className="text-right py-2 pl-3 font-medium text-gray-600">
-                Change
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            {tableRows.map((row) => (
-              <tr key={row.label}>
-                <th scope="row" className="text-left py-2 pr-3 font-normal text-gray-800">
-                  {row.label}
-                </th>
-                <td className="text-right py-2 px-3 tabular-nums">{row.baseline}</td>
-                <td className="text-right py-2 px-3 tabular-nums">{row.reform}</td>
-                <td
-                  className={`text-right py-2 pl-3 tabular-nums font-semibold ${
-                    row.tone === 'positive' ? 'text-green-600' : row.tone === 'negative' ? 'text-red-600' : 'text-gray-700'
-                  }`}
-                >
-                  {row.change}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p className="text-xs text-gray-500 mt-2">
-          Coverage is shown for you, or for your spouse if you are 65 or older. This page reports
-          coverage and premiums rather than net income. PolicyEngine values
-          Medicaid at its average cost per enrollee, the same for every adult, while premium tax
-          credits rise with age, so a net-income comparison would show some adults gaining when they
-          move from Medicaid to marketplace coverage.
-        </p>
+      <div className="space-y-2">
+        <ResultsTable caption="At your employment income" reformLabel="Scenario" rows={tableRows} />
+        <p className="text-xs text-gray-500">Coverage is shown for you, or for your spouse if you are 65 or older.</p>
       </div>
 
       <ChartFigure
@@ -324,6 +283,7 @@ export default function CoverageResults({
             result={result}
             entered={entered}
             rowLabels={{ baseline: 'Current law', reform: SCENARIO }}
+            cutoffs={getContent(measure.slug).coverageCutoffs}
           />
         ) : (
           <ResponsiveContainer width="100%" height={320}>

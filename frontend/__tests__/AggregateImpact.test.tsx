@@ -1,6 +1,6 @@
 import { fireEvent, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
-import AggregateImpact, { PrecisionNote } from '../components/AggregateImpact';
+import { describe, expect, it, vi } from 'vitest';
+import AggregateImpact from '../components/AggregateImpact';
 import { PovertySection } from '../components/statewide/sections';
 import { getMeasure } from '../lib/registry';
 import { fixtureFiles, mockDataFiles, renderWithQuery } from './testUtils';
@@ -10,8 +10,7 @@ describe('AggregateImpact', () => {
     mockDataFiles(fixtureFiles());
     renderWithQuery(<AggregateImpact measure={getMeasure('co-amendment-87')} year={2027} />);
     expect(await screen.findByText('Change in state income tax revenue')).toBeInTheDocument();
-    // The card and the budget table both show the state revenue change.
-    expect(screen.getAllByText('+$1.81B').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText('+$1.81B')).toBeInTheDocument();
     expect(screen.getByText('Households gaining / losing')).toBeInTheDocument();
     expect(screen.getByText('71.5% / 3.2%')).toBeInTheDocument();
 
@@ -25,7 +24,13 @@ describe('AggregateImpact', () => {
       'Winners & losers',
       'Poverty impact',
     ]);
-    // Budgetary impact holds the budget table and the income-band table.
+    // Budgetary impact holds one budget table, in words, and the income-band table.
+    const budget = screen.getByRole('table', { name: 'Change if the measure passes, 2027' });
+    expect(within(budget).getAllByRole('row').map((r) => r.textContent)).toEqual([
+      'Per yearChange',
+      'State budget$1.81B gain',
+      'Household net income-$1.81B total; -$754 per household',
+    ]);
     expect(screen.getByRole('heading', { name: 'Impact by income band' })).toBeInTheDocument();
     expect(screen.getByRole('table', { name: /Impact by income band, 2027/ })).toHaveTextContent('$1M+');
 
@@ -39,22 +44,28 @@ describe('AggregateImpact', () => {
     expect(screen.getByText('Poverty rates')).toBeInTheDocument();
   });
 
-  it('offers FUTA’s year pills and download button', async () => {
+  it('offers year pills for measures scored in several years', async () => {
     mockDataFiles(fixtureFiles());
     let chosen = 0;
     renderWithQuery(
       <AggregateImpact measure={getMeasure('wa-i-645')} year={2028} onYearChange={(y) => (chosen = y)} />,
     );
-    expect(await screen.findByRole('button', { name: 'Download CSV' })).toBeInTheDocument();
+    await screen.findByText('Change in state income tax revenue');
     fireEvent.click(screen.getByRole('radio', { name: '2029' }));
     expect(chosen).toBe(2029);
+    // The download is in the page's title block, not repeated here.
+    expect(screen.queryByRole('button', { name: 'Download CSV' })).toBeNull();
   });
 
-  it('notes that the federal deduction uses withholding when federal revenue does not move', async () => {
+  it('leaves out the federal budget line when it does not move', async () => {
     mockDataFiles(fixtureFiles());
     renderWithQuery(<AggregateImpact measure={getMeasure('wa-i-645')} year={2029} />);
     expect(screen.getByText(/Tax year 2029\./)).toBeInTheDocument();
-    expect(await screen.findByText(/uses state income tax withholding in the model/)).toBeInTheDocument();
+    const budget = await screen.findByRole('table', { name: 'Change if the measure passes, 2029' });
+    expect(budget).toHaveTextContent('State budget$3.95B cost');
+    expect(budget).not.toHaveTextContent('Federal budget');
+    // The withholding note is on the Methods tab.
+    expect(screen.queryByText(/uses state income tax withholding in the model/)).toBeNull();
   });
 
   it('shows people and spending, not net income, for the Medicaid scenario', async () => {
@@ -70,7 +81,8 @@ describe('AggregateImpact', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Gaining a premium tax credit')).toBeInTheDocument();
     expect(screen.getByText(/shown in people and government spending rather than household net income/)).toBeInTheDocument();
-    expect(screen.getByText(/Scaled to the Department of Social Services’ 29,055 expansion enrollees \(×0\.52\)/)).toBeInTheDocument();
+    // How the counts are calibrated is on the Methods tab.
+    expect(screen.queryByText(/Scaled to the Department of Social Services/)).toBeNull();
     // Coverage and budgetary sections only: no net-income sections.
     const sections = screen.getByRole('tablist', { name: 'Statewide sections' });
     expect(within(sections).getAllByRole('tab').map((t) => t.textContent)).toEqual([
@@ -81,25 +93,25 @@ describe('AggregateImpact', () => {
     expect(screen.getByText(/The scenario in which expansion ends, compared with current law\./)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('tab', { name: 'Budgetary impact' }));
-    // The state card carries the methods tab's federal-share sensitivity.
-    expect(
-      screen.getByText(/Each 10-point drop in the federal share would shift about \$33\.2M a year to the state/),
-    ).toBeInTheDocument();
-    expect(screen.getByText('Change in state Medicaid spending')).toBeInTheDocument();
-    expect(screen.getByText('Change in federal Medicaid spending')).toBeInTheDocument();
-    expect(screen.getByText('Change in premium tax credits')).toBeInTheDocument();
-    // The budget table leaves out household net income.
-    expect(screen.getByRole('table', { name: /Change in the scenario, 2028/ })).not.toHaveTextContent(
-      'Household net income',
-    );
+    // Two cards, one per government, each amount stated once.
+    expect(screen.getByText('State savings')).toBeInTheDocument();
+    expect(screen.getByText('$33.2M a year')).toBeInTheDocument();
+    expect(screen.getByText("Lower state Medicaid spending at today's 10% state share")).toBeInTheDocument();
+    expect(screen.getByText('Federal Medicaid')).toBeInTheDocument();
+    expect(screen.getByText('-$299M')).toBeInTheDocument();
+    expect(screen.getByText('Premium tax credits +$15.6M; federal budget $86.1M gain')).toBeInTheDocument();
+    // No net-income budget table.
+    expect(screen.queryByRole('table', { name: /Change in the scenario, 2028/ })).toBeNull();
+    expect(screen.queryByText('Household net income')).toBeNull();
   });
 
   it('explains why California and Washington have no district breakdown', async () => {
     mockDataFiles(fixtureFiles());
     renderWithQuery(<AggregateImpact measure={getMeasure('ca-prop-3')} year={2031} />);
     const note = await screen.findByTestId('no-districts-note');
-    expect(note).toHaveTextContent('does not break Proposition 3 down by congressional district');
-    expect(note).toHaveTextContent('district figures would be unreliable');
+    expect(note).toHaveTextContent(
+      'No district breakdown for Proposition 3: too few sample households carry the change.',
+    );
   });
 
   it('adds no district note for Colorado or at-large states', async () => {
@@ -109,13 +121,20 @@ describe('AggregateImpact', () => {
     expect(screen.queryByTestId('no-districts-note')).toBeNull();
   });
 
-  it('shows the school meal cost range', async () => {
+  it('shows one central school meal cost, with the range left to the Methods tab', async () => {
     mockDataFiles(fixtureFiles());
     renderWithQuery(<AggregateImpact measure={getMeasure('nd-measure-2')} year={2028} />);
     expect(await screen.findByText('State cost per year')).toBeInTheDocument();
-    // The card and the budget details both show the participation-adjusted range.
-    expect(screen.getAllByText('$59.5M to $67M').length).toBeGreaterThanOrEqual(2);
-    expect(screen.getByText('$119M to $134M')).toBeInTheDocument();
+    // The fixtures have no state_cost_central, so the card falls back to the state budget line.
+    expect(screen.getByText('$63M')).toBeInTheDocument();
+    expect(screen.getByText('$126M per two-year budget')).toBeInTheDocument();
+    expect(screen.getByText('Value of meals to families per year')).toBeInTheDocument();
+    expect(screen.getByText('$59M')).toBeInTheDocument();
+    expect(screen.queryByText(/\$59\.5M to \$67M/)).toBeNull();
+    expect(screen.queryByRole('table', { name: 'Details' })).toBeNull();
+    expect(screen.getByRole('table', { name: 'Change if the measure passes, 2028' })).toHaveTextContent(
+      'State budget$63M cost',
+    );
   });
 
   it('shows poverty movement in both directions and notes tiny changes', () => {
@@ -159,26 +178,23 @@ describe('AggregateImpact', () => {
     expect(table).toHaveTextContent('95');
   });
 
-  it('flags estimates that rest on a small effective sample', () => {
-    renderWithQuery(
-      <PrecisionNote metrics={{ affected_sample_households: 447, effective_affected_sample_households: 13.3 }} />,
-    );
-    expect(screen.getByRole('note')).toHaveTextContent('447 sampled households');
-    expect(screen.getByRole('note')).toHaveTextContent('about 13 independent households');
-  });
-
-  it('adds no note for a large effective sample', () => {
-    const { container } = renderWithQuery(
-      <PrecisionNote metrics={{ affected_sample_households: 9000, effective_affected_sample_households: 202 }} />,
-    );
-    expect(container).toBeEmptyDOMElement();
-  });
-
   it('says results are not yet available when metrics.csv is missing', async () => {
     mockDataFiles({});
     renderWithQuery(<AggregateImpact measure={getMeasure('ca-prop-3')} year={2031} />);
     expect(await screen.findByText('Statewide results not yet available')).toBeInTheDocument();
   });
+
+  it('offers Retry when the results fail to load, and loads them on retry', async () => {
+    global.fetch = vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))) as unknown as typeof fetch;
+    renderWithQuery(<AggregateImpact measure={getMeasure('ca-prop-3')} year={2031} />);
+    // Two automatic retries first, then the error.
+    const alert = await screen.findByRole('alert', {}, { timeout: 5000 });
+    expect(alert).toHaveTextContent("Couldn't load results.");
+    mockDataFiles(fixtureFiles());
+    fireEvent.click(within(alert).getByRole('button', { name: 'Retry' }));
+    expect(await screen.findByText('Change in state income tax revenue')).toBeInTheDocument();
+    expect(screen.queryByRole('alert')).toBeNull();
+  }, 15_000);
 
   it('ignores results in the old single-measure format', async () => {
     mockDataFiles({ 'metrics.csv': 'year,metric,value\n2031,households,1\n' });

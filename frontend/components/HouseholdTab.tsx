@@ -3,9 +3,7 @@
 import { useRef } from 'react';
 import { useIsFetching } from '@tanstack/react-query';
 import { getContent } from '@/content/measures';
-import { householdBasisNote } from '@/lib/figureBasis';
 import ExampleHouseholds from './ExampleHouseholds';
-import { BasisNote } from './FigureBasis';
 import HouseholdForm from './HouseholdForm';
 import ImpactAnalysis from './ImpactAnalysis';
 import { Callout, YearPills } from './ui';
@@ -90,12 +88,7 @@ export default function HouseholdTab({ measure, year, onYearChange, state, setSt
 
   return (
     <div className="space-y-6">
-      <div className="space-y-3">
-        <p className="text-gray-700">{content.householdNote}</p>
-        <BasisNote basis="model" link={false}>
-          {householdBasisNote(measure)}
-        </BasisNote>
-      </div>
+      <p className="text-gray-700">{content.householdNote}</p>
       {onYearChange && <YearPills years={measure.years} value={year} onChange={onYearChange} />}
 
       <ExampleHouseholds
@@ -135,11 +128,6 @@ export default function HouseholdTab({ measure, year, onYearChange, state, setSt
         </div>
       )}
 
-      <p className="text-xs text-gray-500">
-        The calculator models a household in {measure.state_name} with employment income only, using
-        the same PolicyEngine model as the statewide results. Single adults with dependents file as
-        head of household; married couples file jointly.
-      </p>
     </div>
   );
 }

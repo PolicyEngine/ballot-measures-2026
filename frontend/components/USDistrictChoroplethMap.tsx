@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { poleOfInaccessibility, ringArea, type Point } from '@/lib/polylabel';
-import { DISTRICTS_GEOJSON_URL } from '@/lib/config';
+import { districtsGeojsonUrl } from '@/lib/config';
 import { formatShare, formatUSDWithSign } from '@/lib/format';
 
 export interface DistrictMapDatum {
@@ -104,11 +105,27 @@ function rampColor(ramp: string[], t: number): string {
   return `color-mix(in srgb, ${ramp[segIndex]} ${start}%, ${ramp[segIndex + 1]} ${end}%)`;
 }
 
+/**
+ * Lowest shade for any nonzero change, so small changes (Colorado's
+ * districts 3 and 5 under Amendment 87) never look like $0 or missing data.
+ */
+export const MIN_SHADE = 0.3;
+
+/** Position (0..1) along a ramp: a square-root scale with a visible floor for nonzero values. */
+export function shadePosition(value: number, maxAbs: number): number {
+  if (maxAbs <= 0 || Math.round(value) === 0) return 0;
+  return Math.max(MIN_SHADE, Math.sqrt(Math.min(1, Math.abs(value) / maxAbs)));
+}
+
 /** Fill for a dollar change, scaled by the largest absolute change. */
 export function districtFill(value: number, maxAbs: number): string {
   if (maxAbs <= 0) return TEAL_RAMP[0];
-  return value >= 0 ? rampColor(TEAL_RAMP, value / maxAbs) : rampColor(GRAY_RAMP, -value / maxAbs);
+  const t = shadePosition(value, maxAbs);
+  return value >= 0 ? rampColor(TEAL_RAMP, t) : rampColor(GRAY_RAMP, t);
 }
+
+/** Pattern for districts without a result: gray hatching. */
+const NO_DATA_PATTERN = 'district-no-data';
 
 /** CSS gradient for the legend, matching districtFill. */
 function legendGradient(hasGains: boolean, hasLosses: boolean): string {
@@ -237,31 +254,27 @@ export default function USDistrictChoroplethMap({
   selectedDistrict,
   onSelect,
 }: Props) {
-  const [geometries, setGeometries] = useState<DistrictGeometry[] | null>(null);
-  const [geoError, setGeoError] = useState<string | null>(null);
   const [tooltip, setTooltip] = useState<{ x: number; y: number; districtNumber: string } | null>(
     null,
   );
-
-  useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const res = await fetch(DISTRICTS_GEOJSON_URL);
-        if (!res.ok) throw new Error(`Failed to load district boundaries (${res.status})`);
-        const json = (await res.json()) as GeoCollection;
-        const geom = buildGeometries(json.features, stateFips, stateCode);
-        if (geom.length === 0) throw new Error(`No ${stateName} districts in the boundary file`);
-        if (!cancelled) setGeometries(geom);
-      } catch (e) {
-        if (!cancelled) setGeoError(e instanceof Error ? e.message : String(e));
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [stateFips, stateCode, stateName]);
+  // One state's boundaries, cached across tab switches and retried on failure.
+  const boundaries = useQuery<DistrictGeometry[]>({
+    queryKey: ['districtBoundaries', stateCode],
+    queryFn: async () => {
+      const res = await fetch(districtsGeojsonUrl(stateCode));
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = (await res.json()) as GeoCollection;
+      const geom = buildGeometries(json.features, stateFips, stateCode);
+      if (geom.length === 0) throw new Error(`no ${stateName} districts in the boundary file`);
+      return geom;
+    },
+    staleTime: Infinity,
+    gcTime: 30 * 60 * 1000,
+    retry: 2,
+    retryDelay: (attempt) => Math.min(300 * 2 ** attempt, 2000),
+  });
+  const geometries = boundaries.data ?? null;
+  const geoError = boundaries.error ? (boundaries.error as Error).message : null;
 
   const dataByDistrict = useMemo(() => {
     const map = new Map<string, DistrictMapDatum>();
@@ -281,22 +294,46 @@ export default function USDistrictChoroplethMap({
   return (
     <div className="relative">
       {geoError && (
-        <div className="mb-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
-          Could not load the {stateName} district boundaries ({geoError}). The table below lists
-          every district.
+        <div className="mb-3 flex flex-wrap items-center gap-3 rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700" role="alert">
+          <span>
+            Couldn&apos;t load the {stateName} district boundaries ({geoError}). The table below lists every district.
+          </span>
+          <button
+            type="button"
+            onClick={() => void boundaries.refetch()}
+            className="rounded-lg border border-primary-500 bg-white px-3 py-1 font-medium text-primary-700 hover:bg-primary-50"
+          >
+            Retry
+          </button>
         </div>
+      )}
+      {boundaries.isLoading && (
+        <div
+          data-testid="district-map-skeleton"
+          aria-label={`Loading the ${stateName} district map`}
+          role="status"
+          className="w-full animate-pulse rounded-lg bg-gray-100"
+          style={{ aspectRatio: `${VB_W} / ${VB_H}`, maxHeight: 560 }}
+        />
       )}
       <svg
         viewBox={`0 0 ${VB_W} ${VB_H}`}
         style={{ width: '100%', height: 'auto', maxHeight: 560 }}
         role="img"
         aria-label={`Map of ${stateName}'s ${count} congressional districts shaded by average change in household net income`}
+        className={boundaries.isLoading ? 'hidden' : undefined}
       >
+        <defs>
+          <pattern id={NO_DATA_PATTERN} width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+            <rect width="8" height="8" style={{ fill: 'var(--background)' }} />
+            <line x1="0" y1="0" x2="0" y2="8" strokeWidth="3" style={{ stroke: 'var(--gray-300)' }} />
+          </pattern>
+        </defs>
         {geometries &&
           geometries.map((g) => {
             const districtData = dataByDistrict.get(g.districtNumber);
             const value = districtData?.average_household_income_change ?? 0;
-            const fill = districtData ? districtFill(value, maxAbs) : 'var(--border)';
+            const fill = districtData ? districtFill(value, maxAbs) : `url(#${NO_DATA_PATTERN})`;
             const isSelected = selectedDistrict === g.districtNumber;
             const setTip = (evt: React.MouseEvent) =>
               setTooltip({ x: evt.clientX, y: evt.clientY, districtNumber: g.districtNumber });
@@ -312,11 +349,13 @@ export default function USDistrictChoroplethMap({
               >
                 <path
                   d={g.path}
-                  strokeWidth={isSelected ? 2.5 : 0.75}
+                  data-no-data={districtData ? undefined : 'true'}
+                  strokeWidth={isSelected ? 2.5 : districtData ? 0.75 : 1.25}
                   strokeLinejoin="round"
+                  strokeDasharray={districtData ? undefined : '4 3'}
                   style={{
                     fill,
-                    stroke: isSelected ? 'var(--color-teal-900)' : 'var(--background)',
+                    stroke: isSelected ? 'var(--color-teal-900)' : districtData ? 'var(--background)' : 'var(--gray-500)',
                     transition: 'opacity 0.15s',
                     opacity: tooltip && tooltip.districtNumber !== g.districtNumber ? 0.7 : 1,
                   }}
@@ -380,6 +419,19 @@ export default function USDistrictChoroplethMap({
             <span>{formatUSDWithSign(hasGains ? maxAbs : 0)}</span>
           </div>
           <span>Average change in household net income (119th Congress districts)</span>
+          <span className="flex items-center gap-1.5" data-testid="no-data-key">
+            <svg width="16" height="12" aria-hidden="true">
+              <rect
+                x="0.5"
+                y="0.5"
+                width="15"
+                height="11"
+                strokeDasharray="3 2"
+                style={{ fill: `url(#${NO_DATA_PATTERN})`, stroke: 'var(--gray-500)' }}
+              />
+            </svg>
+            No data
+          </span>
           {geometries && geometries.some((g) => g.labelArea < MIN_LABEL_AREA) && (
             <span>Small districts are unlabeled; hover over the map or see the table.</span>
           )}

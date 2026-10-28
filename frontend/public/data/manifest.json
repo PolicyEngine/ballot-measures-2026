@@ -1,5 +1,5 @@
 {
-  "generated_at_utc": "2026-10-27T21:36:12.778481+00:00",
+  "generated_at_utc": "2026-10-28T13:05:50.863148+00:00",
   "pin": "policyengine-us==2.72.4",
   "dataset_repo": "policyengine/populace-us",
   "dataset_revision": "populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z",
@@ -112,7 +112,7 @@
         },
         "households_after_cleaning": 162907.0
       },
-      "build_peak_rss_gb": 0.871368408203125
+      "build_peak_rss_gb": 0.8756675720214844
     },
     "CO": {
       "path": "/results/cache/co_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
@@ -143,7 +143,7 @@
         },
         "households_after_cleaning": 30033.0
       },
-      "build_peak_rss_gb": 0.871368408203125
+      "build_peak_rss_gb": 0.8756675720214844
     },
     "ND": {
       "path": "/results/cache/nd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
@@ -167,7 +167,7 @@
         },
         "households_after_cleaning": 4718.0
       },
-      "build_peak_rss_gb": 0.871368408203125
+      "build_peak_rss_gb": 0.8756675720214844
     },
     "SD": {
       "path": "/results/cache/sd_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
@@ -191,7 +191,7 @@
         },
         "households_after_cleaning": 5270.0
       },
-      "build_peak_rss_gb": 0.871368408203125
+      "build_peak_rss_gb": 0.8756675720214844
     },
     "WA": {
       "path": "/results/cache/wa_subset_clean_populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z.h5",
@@ -224,7 +224,7 @@
         },
         "households_after_cleaning": 37934.0
       },
-      "build_peak_rss_gb": 0.871368408203125
+      "build_peak_rss_gb": 0.8756675720214844
     }
   },
   "guards": {
