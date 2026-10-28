@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import geoTopo from '@/lib/data/us-states-10m.json';
 import { fipsToPostal } from '@/lib/states';
+import { officialLine } from './MeasureCard';
 
 export interface MapMeasure {
   /** "Amendment 87" */
@@ -25,6 +26,8 @@ export interface MapMeasure {
   headline: string | null;
   /** The official estimate, formatted; null when none is published. */
   official: string | null;
+  /** What the official figure measures, e.g. "Official estimate" or "Enrolled through expansion". */
+  officialLabel: string;
 }
 
 export interface MapState {
@@ -157,7 +160,7 @@ export default function USStateMap({ states, onSelect, selected = null }: Props)
                 </p>
                 <p className="text-gray-600 tabular-nums">
                   {m.label}: {m.headline ?? 'loading'}
-                  {m.official ? ` · Official: ${m.official}` : ''}
+                  {m.official ? ` · ${officialLine(m.official, m.officialLabel)}` : ''}
                 </p>
               </li>
             ))}

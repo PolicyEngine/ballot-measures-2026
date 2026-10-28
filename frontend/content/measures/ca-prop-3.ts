@@ -36,7 +36,7 @@ const content: MeasureContent = {
     'Proposition 3 would make the three rates permanent. It changes no taxes before 2031, so PolicyEngine scores tax year 2031.',
   ],
   whatItDoes: [
-    'Keeps the revenue in the Education Protection Account, which allocates it 89% to K-12 schools and 11% to community colleges.',
+    'Keeps the revenue in the Education Protection Account, which allocates it 89% to K-12 schools and 11% to community colleges; the Legislative Analyst’s Office expects roughly 40% to reach schools and community colleges after the school funding formula, with the rest going to other programs and reserves.',
     'Leaves the other rates, and the 1% Mental Health Services Act tax on taxable income above $1 million, unchanged.',
   ],
   comparisons: [

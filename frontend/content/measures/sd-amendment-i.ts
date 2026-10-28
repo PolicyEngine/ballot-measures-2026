@@ -57,7 +57,7 @@ const content: MeasureContent = {
     'In the scenario, adults covered through expansion lose Medicaid. Those with income at or above the poverty line may qualify for premium tax credits to buy marketplace coverage; those below it generally qualify for neither.',
   ],
   effectiveDate:
-    'If approved, July 1, 2027. It has an effect only if the federal share falls below 90%; the scenario assumes expansion ends on July 1, 2027, and the model scores 2028, the first full year.',
+    'If approved, July 1, 2027, with an effect only if the federal share falls below 90%. The scenario assumes expansion ends on July 1, 2027, and the model scores 2028, the first full year.',
   context: [],
   coverageCutoffs: {
     medicaidLimit: 'the expansion limit, 138% of the poverty line',
@@ -68,7 +68,7 @@ const content: MeasureContent = {
   scenarioSummary: [
     'Under current federal law, the federal government pays 90% of the cost of the expansion group, so Amendment I would have no immediate effect.',
     'These figures show a scenario in which the federal share falls below 90% and expansion ends on July 1, 2027.',
-    "The Attorney General's explanation and the sponsors' statement read the amendment differently; Methods sets out both readings.",
+    "The Attorney General's explanation and the sponsors' statement read the amendment differently; these figures follow the Attorney General's reading, and Methods sets out both.",
   ],
   scenario: {
     title: 'A conditional scenario, not a forecast',

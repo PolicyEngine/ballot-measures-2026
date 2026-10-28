@@ -12,6 +12,7 @@ const states: MapState[] = measuresByState().map((g) => ({
     label: 'Headline',
     headline: '$1M',
     official: '$2M',
+    officialLabel: 'Official estimate',
   })),
 }));
 

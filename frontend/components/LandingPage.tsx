@@ -46,6 +46,7 @@ export default function LandingPage() {
         label: headline.label,
         headline: headline.model,
         official: headline.official,
+        officialLabel: headline.officialLabel,
       };
     }),
   }));

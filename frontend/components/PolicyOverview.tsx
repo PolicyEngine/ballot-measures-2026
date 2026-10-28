@@ -201,7 +201,7 @@ function HeadlineStats({ measure }: { measure: Measure }) {
           size="lg"
           label={headline.officialLabel}
           value={headline.official ?? <span className="text-base font-medium text-gray-500">None published</span>}
-          detail={headline.officialShortSource ?? undefined}
+          detail={headline.officialSource ?? headline.officialShortSource ?? undefined}
         />
         <StatCard
           size="lg"
@@ -314,7 +314,7 @@ export default function PolicyOverview({ measure }: Props) {
         )}
         <div className="mt-4 bg-gray-50 border border-gray-200 rounded-lg p-4">
           <h3 className="font-semibold text-gray-800 mb-2">
-            {conditional ? 'What changes under the scenario' : 'What changes if it passes'}
+            What changes if it passes
           </h3>
           <ul className="list-disc space-y-1 pl-5 text-sm text-gray-600">
             {content.whatItDoes.map((item) => (

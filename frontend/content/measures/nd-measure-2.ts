@@ -39,7 +39,7 @@ const content: MeasureContent = {
   ],
   comparisons: [
     {
-      caption: 'School meals at North Dakota public schools from the 2027-28 school year',
+      caption: "School meals at North Dakota public schools from the 2027-28 school year, after the state's free meals up to 225% of poverty end on June 30, 2027",
       rows: [
         { label: 'Household income up to 130% of poverty', currentLaw: 'Free', ifPasses: 'Free' },
         { label: '130% to 185% of poverty', currentLaw: 'Reduced price', ifPasses: 'Free' },
@@ -86,7 +86,7 @@ const content: MeasureContent = {
   ],
   caveats: [
     "The model's population has more school-age children than public school enrollment, so PolicyEngine scales its counts to enrollment.",
-    'How many students eat school meals determines the cost. The model adjusts for participation using federal data on average daily breakfast and lunch counts, and reports a low and a high case. The unadjusted figure, which assumes every student eats both meals every day, appears under measure-specific method, below.',
+    'How many students eat school meals determines the cost. The model adjusts for participation using federal data on average daily breakfast and lunch counts, and reports a low and a high case. The unadjusted figure, which assumes every student eats both meals every day, appears under measure-specific method, above.',
   ],
   officialEstimateProse: [
     "The Legislative Council's fiscal impact report, based on Department of Public Instruction figures, puts the measure's cost at $124 million to $134 million for free meals and $300,000 for administration in the 2027-29 biennium: $124.3 million to $134.3 million in total, as the ballot states.",
