@@ -42,6 +42,8 @@ METRICS: tuple[str, ...] = (
     "state_cost_adjusted_high",
     "state_cost_biennium_low",
     "state_cost_biennium_high",
+    "state_cost_central",
+    "state_cost_biennium_central",
     "participation_lunch",
     "participation_breakfast",
     "enrollment_scale",
@@ -147,6 +149,10 @@ def adjust(measure, base: dict, reform: dict, extra_resources=0.0) -> dict:
         "state_cost_adjusted_high": adjusted["high"] + admin_per_year,
         "state_cost_biennium_low": 2 * (adjusted["low"] + admin_per_year),
         "state_cost_biennium_high": 2 * (adjusted["high"] + admin_per_year),
+        # The central case (midpoint participation) behind the household
+        # views and the budget: equals -state_budget_impact.
+        "state_cost_central": adjusted["central"] + admin_per_year,
+        "state_cost_biennium_central": 2 * (adjusted["central"] + admin_per_year),
         "participation_lunch": rates["low"][0],
         "participation_breakfast": rates["low"][1],
         "enrollment_scale": scale,

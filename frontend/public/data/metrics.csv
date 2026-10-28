@@ -330,6 +330,8 @@ nd-measure-2,2028,state_cost_adjusted_low,52061724.42377
 nd-measure-2,2028,state_cost_adjusted_high,62023615.571606
 nd-measure-2,2028,state_cost_biennium_low,104123448.84754
 nd-measure-2,2028,state_cost_biennium_high,124047231.143211
+nd-measure-2,2028,state_cost_central,57042669.997688
+nd-measure-2,2028,state_cost_biennium_central,114085339.995376
 nd-measure-2,2028,participation_lunch,0.659224
 nd-measure-2,2028,participation_breakfast,0.239191
 nd-measure-2,2028,enrollment_scale,0.70358
