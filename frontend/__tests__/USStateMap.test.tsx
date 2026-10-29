@@ -9,10 +9,7 @@ const states: MapState[] = measuresByState().map((g) => ({
   measures: g.measures.map((m) => ({
     designation: m.designation,
     shortTitle: m.short_title,
-    label: 'Headline',
-    headline: '$1M',
-    official: '$2M',
-    officialLabel: 'Official estimate',
+    overview: `What ${m.designation} would do.`,
   })),
 }));
 
@@ -37,7 +34,7 @@ describe('USStateMap', () => {
     expect(onSelect.mock.calls.map((c) => c[0])).toEqual(['WA', 'ND', 'SD']);
   });
 
-  it('shows the measures, headline and official figures on hover or focus, and names the state in a live caption', () => {
+  it('shows each measure with its policy overview, and no scores, on hover or focus, and names the state in a live caption', () => {
     const { container } = render(<USStateMap states={states} />);
     const caption = container.querySelector('figcaption')!;
     expect(caption).toHaveAttribute('aria-live', 'polite');
@@ -46,7 +43,8 @@ describe('USStateMap', () => {
     const tip = screen.getByTestId('map-tooltip');
     expect(tip).toHaveTextContent('Amendment 87');
     expect(tip).toHaveTextContent('Proposition NN');
-    expect(tip).toHaveTextContent('Headline: $1M · Official: $2M');
+    expect(tip).toHaveTextContent(/would do\./);
+    expect(tip).not.toHaveTextContent(/Official/);
     expect(caption).toHaveTextContent('Colorado: Amendment 87 and Proposition NN');
     fireEvent.mouseLeave(screen.getByRole('button', { name: /^Colorado/ }));
     expect(screen.queryByTestId('map-tooltip')).toBeNull();

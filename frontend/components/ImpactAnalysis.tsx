@@ -35,6 +35,7 @@ import {
   PillToggle,
   SweepChartDescription,
   TICK_STYLE,
+  niceDomain,
   niceStep,
   type DescribedSeries,
 } from './chartUtils';
@@ -210,6 +211,11 @@ export function HouseholdResults({
   const xMax = rows.length ? rows[rows.length - 1].income : result.income ?? 0;
   const xStep = niceStep(xMax, 4);
   const xTicks = Array.from({ length: Math.floor(xMax / xStep) + 1 }, (_, i) => i * xStep);
+  const yAxis = niceDomain(
+    rows.flatMap((r) =>
+      view === 'change' ? [r.change] : view === 'levels' ? [r.baseline, r.reform] : [r.kindBaseline, r.kindReform],
+    ),
+  );
   const entered = result.income ?? (result.income_index !== null ? result.income_range[result.income_index] : null);
   const filing = filingStatusLabel(result.filing_status);
   const stateTaxChange = changeAt(result, 'state_tax');
@@ -389,6 +395,8 @@ export function HouseholdResults({
               stroke="var(--chart-axis)"
             />
             <YAxis
+              domain={yAxis.domain}
+              ticks={yAxis.ticks}
               tickFormatter={(v: number) => (view === 'change' ? formatUSDWithSign(v) : formatIncomeTick(v))}
               tick={TICK_STYLE}
               stroke="var(--chart-axis)"

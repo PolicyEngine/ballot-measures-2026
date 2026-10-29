@@ -47,7 +47,7 @@ describe('PolicyOverview', () => {
   it('opens South Dakota with a short scenario note and the comparison', () => {
     renderWithQuery(<PolicyOverview measure={getMeasure('sd-amendment-i')} />);
     expect(screen.getByRole('heading', { name: 'A conditional scenario, not a forecast' })).toBeInTheDocument();
-    expect(screen.getByText(/follow the Attorney General's reading, and Methods sets out both\./)).toBeInTheDocument();
+    expect(screen.getByText(/follow the Attorney General's reading, and Methodology sets out both\./)).toBeInTheDocument();
     // The two readings themselves are on the Methods tab.
     expect(screen.queryByText(/would NOT automatically end Medicaid expansion/)).toBeNull();
     expect(screen.getByRole('heading', { name: 'What changes if it passes' })).toBeInTheDocument();

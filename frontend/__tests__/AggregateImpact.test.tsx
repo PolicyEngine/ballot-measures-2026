@@ -97,8 +97,11 @@ describe('AggregateImpact', () => {
     expect(screen.getByText('State savings')).toBeInTheDocument();
     expect(screen.getByText('$33.2M a year')).toBeInTheDocument();
     expect(screen.getByText("Lower state Medicaid spending at today's 10% state share")).toBeInTheDocument();
-    expect(screen.getByText('Federal Medicaid')).toBeInTheDocument();
-    expect(screen.getByText('-$299M')).toBeInTheDocument();
+    // The card and the spending chart's bar both name federal Medicaid.
+    expect(screen.getAllByText('Federal Medicaid').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('figure', { name: 'Change in government spending, 2028' })).toBeInTheDocument();
+    // On the federal card and as the chart's bar label.
+    expect(screen.getAllByText('-$299M').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Premium tax credits +$15.6M; federal budget $86.1M gain')).toBeInTheDocument();
     // No net-income budget table.
     expect(screen.queryByRole('table', { name: /Change in the scenario, 2028/ })).toBeNull();

@@ -14,20 +14,13 @@ import { useState } from 'react';
 import { ComposableMap, Geographies, Geography } from 'react-simple-maps';
 import geoTopo from '@/lib/data/us-states-10m.json';
 import { fipsToPostal } from '@/lib/states';
-import { officialLine } from './MeasureCard';
 
 export interface MapMeasure {
   /** "Amendment 87" */
   designation: string;
   shortTitle: string;
-  /** "Change in state revenue, 2027" */
-  label: string;
-  /** PolicyEngine's headline figure, formatted; null until results load. */
-  headline: string | null;
-  /** The official estimate, formatted; null when none is published. */
-  official: string | null;
-  /** What the official figure measures, e.g. "Official estimate" or "Enrolled through expansion". */
-  officialLabel: string;
+  /** One-sentence policy overview, from the measure's content file. */
+  overview: string;
 }
 
 export interface MapState {
@@ -158,10 +151,7 @@ export default function USStateMap({ states, onSelect, selected = null }: Props)
                 <p className="font-medium text-gray-800">
                   {m.designation}: {m.shortTitle}
                 </p>
-                <p className="text-gray-600 tabular-nums">
-                  {m.label}: {m.headline ?? 'loading'}
-                  {m.official ? ` · ${officialLine(m.official, m.officialLabel)}` : ''}
-                </p>
+                <p className="text-gray-600">{m.overview}</p>
               </li>
             ))}
           </ul>

@@ -68,7 +68,7 @@ const content: MeasureContent = {
   scenarioSummary: [
     'Under current federal law, the federal government pays 90% of the cost of the expansion group, so Amendment I would have no immediate effect.',
     'These figures show a scenario in which the federal share falls below 90% and expansion ends on July 1, 2027.',
-    "The Attorney General's explanation and the sponsors' statement read the amendment differently; these figures follow the Attorney General's reading, and Methods sets out both.",
+    "The Attorney General's explanation and the sponsors' statement read the amendment differently; these figures follow the Attorney General's reading, and Methodology sets out both.",
   ],
   scenario: {
     title: 'A conditional scenario, not a forecast',

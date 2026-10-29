@@ -17,15 +17,15 @@ describe('MeasureDashboard tabs', () => {
     const tablist = screen.getByRole('tablist', { name: 'Measure sections' });
     expect(within(tablist).getAllByRole('tab').map((t) => t.textContent)).toEqual([
       'Overview',
-      'Household',
       'Statewide',
-      'Methods',
+      'Household',
+      'Methodology',
     ]);
   });
 
   it.each(['co-amendment-87', 'co-prop-nn'])('%s has a Districts tab', (slug) => {
     renderWithQuery(<MeasureDashboard slug={slug} />);
-    expect(tabNames()).toEqual(['Overview', 'Household', 'Statewide', 'Districts', 'Methods']);
+    expect(tabNames()).toEqual(['Overview', 'Statewide', 'Districts', 'Household', 'Methodology']);
   });
 
   it('shows the title block: breadcrumb, title, facts line and the overview first', async () => {
@@ -59,16 +59,16 @@ describe('MeasureDashboard tabs', () => {
     const tab = (name: string) => screen.getByRole('tab', { name });
     // Only the selected tab is in the tab order.
     expect(tab('Overview')).toHaveAttribute('tabindex', '0');
-    expect(tab('Household')).toHaveAttribute('tabindex', '-1');
+    expect(tab('Statewide')).toHaveAttribute('tabindex', '-1');
     fireEvent.keyDown(tablist, { key: 'ArrowRight' });
-    expect(tab('Household')).toHaveAttribute('aria-selected', 'true');
-    expect(tab('Household')).toHaveFocus();
+    expect(tab('Statewide')).toHaveAttribute('aria-selected', 'true');
+    expect(tab('Statewide')).toHaveFocus();
     fireEvent.keyDown(tablist, { key: 'End' });
-    expect(tab('Methods')).toHaveAttribute('aria-selected', 'true');
+    expect(tab('Methodology')).toHaveAttribute('aria-selected', 'true');
     fireEvent.keyDown(tablist, { key: 'ArrowRight' });
     expect(tab('Overview')).toHaveAttribute('aria-selected', 'true');
     fireEvent.keyDown(tablist, { key: 'ArrowLeft' });
-    expect(tab('Methods')).toHaveAttribute('aria-selected', 'true');
+    expect(tab('Methodology')).toHaveAttribute('aria-selected', 'true');
     fireEvent.keyDown(tablist, { key: 'Home' });
     expect(tab('Overview')).toHaveAttribute('aria-selected', 'true');
     expect(tab('Overview')).toHaveFocus();
@@ -126,7 +126,7 @@ describe('year selector and hash', () => {
 
   it('shows the year pills on every tab that depends on the year', () => {
     renderWithQuery(<MeasureDashboard slug="co-prop-nn" />);
-    for (const name of ['Household', 'Statewide', 'Districts', 'Methods']) {
+    for (const name of ['Statewide', 'Districts', 'Household', 'Methodology']) {
       fireEvent.click(screen.getByRole('tab', { name }));
       expect(screen.getByRole('radiogroup', { name: 'Tax year' })).toBeInTheDocument();
     }
@@ -170,7 +170,7 @@ describe('year selector and hash', () => {
       window.dispatchEvent(new HashChangeEvent('hashchange'));
     });
     await waitFor(() =>
-      expect(screen.getByRole('tab', { name: 'Methods' })).toHaveAttribute(
+      expect(screen.getByRole('tab', { name: 'Methodology' })).toHaveAttribute(
         'aria-selected',
         'true',
       ),

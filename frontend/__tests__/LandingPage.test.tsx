@@ -17,7 +17,9 @@ describe('LandingPage', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(
       '2026 ballot measures: taxes and benefits',
     );
-    expect(screen.getByText(/Six measures in five states/)).toBeInTheDocument();
+    // No subtitle line or per-state notes under the title (design review, 10/29).
+    expect(screen.queryByText(/measures in five states/)).toBeNull();
+    expect(screen.queryByText(/decide Amendment 87 and Proposition NN separately/)).toBeNull();
     const map = screen.getByRole('region', { name: 'Map of states with measures' });
     // Five highlighted states on the map, each a button.
     expect(within(map).getAllByRole('button').map((b) => b.getAttribute('data-state')).sort()).toEqual([
@@ -34,12 +36,6 @@ describe('LandingPage', () => {
       ).toHaveAttribute('href', `/${m.slug}`);
     }
     expect(MEASURES).toHaveLength(6);
-    // Colorado's two measures, in one line.
-    expect(
-      screen.getByText(
-        'Colorado voters decide Amendment 87 and Proposition NN separately; each is modeled against current law.',
-      ),
-    ).toBeInTheDocument();
     // No about text or basis labels on the landing page.
     expect(screen.queryByRole('heading', { name: /About/ })).toBeNull();
     expect(screen.queryByText(/Model estimate|Calibrated/)).toBeNull();

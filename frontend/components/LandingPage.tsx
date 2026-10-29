@@ -4,21 +4,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import MeasureCard from './MeasureCard';
 import USStateMap, { type MapState } from './USStateMap';
-import { formatLongDate } from '@/lib/format';
 import { buildHashString, parseHashParams } from '@/lib/embedding';
 import {
-  ELECTION_DATE,
   MEASURES,
   isMeasureSlug,
   measuresByState,
   useAllMetrics,
 } from '@/lib/measures';
-import { headlineFor } from '@/lib/metrics';
+import { getContent } from '@/content/measures';
 import { metricsFor } from '@/lib/results';
 
-const NUMBER_WORDS = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
-const numberWord = (n: number) => NUMBER_WORDS[n] ?? String(n);
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 export default function LandingPage() {
   const router = useRouter();
@@ -39,14 +34,10 @@ export default function LandingPage() {
     code: g.state,
     name: g.stateName,
     measures: g.measures.map((m) => {
-      const headline = headlineFor(m, metricsFor(metricsFile.data, m.slug, m.headline_year));
       return {
         designation: m.designation,
         shortTitle: m.short_title,
-        label: headline.label,
-        headline: headline.model,
-        official: headline.official,
-        officialLabel: headline.officialLabel,
+        overview: getContent(m.slug).description,
       };
     }),
   }));
@@ -64,19 +55,11 @@ export default function LandingPage() {
       ?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
   };
 
-  // One line for a state with several measures, e.g. Colorado's two.
-  const several = groups.filter((g) => g.measures.length > 1);
-
   return (
     <main className="min-h-screen bg-gray-50">
       <div className="border-b border-gray-200 bg-white">
         <div className="max-w-7xl mx-auto px-4 py-6">
           <h1 className="text-3xl font-bold text-gray-900">2026 ballot measures: taxes and benefits</h1>
-          <p className="mt-1 text-sm text-gray-600">
-            {capitalize(numberWord(MEASURES.length))} measures in {numberWord(groups.length)} states ·{' '}
-            {formatLongDate(ELECTION_DATE)} · Compared with current law (South Dakota’s as a
-            conditional scenario)
-          </p>
         </div>
       </div>
 
@@ -89,12 +72,6 @@ export default function LandingPage() {
           <h2 id="measures-heading" className="sr-only">
             Measures
           </h2>
-          {several.map((g) => (
-            <p key={g.state} className="text-sm text-gray-600">
-              {g.stateName} voters decide {g.measures.map((m) => m.designation).join(' and ')} separately; each is
-              modeled against current law.
-            </p>
-          ))}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {MEASURES.map((m) => {
               const first = MEASURES.find((x) => x.state === m.state) === m;

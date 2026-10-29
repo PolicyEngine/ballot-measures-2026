@@ -31,7 +31,7 @@ export const TAB_LABELS: Record<TabId, string> = {
   household: 'Household',
   statewide: 'Statewide',
   districts: 'Districts',
-  validation: 'Methods',
+  validation: 'Methodology',
 };
 
 /** The title block's facts line: "Graduated income tax · November 3, 2026 · Tax year 2027". */

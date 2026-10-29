@@ -101,7 +101,7 @@ describe('how these figures are produced', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Statewide' }));
     fireEvent.click(await screen.findByRole('link', { name: /How these figures are produced/ }));
     await waitFor(() =>
-      expect(screen.getByRole('tab', { name: 'Methods' })).toHaveAttribute('aria-selected', 'true'),
+      expect(screen.getByRole('tab', { name: 'Methodology' })).toHaveAttribute('aria-selected', 'true'),
     );
   });
 });

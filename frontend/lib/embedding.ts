@@ -7,7 +7,7 @@
  * 3. postMessage communication to sync state with the parent frame
  */
 
-export const TAB_IDS = ['overview', 'household', 'statewide', 'districts', 'validation'] as const;
+export const TAB_IDS = ['overview', 'statewide', 'districts', 'household', 'validation'] as const;
 export type TabId = (typeof TAB_IDS)[number];
 
 /**
