@@ -111,4 +111,15 @@ describe('derived results', () => {
     expect(sd.find((r) => r.key === 'medicaid_enrolled')?.unit).toBe('count');
     expect(sd.map((r) => r.key)).not.toContain('state_tax');
   });
+
+  it('shows only the provisions each measure changes, never federal income tax', () => {
+    for (const slug of ['co-amendment-87', 'co-prop-nn', 'ca-prop-3', 'wa-i-645', 'nd-measure-2', 'sd-amendment-i']) {
+      const keys = atIncomeRows(fixtureResponse(slug, 0), getMeasure(slug)).map((r) => r.key);
+      expect(keys[0]).toBe('net_income');
+      expect(keys).not.toContain('federal_tax');
+    }
+    // Prop NN's refund is a refundable credit; a state tax row would repeat it.
+    const nn = atIncomeRows(fixtureResponse('co-prop-nn', 0), getMeasure('co-prop-nn')).map((r) => r.key);
+    expect(nn).not.toContain('state_tax');
+  });
 });
