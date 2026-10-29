@@ -292,8 +292,8 @@ export function atIncomeRows(result: HouseholdResponse, measure: Measure): AtInc
       rows.push(row('state_tax', `${measure.state_name} income tax`, false));
       break;
     case 'tabor_refund':
+      // The refund is a refundable credit, so a state tax row would repeat it.
       rows.push(row('refund', 'Sales tax refund', true));
-      rows.push(row('state_tax', 'Colorado income tax after credits', false));
       break;
     case 'school_meals':
       rows.push(row('meal_value', 'Value of school meals', true));
@@ -307,7 +307,8 @@ export function atIncomeRows(result: HouseholdResponse, measure: Measure): AtInc
       rows.push(row('medicaid_enrolled', 'People enrolled in Medicaid', true, 'count'));
       break;
   }
-  rows.push(row('federal_tax', 'Federal income tax', false));
+  // Only the provisions the measure changes: no federal income tax row, since
+  // no measure changes it (federal effects are not modeled).
   return rows.filter(
     (r) => r.key === 'net_income' || Math.round(r.baseline) !== 0 || Math.round(r.reform) !== 0,
   );
