@@ -26,3 +26,9 @@ export function lowerFirst(text: string): string {
   if (letters.length > 1 && letters === letters.toUpperCase()) return text;
   return text.charAt(0).toLowerCase() + text.slice(1);
 }
+
+/** "Tax year 2027" / "Tax years 2028 and 2029" */
+export const yearsLabel = (years: number[]): string =>
+  years.length === 1
+    ? `Tax year ${years[0]}`
+    : `Tax years ${years.slice(0, -1).join(', ')} and ${years[years.length - 1]}`;

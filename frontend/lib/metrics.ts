@@ -99,13 +99,13 @@ export const MEDICAID_METRICS = {
   medicaidFederalCostChange: 'medicaid_federal_cost_change',
   ptcChange: 'ptc_change',
   baselineExpansionEnrollees: 'baseline_expansion_enrollees',
-  /** Department of Social Services expansion enrollment the counts are calibrated to. */
+  /** Department of Social Services expansion enrollment the counts are adjusted to. */
   adminExpansionEnrollees: 'admin_expansion_enrollees',
-  /** admin ÷ model expansion enrollment; multiplies every calibrated count and cost. */
+  /** admin ÷ model expansion enrollment; multiplies every adjusted count and cost. */
   enrollmentCalibrationFactor: 'enrollment_calibration_factor',
 } as const;
 
-/** The uncalibrated twin of a calibrated metric (SD publishes both). */
+/** The unadjusted twin of an adjusted metric (SD publishes both). */
 export const modelMetric = (name: string): string => `${name}_model`;
 
 /** Every kind-specific key, for checks and downloads. */

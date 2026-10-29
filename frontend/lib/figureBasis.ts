@@ -4,14 +4,17 @@
  *
  * - model: PolicyEngine's output as is (the income tax measures, and every
  *   household-calculator result).
- * - calibrated: model output adjusted to administrative data after the run
- *   (North Dakota: public enrollment and meal participation; South Dakota:
- *   the Department of Social Services' expansion enrollment).
+ * - adjusted: model output changed after the run to come closer to official
+ *   statistics (North Dakota: public enrollment and meal participation; South
+ *   Dakota: the Department of Social Services' expansion enrollment), and
+ *   poverty figures, whose SPM resources add income the released model omits
+ *   (policyengine-us#9919).
  * - forecast: model output with a forecast input (Proposition NN's
  *   current-law refund amounts come from the Legislative Council Staff
  *   September 2026 forecast).
- * - adjusted: poverty figures, whose SPM resources add income the released
- *   model omits (policyengine-us#9919).
+ *
+ * "Calibrated" is kept for the dataset itself: its survey weights are
+ * calibrated to administrative totals before any figure is computed.
  *
  * Every number in the table comes from metrics.csv; none is typed in.
  */
@@ -25,13 +28,12 @@ import {
 import type { Measure } from './registry';
 import { metric } from './results';
 
-export type FigureBasis = 'model' | 'calibrated' | 'forecast' | 'adjusted';
+export type FigureBasis = 'model' | 'adjusted' | 'forecast';
 
 export const BASIS_LABELS: Record<FigureBasis, string> = {
   model: 'Model estimate',
-  calibrated: 'Calibrated',
-  forecast: 'Forecast input',
   adjusted: 'Adjusted',
+  forecast: 'Forecast input',
 };
 
 /** Id of the Methods tab's "How these figures are produced" section. */
@@ -42,7 +44,7 @@ export function measureBasis(m: Pick<Measure, 'kind'>): FigureBasis {
   switch (m.kind) {
     case 'school_meals':
     case 'medicaid':
-      return 'calibrated';
+      return 'adjusted';
     case 'tabor_refund':
       return 'forecast';
     default:
@@ -82,13 +84,13 @@ export function figureBasisRows(
         {
           figure: 'Revenue change, households gaining and losing, income deciles',
           bases: ['model'],
-          source: 'PolicyEngine microsimulation (policyengine-us), no calibration after the run',
+          source: 'PolicyEngine microsimulation (policyengine-us), no adjustment after the run',
         },
         ...poverty,
         {
           figure: 'Household calculator',
           bases: ['model'],
-          source: 'The model’s own per-household calculation, no calibration',
+          source: 'The model’s own per-household calculation, no adjustment',
         },
       ];
     case 'tabor_refund':
@@ -107,7 +109,7 @@ export function figureBasisRows(
         {
           figure: 'Household calculator',
           bases: ['forecast'],
-          source: 'The same forecast refund amounts; the model’s own per-household calculation, no calibration',
+          source: 'The same forecast refund amounts; the model’s own per-household calculation, no adjustment',
         },
       ];
     case 'school_meals': {
@@ -120,32 +122,32 @@ export function figureBasisRows(
       return [
         {
           figure: 'State cost (per year and per two-year budget, low and high cases), value of meals to families',
-          bases: ['calibrated'],
+          bases: ['adjusted'],
           source: [
             scaleText,
             lunch && breakfast ? `current participation ${lunch} at lunch and ${breakfast} at breakfast (low case)` : null,
-            unadjusted === null ? null : `model before calibration ${usd(unadjusted)} a year`,
+            unadjusted === null ? null : `model before adjustment ${usd(unadjusted)} a year`,
           ]
             .filter(Boolean)
             .join('; '),
         },
         {
           figure: 'Students newly qualifying for free meals',
-          bases: ['calibrated'],
+          bases: ['adjusted'],
           source: [scaleText, students === null ? null : `model count ${formatCount(students)}`]
             .filter(Boolean)
             .join('; '),
         },
         {
           figure: 'Household gains: deciles, households gaining and losing, income bands',
-          bases: ['calibrated'],
+          bases: ['adjusted'],
           source: 'The participation-adjusted midpoint of the low and high cases',
         },
         ...(spmAdjusted
           ? [
               {
                 figure: 'Poverty',
-                bases: ['calibrated', 'adjusted'] as FigureBasis[],
+                bases: ['adjusted'] as FigureBasis[],
                 source: `The participation-adjusted midpoint. ${SPM_ADJUSTMENT_NOTE}`,
               },
             ]
@@ -153,7 +155,7 @@ export function figureBasisRows(
         {
           figure: 'Household calculator',
           bases: ['model'],
-          source: 'Assumes each child eats school breakfast and lunch every school day; no calibration',
+          source: 'Assumes each child eats school breakfast and lunch every school day; no adjustment',
         },
       ];
     }
@@ -163,7 +165,7 @@ export function figureBasisRows(
       const model = metric(metrics, MC.baselineExpansionEnrollees);
       const scaling =
         factor === null
-          ? 'Not calibrated in these results'
+          ? 'Not adjusted in these results'
           : [
               `×${factor.toFixed(3)}`,
               admin === null ? null : `to the Department of Social Services’ ${formatCount(admin)} expansion enrollees`,
@@ -174,18 +176,18 @@ export function figureBasisRows(
       return [
         {
           figure: 'People losing Medicaid, in the coverage gap, at or above the poverty line, gaining a premium tax credit',
-          bases: factor === null ? ['model'] : ['calibrated'],
+          bases: factor === null ? ['model'] : ['adjusted'],
           source: scaling,
         },
         {
           figure: 'State and federal Medicaid spending, premium tax credits, budget impacts',
-          bases: factor === null ? ['model'] : ['calibrated'],
+          bases: factor === null ? ['model'] : ['adjusted'],
           source: scaling,
         },
         {
           figure: 'Household calculator',
           bases: ['model'],
-          source: 'The model’s Medicaid eligibility and marketplace coverage rules; no calibration',
+          source: 'The model’s Medicaid eligibility and marketplace coverage rules; no adjustment',
         },
       ];
     }

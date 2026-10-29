@@ -83,11 +83,11 @@ const content: MeasureContent = {
     "Effects on hospitals, providers and the state's other health spending.",
   ],
   caveats: [
-    "PolicyEngine's model counts more adults enrolled through expansion than the state reports, so counts and costs are calibrated to the Department of Social Services' enrollment; the measure-specific method section shows the model's values before calibration.",
+    "PolicyEngine's model counts more adults enrolled through expansion than the state reports, so counts and costs are adjusted to the Department of Social Services' enrollment; the measure-specific method section shows the model's values before adjustment.",
     'The figures cover coverage, premiums and government spending. They do not capture differences in cost sharing, provider networks or access to care between Medicaid and marketplace coverage.',
   ],
   officialEstimateProse: [
-    "No official fiscal note estimates the measure's cost. The Department of Social Services reports an average of 29,055 people a month enrolled through expansion in state fiscal year 2025, and both statements in the ballot pamphlet cite about 30,000. The dashboard's counts and costs are calibrated to the Department of Social Services figure; the measure-specific method section, below, shows the model's values before calibration and its expansion costs.",
+    "No official fiscal note estimates the measure's cost. The Department of Social Services reports an average of 29,055 people a month enrolled through expansion in state fiscal year 2025, and both statements in the ballot pamphlet cite about 30,000. The dashboard's counts and costs are adjusted to the Department of Social Services figure; the measure-specific method section, below, shows the model's values before adjustment and its expansion costs.",
   ],
   householdNote:
     'Enter your household to see its 2028 health coverage and premiums under current law and in the scenario where expansion ends.',

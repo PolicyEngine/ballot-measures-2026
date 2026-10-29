@@ -3,9 +3,9 @@
 /**
  * Statewide view for the Medicaid scenario (South Dakota): people and
  * government spending rather than household net income. The unsuffixed
- * metrics are calibrated to administrative enrollment when the pipeline
- * publishes `enrollment_calibration_factor`; the Methods tab shows the
- * model's values before calibration.
+ * metrics are adjusted to administrative enrollment when the pipeline
+ * publishes `enrollment_calibration_factor`; the Methodology tab shows the
+ * model's values before adjustment.
  */
 
 import {
@@ -54,7 +54,7 @@ export default function CoverageStatewide({
   const below = metric(m, MC.losingBelow100fpl);
   const above = metric(m, MC.losing100PlusFpl);
   const gaining = metric(m, MC.gainingPtc);
-  // Calibrated pages pair the calibrated counts with the administrative
+  // Adjusted pages pair the adjusted counts with the administrative
   // enrollment they are scaled to (baseline_expansion_enrollees stays the model's).
   const enrolled = metric(m, MC.adminExpansionEnrollees) ?? metric(m, MC.baselineExpansionEnrollees);
   const share = (v: number | null) => (v !== null && losing ? formatShare(v / losing) : null);

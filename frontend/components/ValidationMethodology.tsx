@@ -54,8 +54,8 @@ function differenceText(c: EstimateComparison): string {
   return `${formatPercent(c.ratioPercent, 0)} of the official figure`;
 }
 
-/** "Before calibration: 55,952" under a calibrated figure (SD publishes `<metric>_model`). */
-function ModelBeforeCalibration({
+/** "Before adjustment: 55,952" under an adjusted figure (SD publishes `<metric>_model`). */
+function ModelBeforeAdjustment({
   metrics,
   name,
   unit,
@@ -68,22 +68,22 @@ function ModelBeforeCalibration({
   if (raw === null || metric(metrics, MC.enrollmentCalibrationFactor) === null) return null;
   return (
     <span className="block text-xs font-normal text-gray-500">
-      Before calibration: {formatEstimateValue({ low: raw, high: raw }, unit, { sign: raw < 0, model: true })}
+      Before adjustment: {formatEstimateValue({ low: raw, high: raw }, unit, { sign: raw < 0, model: true })}
     </span>
   );
 }
 
 /**
- * Rows of the model-vs-calibrated table: the model value's key and the
- * calibrated value's key (scripts/DATA_SCHEMA.md: calibrated keys keep their
+ * Rows of the model-vs-adjusted table: the model value's key and the
+ * adjusted value's key (scripts/DATA_SCHEMA.md: these keys keep their
  * unscaled value under `<key>_model`; enrollment pairs the model's own count
  * with the administrative one).
  */
-const CALIBRATION_ROWS: { label: string; model: string; calibrated: string; unit: 'usd' | 'people' }[] = [
+const ADJUSTMENT_ROWS: { label: string; model: string; adjusted: string; unit: 'usd' | 'people' }[] = [
   {
     label: 'Enrolled through expansion under current law',
     model: MC.baselineExpansionEnrollees,
-    calibrated: MC.adminExpansionEnrollees,
+    adjusted: MC.adminExpansionEnrollees,
     unit: 'people',
   },
   ...(
@@ -99,21 +99,21 @@ const CALIBRATION_ROWS: { label: string; model: string; calibrated: string; unit
       [C.stateBudgetImpact, 'State budget impact', 'usd'],
       [C.federalBudgetImpact, 'Federal budget impact', 'usd'],
     ] as const
-  ).map(([key, label, unit]) => ({ label, model: modelMetric(key), calibrated: key, unit })),
+  ).map(([key, label, unit]) => ({ label, model: modelMetric(key), adjusted: key, unit })),
 ];
 
-/** Model vs calibrated values for the Medicaid scenario; null until the pipeline publishes them. */
-export function CalibrationTable({ metrics }: { metrics: Record<string, number> | null }) {
+/** Model vs adjusted values for the Medicaid scenario; null until the pipeline publishes them. */
+export function AdjustmentTable({ metrics }: { metrics: Record<string, number> | null }) {
   const factor = metric(metrics, MC.enrollmentCalibrationFactor);
   if (factor === null) return null;
   const admin = metric(metrics, MC.adminExpansionEnrollees);
   const fmt = (v: number | null, unit: 'usd' | 'people') =>
     v === null ? DASH : formatEstimateValue({ low: v, high: v }, unit, { sign: unit === 'usd' && v !== 0, model: true });
-  const rows = CALIBRATION_ROWS.filter(
-    (r) => metric(metrics, r.model) !== null || metric(metrics, r.calibrated) !== null,
+  const rows = ADJUSTMENT_ROWS.filter(
+    (r) => metric(metrics, r.model) !== null || metric(metrics, r.adjusted) !== null,
   ).map((r) => ({
     label: r.label,
-    values: [fmt(metric(metrics, r.model), r.unit), fmt(metric(metrics, r.calibrated), r.unit)],
+    values: [fmt(metric(metrics, r.model), r.unit), fmt(metric(metrics, r.adjusted), r.unit)],
   }));
   return (
     <div className="space-y-2">
@@ -121,13 +121,13 @@ export function CalibrationTable({ metrics }: { metrics: Record<string, number> 
         PolicyEngine&apos;s model counts more adults enrolled through expansion than the state
         reports, so the coverage and budget figures on these pages are scaled to the Department of
         Social Services&apos; enrollment
-        {admin !== null ? ` (${formatCount(admin)} people)` : ''}: a calibration factor of{' '}
+        {admin !== null ? ` (${formatCount(admin)} people)` : ''}: an enrollment adjustment factor of{' '}
         {factor.toFixed(3)}. Household-level figures are not scaled.
       </p>
       <CompareTable
-        caption="Model and calibrated values"
+        caption="Model and adjusted values"
         firstColumn="Measure"
-        columns={['Model', 'Calibrated to enrollment']}
+        columns={['Model', 'Adjusted to enrollment']}
         rows={rows}
       />
     </div>
@@ -135,11 +135,11 @@ export function CalibrationTable({ metrics }: { metrics: Record<string, number> 
 }
 
 /**
- * Official figures the model is calibrated to: compare them with the
- * model's own value instead (enrollment calibrated to administrative data
+ * Official figures the dashboard adjusts the model to: compare them with
+ * the model's own value instead (enrollment adjusted to administrative data
  * matches it by construction).
  */
-const CALIBRATION_TARGETS: Record<string, string> = {
+const ADJUSTMENT_TARGETS: Record<string, string> = {
   [MC.adminExpansionEnrollees]: MC.baselineExpansionEnrollees,
 };
 
@@ -152,17 +152,17 @@ export function ValidationTable({
   metricsByYear: Record<number, Record<string, number> | null>;
 }) {
   const rows = measure.official_estimates.map((e) => {
-    const target = CALIBRATION_TARGETS[e.metric];
+    const target = ADJUSTMENT_TARGETS[e.metric];
     const metrics = metricsByYear[e.model_year] ?? null;
     const comparison = compareEstimate(target ? { ...e, metric: target } : e, metrics);
-    // Enrollment rows compare the model's own count, before calibration.
-    const calibrated = metric(metrics, MC.enrollmentCalibrationFactor) !== null;
-    const calibrationNote = target
-      ? 'Model before calibration; the dashboard scales its counts and costs to this figure'
-      : calibrated && e.metric === MC.baselineExpansionEnrollees
-        ? 'Model before calibration to the Department of Social Services’ enrollment'
+    // Enrollment rows compare the model's own count, before adjustment.
+    const adjusted = metric(metrics, MC.enrollmentCalibrationFactor) !== null;
+    const adjustmentNote = target
+      ? 'Model before adjustment; the dashboard scales its counts and costs to this figure'
+      : adjusted && e.metric === MC.baselineExpansionEnrollees
+        ? 'Model before adjustment to the Department of Social Services’ enrollment'
         : null;
-    return { ...comparison, estimate: e, calibrationNote };
+    return { ...comparison, estimate: e, adjustmentNote };
   });
   if (rows.length === 0) {
     return <p className="text-sm text-gray-600">No official estimate has been published for this measure.</p>;
@@ -199,7 +199,7 @@ export function ValidationTable({
                   ? formatEstimateValue(c.model, c.estimate.unit, { sign: c.model.low < 0, model: true })
                   : 'Pending'}
                 <span className="block text-xs font-normal text-gray-500">{c.estimate.model_year}</span>
-                <ModelBeforeCalibration
+                <ModelBeforeAdjustment
                   metrics={metricsByYear[c.estimate.model_year] ?? null}
                   name={c.estimate.metric}
                   unit={c.estimate.unit}
@@ -207,8 +207,8 @@ export function ValidationTable({
               </td>
               <td className="py-3 px-3 text-gray-700">
                 {differenceText(c)}
-                {c.calibrationNote && (
-                  <span className="block text-xs text-gray-500 mt-0.5">{c.calibrationNote}</span>
+                {c.adjustmentNote && (
+                  <span className="block text-xs text-gray-500 mt-0.5">{c.adjustmentNote}</span>
                 )}
               </td>
             </tr>
@@ -329,12 +329,12 @@ function KindMethodology({
             The Department of Social Services reports an average of 29,055 a month in state fiscal
             year 2025, and the ballot pamphlet&apos;s statements cite about 30,000.
           </p>
-          <CalibrationTable metrics={metrics} />
+          <AdjustmentTable metrics={metrics} />
           {total !== null && (
             <p>
               <strong>Expansion costs.</strong>{' '}
               {metric(metrics, MC.enrollmentCalibrationFactor) !== null
-                ? 'After calibration to enrollment, Medicaid'
+                ? 'After adjustment to enrollment, Medicaid'
                 : 'Medicaid'}{' '}
               spending on the expansion group is {usd(Math.abs(total))} a year
               {state !== null ? `, of which the state pays ${usd(Math.abs(state))} at today's 10% share` : ''}.
@@ -622,7 +622,7 @@ interface Props {
   onYearChange?: (year: number) => void;
 }
 
-/** Methods tab: the single place for how figures are produced, sources, caveats and calibration. */
+/** Methodology tab: the single place for how figures are produced, sources, caveats and adjustments. */
 export default function ValidationMethodology({ measure, year, onYearChange }: Props) {
   const content = getContent(measure.slug);
   const metricsFile = useResultsCsv(STATEWIDE_FILES.metrics);
@@ -672,10 +672,11 @@ export default function ValidationMethodology({ measure, year, onYearChange }: P
           How these figures are produced
         </h2>
         <p className="text-sm text-gray-700">
-          Model estimates are PolicyEngine&apos;s output as is. Calibrated figures adjust that
-          output to administrative data after the run. Figures with a forecast input use an
-          official forecast in place of a model input. Adjusted poverty figures add income that
-          the released model leaves out of poverty resources.
+          Model estimates are PolicyEngine&apos;s output as is, from survey households whose
+          weights are calibrated to administrative totals before the run. Adjusted figures change
+          that output after the run to come closer to official statistics, such as enrollment,
+          or add income that the released model leaves out of poverty resources. Figures with a
+          forecast input use an official forecast in place of a model input.
         </p>
         <FigureBasisTable measure={measure} year={year} metrics={metrics} manifest={manifest} />
         <PovertyBasisTable measure={measure} year={year} metrics={metrics} manifest={manifest} />

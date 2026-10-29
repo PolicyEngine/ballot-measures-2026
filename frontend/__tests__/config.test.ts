@@ -36,7 +36,9 @@ describe('robots and sitemap', () => {
     expect(robots.rules).toEqual({ userAgent: '*', allow: '/' });
     expect(robots.sitemap).toBe('https://policyengine.org/us/ballot-measures-2026/sitemap.xml');
     const pages = (await import('../app/sitemap')).default();
-    expect(pages).toHaveLength(7);
+    // The landing page, six measure pages and the Proposition 40 calculator page.
+    expect(pages).toHaveLength(8);
+    expect(pages.map((p) => p.url)).toContain('https://policyengine.org/us/ballot-measures-2026/ca-prop-40');
   });
 
   it('refuses to load in production with fixture data', async () => {

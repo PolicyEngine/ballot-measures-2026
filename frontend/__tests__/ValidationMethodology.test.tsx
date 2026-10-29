@@ -52,14 +52,19 @@ describe('ValidationMethodology', () => {
     expect(screen.getByText(/Scaling the change in each income band/)).toHaveTextContent('+$2.24B');
   });
 
-  it('shows South Dakota’s model and calibrated values', async () => {
+  it('shows South Dakota’s model and adjusted values', async () => {
     mockDataFiles(fixtureFiles());
     renderWithQuery(<ValidationMethodology measure={getMeasure('sd-amendment-i')} year={2028} />);
-    const calibration = await screen.findByRole('table', { name: 'Model and calibrated values' });
+    const calibration = await screen.findByRole('table', { name: 'Model and adjusted values' });
+    expect(within(calibration).getAllByRole('columnheader').map((h) => h.textContent)).toEqual([
+      'Measure',
+      'Model',
+      'Adjusted to enrollment',
+    ]);
     const losing = within(calibration).getByText('People losing Medicaid').closest('tr')!;
     expect(losing).toHaveTextContent('54,000');
     expect(losing).toHaveTextContent('28,017');
-    expect(screen.getByText(/calibration factor of 0\.519/)).toBeInTheDocument();
+    expect(screen.getByText(/enrollment adjustment factor of 0\.519/)).toBeInTheDocument();
     expect(screen.getByText(/enrollment \(29,055 people\)/)).toBeInTheDocument();
     // Enrollment pairs the model's own count with the administrative one.
     const enrolled = within(calibration).getByText('Enrolled through expansion under current law').closest('tr')!;
@@ -71,9 +76,16 @@ describe('ValidationMethodology', () => {
     const dss = within(validation).getByRole('link', { name: /Department of Social Services/ }).closest('tr')!;
     expect(dss).toHaveTextContent('29,055');
     expect(dss).toHaveTextContent('56,000');
-    expect(dss).toHaveTextContent('Model before calibration; the dashboard scales');
+    expect(dss).toHaveTextContent('Model before adjustment; the dashboard scales');
     const pamphlet = within(validation).getByRole('link', { name: /ballot question pamphlet/ }).closest('tr')!;
-    expect(pamphlet).toHaveTextContent('Model before calibration to the Department');
+    expect(pamphlet).toHaveTextContent('Model before adjustment to the Department');
+    // "Calibrated" now describes only the dataset's survey weights.
+    expect(screen.getByText(/weights are calibrated to administrative totals before the run/)).toBeInTheDocument();
+    expect(screen.getByText(/runs on a calibrated sample of US households/)).toBeInTheDocument();
+    expect(
+      screen.queryByText(/Calibrated to enrollment|before calibration|calibration factor|calibrated to the Department/i),
+    ).toBeNull();
+    expect(screen.getByText(/After adjustment to enrollment, Medicaid/)).toBeInTheDocument();
   });
 
   it('has no IRS comparison for other kinds', async () => {
