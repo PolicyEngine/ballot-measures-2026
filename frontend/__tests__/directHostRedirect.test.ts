@@ -2,8 +2,10 @@ import { stringify, parse, type ParsedUrlQuery } from 'querystring';
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { NextConfig } from 'next';
 // Next's own route compilation and matching, so these tests resolve redirects
-// the way the Next router does (Vercel serves the same compiled regexes and
-// has-conditions).
+// the way the Next router does. Vercel doesn't use these regexes: it builds its
+// own from each rule's source, without Next's /_next exclusion or optional
+// trailing slash. The last test pins the rule that difference needs, and a test
+// deployment checked the rules on Vercel itself (2026-10-29).
 import loadCustomRoutes, { type Redirect } from 'next/dist/lib/load-custom-routes';
 import { modifyRouteRegex } from 'next/dist/lib/redirect-status';
 import { getPathMatch } from 'next/dist/shared/lib/router/utils/path-match';
@@ -166,7 +168,11 @@ function randomCase(random: () => number) {
     Array.from({ length }, () => chars[Math.floor(random() * chars.length)]).join('');
   const segments = Array.from({ length: Math.floor(random() * 4) }, () => pick(SEGMENT_CHARS, 1 + Math.floor(random() * 12)))
     // A segment of only dots is path traversal, not a page.
-    .filter((segment) => !/^\.+$/.test(segment));
+    .filter((segment) => !/^\.+$/.test(segment))
+    // Next's router keeps /_next out of custom redirects and Vercel's doesn't,
+    // so this harness can't speak for those paths. (On Vercel they 308 to
+    // policyengine.org, which proxies them back here.)
+    .filter((segment, index) => !(index === 0 && segment === '_next'));
   const suffix = segments.map((segment) => `/${segment}`).join('');
   const search = Array.from({ length: Math.floor(random() * 4) }, () =>
     `${pick(QUERY_CHARS, 1 + Math.floor(random() * 8))}=${pick(QUERY_CHARS, Math.floor(random() * 8))}`,
@@ -185,11 +191,6 @@ describe('invariants over generated paths and queries', () => {
       const url = direct(`${basePath}${suffix}${search ? `?${search}` : ''}`);
       const label = `seed ${SEED} case ${i}: ${url}`;
       const resolved = resolve(url, PRODUCTION_HOST);
-      if (suffix.startsWith('/_next')) {
-        // Next keeps its own assets out of custom redirects.
-        expect(resolved, label).toBeNull();
-        continue;
-      }
       expect(resolved?.status, label).toBe(308);
       expect(resolved!.location.origin + resolved!.location.pathname, label).toBe(`${PUBLIC_ORIGIN}${basePath}${suffix}`);
       expect(pairs(resolved!.location.search), label).toEqual(pairs(search));
