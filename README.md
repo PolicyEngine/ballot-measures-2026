@@ -121,3 +121,12 @@ npm run build  # production build (basePath /us/ballot-measures-2026)
 
 Branch + pull request + Vercel preview; production deploys (Vercel and the
 Modal household endpoint) only after the dashboard PR is approved.
+
+policyengine.org serves the dashboard through policyengine-app-v2's zone
+rewrite (`website/src/data/appZoneRoutes.ts`) to the production host,
+`ballot-measures-2026.vercel.app`. `frontend/next.config.js` 308s visits
+straight to that host to the same page and query on
+`www.policyengine.org/us/ballot-measures-2026`. It keys on `x-forwarded-host`,
+which Vercel sets to the host the visitor asked for: the production host on a
+direct visit, `www.policyengine.org` on a proxied request. Previews keep their
+own host, so the rule leaves them alone.
