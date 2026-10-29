@@ -7,7 +7,7 @@ import { FIGURE_BASIS_ID } from '@/lib/figureBasis';
  * Opens the Methods tab (keeping the year and household in the hash) and
  * scrolls to its "How these figures are produced" table.
  */
-export function MethodsLink({ children = 'See methods' }: { children?: React.ReactNode }) {
+export function MethodsLink({ children = 'See methodology' }: { children?: React.ReactNode }) {
   const open = (event: React.MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
     const params = parseHashParams(window.location.hash);

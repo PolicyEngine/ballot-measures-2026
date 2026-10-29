@@ -23,8 +23,9 @@ beforeEach(() => {
 
 describe('figure bases', () => {
   it('classifies each kind of measure', () => {
-    expect(measureBasis(getMeasure('nd-measure-2'))).toBe('calibrated');
-    expect(measureBasis(getMeasure('sd-amendment-i'))).toBe('calibrated');
+    // Adjusted after the run, outside the dataset's own calibration.
+    expect(measureBasis(getMeasure('nd-measure-2'))).toBe('adjusted');
+    expect(measureBasis(getMeasure('sd-amendment-i'))).toBe('adjusted');
     expect(measureBasis(getMeasure('co-prop-nn'))).toBe('forecast');
     for (const slug of ['co-amendment-87', 'ca-prop-3', 'wa-i-645']) {
       expect(measureBasis(getMeasure(slug))).toBe('model');
@@ -36,7 +37,8 @@ describe('figure bases', () => {
     expect(ndRows.find((r) => r.figure.startsWith('State cost'))?.source).toContain(
       `×${nd.enrollment_scale.toFixed(3)} to public school enrollment`,
     );
-    expect(ndRows.find((r) => r.figure === 'Poverty')?.bases).toEqual(['calibrated', 'adjusted']);
+    expect(ndRows.find((r) => r.figure === 'Poverty')?.bases).toEqual(['adjusted']);
+    expect(ndRows.find((r) => r.figure.startsWith('State cost'))?.source).toMatch(/model before adjustment \$/);
     const sdRows = figureBasisRows(getMeasure('sd-amendment-i'), sd, true);
     expect(sdRows[0].source).toBe(
       `×${sd.enrollment_calibration_factor.toFixed(3)} to the Department of Social Services’ 29,055 expansion enrollees (model count ${formatCount(sd.baseline_expansion_enrollees)})`,
@@ -47,12 +49,11 @@ describe('figure bases', () => {
 });
 
 describe('no basis labels outside the methods table', () => {
-  it('shows no pills or calibration footnotes on the landing page', async () => {
+  it('shows no pills, footnotes or scores on the landing page', () => {
     const { container } = renderWithQuery(<LandingPage />);
-    await waitFor(() => expect(screen.getAllByText(/Official:/).length).toBeGreaterThan(0));
+    expect(screen.getByRole('region', { name: 'Map of states with measures' })).toBeInTheDocument();
     expect(container.querySelector('[data-basis]')).toBeNull();
-    expect(screen.queryByText(/Model before calibration/)).toBeNull();
-    expect(screen.queryByText('Calibrated')).toBeNull();
+    expect(screen.queryByText(/before (calibration|adjustment)|Calibrated|Adjusted|Model estimate|Official/)).toBeNull();
   });
 
   it.each([
@@ -67,7 +68,7 @@ describe('no basis labels outside the methods table', () => {
     const statewide = renderWithQuery(<AggregateImpact measure={getMeasure(slug)} year={year} />);
     await screen.findAllByTestId('stat-card');
     expect(statewide.container.querySelector('[data-basis]')).toBeNull();
-    expect(screen.queryByText(/Model before calibration/)).toBeNull();
+    expect(screen.queryByText(/before (calibration|adjustment)/i)).toBeNull();
     expect(screen.queryByTestId('card-footnote')).toBeNull();
   });
 });
@@ -79,7 +80,8 @@ describe('how these figures are produced', () => {
     const table = await screen.findByRole('table', { name: 'Basis of each figure, 2028' });
     const students = () => within(table).getByText('Students newly qualifying for free meals').closest('tr')!;
     await waitFor(() => expect(students()).toHaveTextContent(`model count ${formatCount(nd.children_newly_free_model)}`));
-    expect(students()).toHaveTextContent('Calibrated');
+    expect(students()).toHaveTextContent('Adjusted');
+    expect(table).not.toHaveTextContent(/calibrat/i);
     expect(within(table).getByText('Household calculator').closest('tr')).toHaveTextContent('Model estimate');
   });
 
@@ -101,7 +103,7 @@ describe('how these figures are produced', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Statewide' }));
     fireEvent.click(await screen.findByRole('link', { name: /How these figures are produced/ }));
     await waitFor(() =>
-      expect(screen.getByRole('tab', { name: 'Methods' })).toHaveAttribute('aria-selected', 'true'),
+      expect(screen.getByRole('tab', { name: 'Methodology' })).toHaveAttribute('aria-selected', 'true'),
     );
   });
 });

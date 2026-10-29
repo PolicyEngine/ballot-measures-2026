@@ -7,6 +7,7 @@
  * facts, and a three-column references grid.
  */
 
+import { yearsLabel } from '@/lib/text';
 import { getContent, type Comparison, type Reference, type SimpleTable } from '@/content/measures';
 import { formatCompactCount, formatCount, formatUSD } from '@/lib/format';
 import { REGISTRY, useMetrics, type Measure } from '@/lib/measures';
@@ -18,7 +19,6 @@ import {
   type Metrics,
 } from '@/lib/metrics';
 import { metric } from '@/lib/results';
-import { yearsLabel } from './MeasureCard';
 import { newlyFreeStudents } from './statewide/KindSummary';
 import { ExternalLink, StatCard } from './ui';
 

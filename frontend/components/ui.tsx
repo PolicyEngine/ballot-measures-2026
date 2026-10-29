@@ -239,7 +239,7 @@ export function MetricCard({
   tone?: Tone;
   /** A short pill beside the label (text), or a node such as a BasisBadge. */
   badge?: React.ReactNode;
-  /** A line under the detail, e.g. the model's value before calibration. */
+  /** A line under the detail, e.g. the model's value before adjustment. */
   footnote?: React.ReactNode;
 }) {
   const t = CARD_TONES[tone];

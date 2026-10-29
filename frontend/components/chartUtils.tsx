@@ -60,6 +60,22 @@ export function niceDomain(values: number[]): { domain: [number, number]; ticks:
   return { domain, ticks };
 }
 
+/** Whole-number ticks from 0 for small counts (people enrolled in a household). */
+export function countDomain(values: number[]): { domain: [number, number]; ticks: number[] } {
+  const top = Math.max(1, Math.ceil(Math.max(0, ...values.filter((v) => Number.isFinite(v)))));
+  const step = top <= 5 ? 1 : niceStep(top, 5);
+  const end = Math.ceil(top / step) * step;
+  return { domain: [0, end], ticks: Array.from({ length: end / step + 1 }, (_, i) => i * step) };
+}
+
+/** Decimals that keep round tick labels distinct: a 0.05 step needs 2, 0.5 needs 1, 5 needs 0. */
+export function tickDecimals(ticks: number[]): number {
+  if (ticks.length < 2) return 0;
+  const step = Math.abs(ticks[1] - ticks[0]);
+  if (!(step > 0) || step >= 1) return 0;
+  return Math.min(3, Math.ceil(-Math.log10(step) - 1e-9));
+}
+
 interface TooltipEntry {
   name?: string | number;
   value?: number | string | (number | string)[];

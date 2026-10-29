@@ -33,6 +33,7 @@ import {
   TICK_STYLE,
   WINNERS_COLORS,
   niceDomain,
+  tickDecimals,
 } from '../chartUtils';
 import { CompareTable, toneOf, toneText } from '../ui';
 import { DASH, kindDetailRows, money, show, signedMoney } from './KindSummary';
@@ -152,7 +153,9 @@ export function DistributionalSection({ data }: { data: StatewideResults }) {
           <YAxis
             domain={axis.domain}
             ticks={axis.ticks}
-            tickFormatter={isRelative ? (v: number) => formatPercent(v, 1, { sign: true }) : fmt}
+            tickFormatter={
+              isRelative ? (v: number) => formatPercent(v, tickDecimals(axis.ticks), { sign: true }) : fmt
+            }
             tick={TICK_STYLE}
             stroke="var(--chart-axis)"
             width={isRelative ? 64 : 76}
@@ -401,7 +404,7 @@ export function PovertySection({ data }: { data: StatewideResults }) {
               <YAxis
                 domain={axis.domain}
                 ticks={axis.ticks}
-                tickFormatter={(v: number) => formatPercent(v, 1, { sign: true })}
+                tickFormatter={(v: number) => formatPercent(v, tickDecimals(axis.ticks), { sign: true })}
                 tick={TICK_STYLE}
                 stroke="var(--chart-axis)"
                 width={60}

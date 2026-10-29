@@ -17,7 +17,16 @@ import { filingStatusLabel } from '@/lib/householdForm';
 import type { HouseholdResponse, NumericPointKey, PolicySweep } from '@/lib/householdApi';
 import type { Measure } from '@/lib/registry';
 import { formatCount, formatIncomeTick, formatUSD, formatUSDWithSign } from '@/lib/format';
-import { CHART_MARGIN, ChartFigure, PillToggle, SweepChartDescription, TICK_STYLE, niceStep } from './chartUtils';
+import {
+  CHART_MARGIN,
+  ChartFigure,
+  PillToggle,
+  SweepChartDescription,
+  TICK_STYLE,
+  countDomain,
+  niceDomain,
+  niceStep,
+} from './chartUtils';
 import CoverageBands, { coverageLegend } from './CoverageBands';
 import { MetricCard, ResultsTable, toneOf } from './ui';
 
@@ -122,6 +131,8 @@ export default function CoverageResults({
   const xMax = rows.length ? rows[rows.length - 1].income : (entered ?? 0);
   const xStep = niceStep(xMax, 4);
   const xTicks = Array.from({ length: Math.floor(xMax / xStep) + 1 }, (_, i) => i * xStep);
+  const yValues = rows.flatMap((r) => [r.baseline, r.reform]);
+  const yAxis = lineView === 'enrolled' ? countDomain(yValues) : niceDomain(yValues);
 
   const changes = coverageChanges(outcome);
   const scenarioDetail =
@@ -299,6 +310,8 @@ export default function CoverageResults({
                 stroke="var(--chart-axis)"
               />
               <YAxis
+                domain={yAxis.domain}
+                ticks={yAxis.ticks}
                 allowDecimals={view !== 'enrolled'}
                 tickFormatter={(v: number) => (view === 'enrolled' ? formatCount(v) : formatIncomeTick(v))}
                 tick={TICK_STYLE}

@@ -72,7 +72,7 @@ describe('AggregateImpact', () => {
     mockDataFiles(fixtureFiles());
     renderWithQuery(<AggregateImpact measure={getMeasure('sd-amendment-i')} year={2028} />);
     expect(await screen.findByText('People losing Medicaid')).toBeInTheDocument();
-    // Calibrated (unsuffixed) counts, not the _model values.
+    // Adjusted (unsuffixed) counts, not the _model values.
     expect(screen.getByText('28,017')).toBeInTheDocument();
     expect(screen.queryByText('54,000')).toBeNull();
     expect(screen.getByText('In the coverage gap')).toBeInTheDocument();
@@ -81,7 +81,7 @@ describe('AggregateImpact', () => {
     ).toBeInTheDocument();
     expect(screen.getByText('Gaining a premium tax credit')).toBeInTheDocument();
     expect(screen.getByText(/shown in people and government spending rather than household net income/)).toBeInTheDocument();
-    // How the counts are calibrated is on the Methods tab.
+    // How the counts are adjusted is on the Methodology tab.
     expect(screen.queryByText(/Scaled to the Department of Social Services/)).toBeNull();
     // Coverage and budgetary sections only: no net-income sections.
     const sections = screen.getByRole('tablist', { name: 'Statewide sections' });
@@ -97,8 +97,11 @@ describe('AggregateImpact', () => {
     expect(screen.getByText('State savings')).toBeInTheDocument();
     expect(screen.getByText('$33.2M a year')).toBeInTheDocument();
     expect(screen.getByText("Lower state Medicaid spending at today's 10% state share")).toBeInTheDocument();
-    expect(screen.getByText('Federal Medicaid')).toBeInTheDocument();
-    expect(screen.getByText('-$299M')).toBeInTheDocument();
+    // The card and the spending chart's bar both name federal Medicaid.
+    expect(screen.getAllByText('Federal Medicaid').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByRole('figure', { name: 'Change in government spending, 2028' })).toBeInTheDocument();
+    // On the federal card and as the chart's bar label.
+    expect(screen.getAllByText('-$299M').length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText('Premium tax credits +$15.6M; federal budget $86.1M gain')).toBeInTheDocument();
     // No net-income budget table.
     expect(screen.queryByRole('table', { name: /Change in the scenario, 2028/ })).toBeNull();

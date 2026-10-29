@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { poleOfInaccessibility, ringArea, type Point } from '@/lib/polylabel';
 import { districtsGeojsonUrl } from '@/lib/config';
 import { formatShare, formatUSDWithSign } from '@/lib/format';
+import { niceDomain } from './chartUtils';
 
 export interface DistrictMapDatum {
   /** "CO-01" */
@@ -282,10 +283,11 @@ export default function USDistrictChoroplethMap({
     return map;
   }, [data]);
 
-  const maxAbs = useMemo(
-    () => Math.max(0, ...data.map((d) => Math.abs(d.average_household_income_change))),
-    [data],
-  );
+  // Round the scale's end up (e.g. $1,583 to $2,000) so the legend reads in round numbers.
+  const maxAbs = useMemo(() => {
+    const raw = Math.max(0, ...data.map((d) => Math.abs(d.average_household_income_change)));
+    return raw > 0 ? niceDomain([raw]).domain[1] : 0;
+  }, [data]);
   const hasLosses = data.some((d) => d.average_household_income_change < 0);
   const hasGains = data.some((d) => d.average_household_income_change > 0);
   const tooltipData = tooltip ? dataByDistrict.get(tooltip.districtNumber) : null;
