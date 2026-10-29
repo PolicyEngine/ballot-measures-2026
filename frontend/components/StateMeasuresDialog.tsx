@@ -106,7 +106,7 @@ export default function StateMeasuresDialog({ state, placement, onClose }: Props
             <p className="mt-1 text-sm text-gray-600">{m.overview}</p>
             <Link
               href={`/${m.slug}`}
-              className="mt-2 inline-block text-sm font-semibold text-primary-700 hover:underline"
+              className="mt-3 inline-flex items-center gap-1 rounded-lg bg-teal-500 px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-teal-600 active:bg-teal-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-700"
             >
               {m.linkLabel}
               <span className="sr-only">
