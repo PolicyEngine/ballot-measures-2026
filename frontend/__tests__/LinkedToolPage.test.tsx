@@ -16,7 +16,7 @@ describe('California Proposition 40 page', () => {
     expect(screen.getByText(CA_PROP_40.intro)).toBeInTheDocument();
     const frame = screen.getByTitle(CA_PROP_40.embedTitle);
     expect(frame.tagName).toBe('IFRAME');
-    expect(frame).toHaveAttribute('src', 'https://california-wealth-tax.vercel.app/us/california-wealth-tax');
+    expect(frame).toHaveAttribute('src', 'https://www.policyengine.org/us/california-wealth-tax');
     expect(frame).toHaveClass('h-[calc(100vh-200px)]', 'min-h-[900px]', 'w-full');
     const open = screen.getByRole('link', { name: /Open the calculator in a new tab/ });
     expect(open).toHaveAttribute('href', 'https://www.policyengine.org/us/california-wealth-tax');
