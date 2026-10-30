@@ -1,7 +1,7 @@
 {
   "election_date": "2026-11-03",
   "pin": "policyengine-us==2.72.4",
-  "registry_hash": "56bf65ea3ed21f84",
+  "registry_hash": "0e9995afefd53c06",
   "measures": [
     {
       "slug": "co-amendment-87",
@@ -370,13 +370,8 @@
         ],
         [
           5000000,
-          10000000,
-          "$5M - $10M"
-        ],
-        [
-          10000000,
           "Infinity",
-          "$10M+"
+          "$5M+"
         ]
       ],
       "sweep_max": 3000000,
@@ -493,13 +488,8 @@
         ],
         [
           5000000,
-          10000000,
-          "$5M - $10M"
-        ],
-        [
-          10000000,
           "Infinity",
-          "$10M+"
+          "$5M+"
         ]
       ],
       "sweep_max": 5000000,

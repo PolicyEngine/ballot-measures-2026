@@ -144,8 +144,10 @@ TOP_INCOME_BANDS: tuple[Band, ...] = (
     (500_000, 1_000_000, "$500k - $1M"),
     (1_000_000, 2_000_000, "$1M - $2M"),
     (2_000_000, 5_000_000, "$2M - $5M"),
-    (5_000_000, 10_000_000, "$5M - $10M"),
-    (10_000_000, INF, "$10M+"),
+    # One top band: the survey data hold no California or Washington household
+    # with AGI above $10 million, so a separate $10M+ band showed zero for
+    # both measures
+    (5_000_000, INF, "$5M+"),
 )
 
 

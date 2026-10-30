@@ -342,3 +342,17 @@ def test_no_link_uses_the_sd_pamphlets_dead_path():
     for m in MEASURES.values():
         for e in m.official_estimates:
             assert "2026%20Election%20Information" not in e.url, (m.slug, e.url)
+
+
+def test_top_income_measures_end_in_one_band_from_5_million():
+    # California and Washington have no surveyed household with AGI above
+    # $10 million, so their bands end in one $5M+ band
+    for slug in ("ca-prop-3", "wa-i-645"):
+        bands = MEASURES[slug].income_bands
+        assert (
+            bands[-1][0] == 5_000_000
+            and math.isinf(bands[-1][1])
+            and bands[-1][2] == "$5M+"
+        )
+        assert bands[-2][1] == 5_000_000
+    assert not any(b[2] == "$10M+" for m in MEASURES.values() for b in m.income_bands)
