@@ -130,3 +130,34 @@ straight to that host to the same page and query on
 which Vercel sets to the host the visitor asked for: the production host on a
 direct visit, `www.policyengine.org` on a proxied request. Previews keep their
 own host, so the rule leaves them alone.
+
+That relies on policyengine.org reaching the app through a Vercel rewrite, the
+one hop that keeps `www.policyengine.org` in `x-forwarded-host` (seen on a test
+deployment, 2026-10-29, with both projects in PolicyEngine's Vercel team). A
+request that reaches the production host any other way, such as through a
+proxy outside Vercel, arrives with the production host there, gets the 308 and
+loops. After any change to how policyengine.org reaches the app (another host,
+another Vercel team, a proxy in front), check that
+`https://www.policyengine.org/us/ballot-measures-2026` still answers 200.
+
+The project isn't linked to git, so a merge doesn't deploy. To deploy the
+frontend, run the tests, then deploy from `frontend/`:
+
+```bash
+make test
+cd frontend && vercel deploy --prod
+```
+
+Then check that a direct visit 308s and that policyengine.org still serves the
+dashboard:
+
+```bash
+curl -sI https://ballot-measures-2026.vercel.app/us/ballot-measures-2026/ca-prop-3
+curl -sI https://www.policyengine.org/us/ballot-measures-2026
+```
+
+The first should answer 308 with `location:
+https://www.policyengine.org/us/ballot-measures-2026/ca-prop-3`, the second
+200. If policyengine.org stops serving the dashboard, roll back with
+`vercel rollback` from `frontend/`, or promote the previous deployment in the
+Vercel dashboard.

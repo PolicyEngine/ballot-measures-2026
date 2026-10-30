@@ -1,17 +1,38 @@
+import { createRequire } from 'module';
 import { stringify, parse, type ParsedUrlQuery } from 'querystring';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { NextConfig } from 'next';
-// Next's own route compilation and matching, so these tests resolve redirects
-// the way the Next router does. Vercel doesn't use these regexes: it builds its
-// own from each rule's source, without Next's /_next exclusion or optional
-// trailing slash. The last test pins the rule that difference needs, and a test
-// deployment checked the rules on Vercel itself (2026-10-29).
+// Next's own route compilation and matching, so `resolve` below handles
+// redirects the way the Next router does. Vercel runs the same rules through
+// routes of its own, which `resolveOnVercel` models.
 import loadCustomRoutes, { type Redirect } from 'next/dist/lib/load-custom-routes';
 import { modifyRouteRegex } from 'next/dist/lib/redirect-status';
 import { getPathMatch } from 'next/dist/shared/lib/router/utils/path-match';
 import { matchHas, prepareDestination } from 'next/dist/shared/lib/router/utils/prepare-destination';
 import nextConfig from '../next.config.js';
 import { DEFAULT_BASE_PATH, SITE_URL } from '../lib/config';
+
+// The expectations assume the production basePath, so a local-dev
+// NEXT_PUBLIC_BASE_PATH="" (lib/config.ts) mustn't reach next.config.js,
+// which reads it on import. vi.hoisted runs before the imports above.
+const savedBasePath = vi.hoisted(() => {
+  const saved = process.env.NEXT_PUBLIC_BASE_PATH;
+  delete process.env.NEXT_PUBLIC_BASE_PATH;
+  return saved;
+});
+afterAll(() => {
+  if (savedBasePath !== undefined) process.env.NEXT_PUBLIC_BASE_PATH = savedBasePath;
+});
+
+type RoutingUtils = {
+  convertRedirects: (
+    redirects: Redirect[],
+    defaultStatus: number,
+  ) => { src: string; headers: { Location: string }; status: number }[];
+};
+const { convertRedirects } = createRequire(import.meta.url)(
+  'next/dist/compiled/@vercel/routing-utils',
+) as RoutingUtils;
 
 const PRODUCTION_HOST = 'ballot-measures-2026.vercel.app';
 const PUBLIC_ORIGIN = 'https://www.policyengine.org';
@@ -23,11 +44,15 @@ type Resolved = { status: number; location: URL } | null;
 type LoadedRedirect = Redirect & { internal?: boolean };
 type Route = LoadedRedirect & { match: ReturnType<typeof getPathMatch> };
 
+type VercelRoute = { src: RegExp; location: string; status: number; has?: Redirect['has'] };
+
 let routes: Route[];
+let vercelRoutes: VercelRoute[];
 
 beforeAll(async () => {
+  const loaded = (await loadCustomRoutes(config)).redirects as LoadedRedirect[];
   const restricted = [`${basePath}/_next`];
-  routes = ((await loadCustomRoutes(config)).redirects as LoadedRedirect[]).map((route) => ({
+  routes = loaded.map((route) => ({
     ...route,
     match: getPathMatch(route.source, {
       strict: true,
@@ -35,6 +60,21 @@ beforeAll(async () => {
       regexModifier: (regex) => (route.internal ? regex : modifyRouteRegex(regex, restricted)),
     }),
   }));
+  // Next 16 hands Vercel each redirect as routing-utils' convertRedirects
+  // builds it, passed through modifyRouteRegex with no restricted paths, so
+  // without Next's /_next exclusion (next/dist/build/adapter/build-complete.js).
+  // Next's own trailing-slash redirects come first. Vercel matches paths
+  // case-insensitively: on a test deployment of these rules (Next 16.2.6,
+  // 2026-10-29), /US/ZONE-ECHO/x 308'd to the lowercase public path.
+  vercelRoutes = loaded.map((route) => {
+    const converted = convertRedirects([route], 307)[0];
+    return {
+      src: new RegExp(route.internal ? converted.src : modifyRouteRegex(converted.src), 'i'),
+      location: converted.headers.Location,
+      status: converted.status,
+      has: route.has,
+    };
+  });
 });
 
 /** The first redirect a request to `url` gets, given the x-forwarded-host Vercel sets. */
@@ -65,12 +105,45 @@ function resolve(url: string, forwardedHost: string): Resolved {
   return null;
 }
 
+/**
+ * The first redirect a request to `url` gets from Vercel's routes. A header
+ * condition matches the whole header, as on Vercel (seen on a test
+ * deployment, 2026-10-29), and the request's query rides along.
+ */
+function resolveOnVercel(url: string, forwardedHost: string): Resolved {
+  const requested = new URL(url);
+  for (const route of vercelRoutes) {
+    const match = route.src.exec(requested.pathname);
+    if (!match) continue;
+    const headerMatches = (route.has ?? []).every(
+      (condition) =>
+        condition.type === 'header' &&
+        condition.key === 'x-forwarded-host' &&
+        new RegExp(`^${condition.value}$`).test(forwardedHost),
+    );
+    if (!headerMatches) continue;
+    const location = new URL(
+      route.location.replace(/\$(\d)/g, (_, index) => match[Number(index)] ?? ''),
+      requested,
+    );
+    if (!location.search) location.search = requested.search;
+    return { status: route.status, location };
+  }
+  return null;
+}
+
+type Resolver = typeof resolve;
+
 /** Follows redirects from `url` as a browser would, with Vercel's x-forwarded-host on each hop. */
-function follow(url: string, forwardedHostFor: (host: string) => string): { url: URL; hops: number } {
+function follow(
+  url: string,
+  forwardedHostFor: (host: string) => string,
+  resolver: Resolver = resolve,
+): { url: URL; hops: number } {
   let current = new URL(url);
   for (let hops = 0; hops < 10; hops++) {
     if (current.origin === PUBLIC_ORIGIN) return { url: current, hops };
-    const next = resolve(current.href, forwardedHostFor(current.host));
+    const next = resolver(current.href, forwardedHostFor(current.host));
     if (!next) return { url: current, hops };
     current = next.location;
   }
@@ -134,7 +207,7 @@ describe('requests that must not redirect', () => {
     'ballot-measures-2026-q7g5g0966-policy-engine.vercel.app',
     'ballot-measures-2026-policy-engine.vercel.app',
     'ballot-measures-2026-git-main-policy-engine.vercel.app',
-    // Near misses the dot-escaped, anchored match must reject.
+    // Near misses the dot-escaped, whole-header match must reject.
     'ballot-measures-2026Xvercel.app',
     'xballot-measures-2026.vercel.app',
     'ballot-measures-2026.vercel.app.evil.example',
@@ -169,9 +242,8 @@ function randomCase(random: () => number) {
   const segments = Array.from({ length: Math.floor(random() * 4) }, () => pick(SEGMENT_CHARS, 1 + Math.floor(random() * 12)))
     // A segment of only dots is path traversal, not a page.
     .filter((segment) => !/^\.+$/.test(segment))
-    // Next's router keeps /_next out of custom redirects and Vercel's doesn't,
-    // so this harness can't speak for those paths. (On Vercel they 308 to
-    // policyengine.org, which proxies them back here.)
+    // Next's router keeps /_next out of custom redirects and Vercel's routes
+    // don't; a test below covers those paths on Vercel.
     .filter((segment, index) => !(index === 0 && segment === '_next'));
   const suffix = segments.map((segment) => `/${segment}`).join('');
   const search = Array.from({ length: Math.floor(random() * 4) }, () =>
@@ -217,16 +289,61 @@ describe('the redirect target', () => {
     expect(target.origin).toBe(PUBLIC_ORIGIN);
     expect(target.pathname).toBe(new URL(SITE_URL).pathname);
   });
+});
 
-  it('has its own rule for the bare basePath, ahead of /:path*', async () => {
-    // Next's router sends the bare basePath through /:path* without a trailing
-    // slash, but Vercel's routing adds one (seen on a test deployment,
-    // 2026-10-29), which costs policyengine.org a second hop. The tests above
-    // run Next's router, so this pins the rule Vercel needs.
-    const custom = (await config.redirects!()).filter((r) => r.basePath !== false);
-    const bare = custom.findIndex((r) => r.source === '/' && r.destination === `${PUBLIC_ORIGIN}${basePath}`);
-    const deep = custom.findIndex((r) => r.source === '/:path*');
-    expect(bare).toBeGreaterThanOrEqual(0);
-    expect(bare).toBeLessThan(deep);
+describe("Vercel's routes for the same rules", () => {
+  const SEED = 20261030;
+  const CASES = 2000;
+  const landing = (url: URL) => `${url.origin}${url.pathname} ${pairs(url.search).join('&')}`;
+
+  it('send each newsletter link, the bare basePath and the host root to policyengine.org in one hop', () => {
+    for (const path of ['/', ...NEWSLETTER_PATHS.map((suffix) => `${basePath}${suffix}`)]) {
+      const resolved = resolveOnVercel(direct(path), PRODUCTION_HOST);
+      expect(resolved?.status, path).toBe(308);
+      // Without the bare-basePath rule, /:path* would send it to PUBLIC_URL + "/".
+      expect(resolved?.location.href, path).toBe(`${PUBLIC_ORIGIN}${path === '/' ? basePath : path}`);
+    }
+  });
+
+  it('land every generated direct visit where Next lands it, within the trailing-slash hop', () => {
+    const random = mulberry32(SEED);
+    for (let i = 0; i < CASES; i++) {
+      const { suffix, search } = randomCase(random);
+      const slash = random() < 0.3 ? '/' : '';
+      const url = direct(`${basePath}${suffix}${slash}${search ? `?${search}` : ''}`);
+      const label = `seed ${SEED} case ${i}: ${url}`;
+      const onVercel = follow(url, (host) => host, resolveOnVercel);
+      const onNext = follow(url, (host) => host);
+      expect(landing(onVercel.url), label).toBe(landing(onNext.url));
+      expect(onVercel.url.origin, label).toBe(PUBLIC_ORIGIN);
+      expect(onVercel.hops, label).toBeLessThanOrEqual(slash ? 2 : 1);
+    }
+  });
+
+  it('send direct requests for _next assets to policyengine.org, which proxies them back', () => {
+    const asset = `${basePath}/_next/static/chunks/main.js?v=1`;
+    expect(resolveOnVercel(direct(asset), PRODUCTION_HOST)?.location.href).toBe(`${PUBLIC_ORIGIN}${asset}`);
+    expect(resolveOnVercel(direct(asset), 'www.policyengine.org')).toBeNull();
+  });
+
+  it('send an upper-case basePath to the lower-case public URL', () => {
+    expect(
+      resolveOnVercel(direct(`${basePath.toUpperCase()}/ca-prop-40`), PRODUCTION_HOST)?.location.href,
+    ).toBe(`${PUBLIC_ORIGIN}${basePath}/ca-prop-40`);
+  });
+
+  it('never send a proxied request off its host', () => {
+    const random = mulberry32(SEED + 1);
+    const hosts = ['www.policyengine.org', 'policyengine-website-git-x-policy-engine.vercel.app'];
+    for (let i = 0; i < CASES; i++) {
+      const { suffix, search } = randomCase(random);
+      const slash = random() < 0.3 ? '/' : '';
+      const url = direct(`${basePath}${suffix}${slash}${search ? `?${search}` : ''}`);
+      for (const host of hosts) {
+        const resolved = resolveOnVercel(url, host);
+        // Next's own trailing-slash redirect stays on the host.
+        if (resolved) expect(resolved.location.host, `${host} ${url}`).toBe(PRODUCTION_HOST);
+      }
+    }
   });
 });
