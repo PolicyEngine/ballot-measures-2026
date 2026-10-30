@@ -57,13 +57,21 @@ describe('compareEstimate', () => {
     expect(c.model).toBeNull();
     expect(c.position).toBeNull();
   });
+
+  it('sets no ratio or position against a source that measures something else', () => {
+    const c = compareEstimate({ ...estimate, compare: false }, { [estimate.metric]: estimate.low / 2 });
+    expect(c.model).not.toBeNull();
+    expect(c.ratioPercent).toBeNull();
+    expect(c.position).toBeNull();
+    expect(c.overlap).toBeNull();
+  });
 });
 
 describe('headlineFor', () => {
   it('shows signed revenue for income tax measures beside the official figure', () => {
     const wa = getMeasure('wa-i-645');
     const h = headlineFor(wa, metricsOf('wa-i-645', 2028));
-    expect(h.label).toBe('Change in state revenue, 2028');
+    expect(h.label).toBe('Change in individual income tax revenue, tax year 2028');
     expect(h.model).toMatch(/^-\$3\./);
     expect(h.official).toBe('-$3.11B');
     expect(h.officialSource).toMatch(/Office of Financial Management, FY 2029/);

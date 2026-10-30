@@ -112,10 +112,15 @@ export const formatCount = (value: number): string => {
 export const formatCompactCount = (value: number): string =>
   countCompact.format(clean(Math.round(value)));
 
-/** Axis tick for incomes: 50000 -> "$50k", 1500000 -> "$1.5M". */
+/** Axis tick for incomes: 50000 -> "$50k", 1500 -> "$1.5k", 1500000 -> "$1.5M",
+ *  -400000 -> "-$400k". Below $10k, a tenth of a thousand: gridlines every
+ *  $500 would otherwise read "$2k" twice. */
 export const formatIncomeTick = (value: number): string => {
-  if (Math.abs(value) >= 1_000_000) return `$${Number((value / 1_000_000).toFixed(1))}M`;
-  if (Math.abs(value) >= 1_000) return `$${Math.round(value / 1_000)}k`;
+  const a = Math.abs(value);
+  const sign = value < 0 ? '-' : '';
+  if (a >= 1_000_000) return `${sign}$${Number((a / 1_000_000).toFixed(1))}M`;
+  if (a >= 10_000) return `${sign}$${Math.round(a / 1_000)}k`;
+  if (a >= 1_000) return `${sign}$${Number((a / 1_000).toFixed(1))}k`;
   return formatUSD(value);
 };
 

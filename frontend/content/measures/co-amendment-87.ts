@@ -95,11 +95,12 @@ const content: MeasureContent = {
   ],
   caveats: [
     'Most of the added revenue comes from taxable income above $500,000. Survey-based microdata hold few very high-income households, so this part of the estimate is the least certain; the comparisons on this tab show how the model’s figures line up with official estimates and IRS data.',
-    'The official estimates cover state budget years and include corporations; the model covers individual income tax liability for tax year 2027.',
+    'The Blue Book’s revenue estimates cover state budget years and include corporations, and its table for individual taxpayers uses tax year 2023 incomes; the model covers individual income tax liability for tax year 2027.',
   ],
   officialEstimateProse: [
     "Colorado's Legislative Council Staff estimate in the 2026 Blue Book that the measure raises $958.4 million in the 2026-27 budget year, a half-year of tax year 2027, and $1.972 billion in 2027-28. The Blue Book describes the $2.7 billion in the ballot title as the maximum estimate for 2027-28, based on possible forecast error.",
     'The Blue Book figures include corporate income tax and are stated by budget year (July through June). PolicyEngine estimates individual income tax for tax year 2027.',
+    'For individual taxpayers alone, the Blue Book’s Table 3 gives the change in tax by income, estimated on tax year 2023 Department of Revenue data: $1,208.5 million more from incomes of $1 million or more and $572.8 million less below that, a net $635.7 million. The dashboard compares PolicyEngine’s estimate with that figure.',
   ],
   householdNote:
     'Enter your household to compare your 2027 Colorado and federal income taxes under current law and if Amendment 87 passes.',

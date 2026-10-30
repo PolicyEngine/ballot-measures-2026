@@ -41,7 +41,7 @@ const content: MeasureContent = {
   ],
   comparisons: [
     {
-      caption: 'Income tax rates from 2031, single filers',
+      caption: 'Income tax rates from 2031, single filers (2025 thresholds; they rise with inflation)',
       rows: [
         { label: 'Up to $371,479', currentLaw: '1% to 9.3%', ifPasses: '1% to 9.3%' },
         { label: '$371,479 to $445,771', currentLaw: '9.3%', ifPasses: '10.3%' },

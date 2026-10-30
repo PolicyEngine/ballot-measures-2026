@@ -195,7 +195,9 @@ export function DistributionalSection({ data }: { data: StatewideResults }) {
 const WL_CATEGORIES = [
   { key: 'gain_more_5pct', label: 'Gain more than 5%', color: WINNERS_COLORS.gainMore5 },
   { key: 'gain_less_5pct', label: 'Gain less than 5%', color: WINNERS_COLORS.gainLess5 },
-  { key: 'no_change', label: 'No change', color: WINNERS_COLORS.noChange },
+  // Changes within 0.1% of net income either way (ballot_calc/metrics/core.py):
+  // small gains and losses alike, so not "No change"
+  { key: 'no_change', label: 'Change under 0.1%', color: WINNERS_COLORS.noChange },
   { key: 'lose_less_5pct', label: 'Lose less than 5%', color: WINNERS_COLORS.loseLess5 },
   { key: 'lose_more_5pct', label: 'Lose more than 5%', color: WINNERS_COLORS.loseMore5 },
 ] as const;
@@ -266,7 +268,7 @@ export function WinnersSection({ data }: { data: StatewideResults }) {
         <ChartFigure
           title="Gains and losses by income decile"
           legend={WL_CATEGORIES.map((c) => ({ label: c.label, color: c.color }))}
-          caption="Share of people in each decile by their household's percent change in net income."
+          caption="Share of people in each decile by their household's percent change in net income. “Change under 0.1%” counts gains and losses smaller than 0.1% of net income; the cards above count every change of more than $1."
         >
           <ResponsiveContainer width="100%" height={380}>
             <BarChart data={stacked} layout="vertical" stackOffset="expand" barSize={22} margin={CHART_MARGIN}>

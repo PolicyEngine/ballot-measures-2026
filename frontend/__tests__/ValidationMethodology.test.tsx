@@ -14,10 +14,29 @@ describe('ValidationMethodology', () => {
     const rows = within(table).getAllByRole('row').slice(1);
     expect(rows).toHaveLength(3);
     expect(rows[0]).toHaveTextContent('-$3.11B');
-    expect(rows[0]).toHaveTextContent(/110% of the official figure/);
+    // Fiscal-year collections against tax-year liability: shown side by side, no ratio
+    expect(rows[0]).toHaveTextContent('Not compared; see the note');
+    expect(rows[0]).not.toHaveTextContent(/of the official figure/);
     expect(rows[1]).toHaveTextContent('-$4.43B');
     expect(rows[1]).toHaveTextContent('-$3.95B');
     expect(rows[2]).toHaveTextContent('30,000');
+  });
+
+  it('compares Amendment 87 with the Blue Book’s individual-taxpayer table, not its revenue total', async () => {
+    mockDataFiles(fixtureFiles());
+    renderWithQuery(<ValidationMethodology measure={getMeasure('co-amendment-87')} year={2027} />);
+    const table = screen.getByRole('table', { name: 'PolicyEngine and official estimates' });
+    await within(table).findAllByText('$1.81B');
+    const rows = within(table).getAllByRole('row').slice(1);
+    expect(rows).toHaveLength(2);
+    expect(rows[0]).toHaveTextContent('2026 Blue Book, Table 3');
+    expect(rows[0]).toHaveTextContent('$635.7M');
+    expect(rows[0]).toHaveTextContent(/\d+% of the official figure/);
+    // The revenue total also counts C corporations: no ratio against it
+    expect(rows[1]).toHaveTextContent('$1.97B');
+    expect(rows[1]).toHaveTextContent('incl. C corporations');
+    expect(rows[1]).toHaveTextContent('Not compared; see the note');
+    expect(rows[1]).not.toHaveTextContent(/of the official figure/);
   });
 
   it('places a model range against an official range', async () => {
@@ -165,11 +184,15 @@ describe('Methods tab sections', () => {
     expect(note).toHaveTextContent('about 13 independent households (the effective sample size)');
   });
 
-  it('values health coverage in South Dakota’s household definitions and gives its reasoning once', async () => {
+  it('describes South Dakota’s household results as the Household tab shows them, and gives its reasoning once', async () => {
     mockDataFiles(fixtureFiles());
     renderWithQuery(<ValidationMethodology measure={getMeasure('sd-amendment-i')} year={2028} />);
     await screen.findByText('synthetic');
-    expect(screen.getByText(/net income is income after taxes plus benefits, counting the value of health coverage\./)).toBeInTheDocument();
+    // The Household tab reports cash income without the value of coverage (CoverageResults)
+    expect(
+      screen.getByText(/For Medicaid, the calculator reports cash income, net income without the value of health coverage, and shows the coverage itself separately\./),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/counting the value of health coverage/)).not.toBeInTheDocument();
     // Why the scenario is in people rather than net income: one copy, in the measure-specific method.
     expect(screen.getAllByText(/rather than (household )?net income|People rather than net income/)).toHaveLength(1);
     // Both readings of the amendment, in full.

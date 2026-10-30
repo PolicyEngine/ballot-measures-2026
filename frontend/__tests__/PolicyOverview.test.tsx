@@ -24,13 +24,38 @@ describe('PolicyOverview', () => {
     expect(screen.getByText(getContent('co-amendment-87').whoIsAffectedSummary)).toBeInTheDocument();
     // FUTA's three headline stats: the estimate, the official one and a third, with no basis labels.
     expect(await screen.findByText('+$1.81B')).toBeInTheDocument();
-    expect(screen.getByText('+$1.97B')).toBeInTheDocument();
     const stats = screen.getAllByTestId('stat-card');
     expect(stats).toHaveLength(3);
     expect(stats[0]).toHaveTextContent('PolicyEngine estimate');
+    // The model scores individual income tax only, so the card says so and
+    // sits beside the Blue Book's individual-taxpayer table (Table 3), not
+    // its revenue total, which also counts C corporations
+    expect(stats[0]).toHaveTextContent('Change in individual income tax revenue, tax year 2027');
+    expect(stats[1]).toHaveTextContent('+$635.7M');
+    expect(stats[1]).toHaveTextContent('2026 Blue Book, Table 3, individual taxpayers, 2023 incomes');
+    expect(screen.queryByText('+$1.97B')).toBeNull();
     expect(stats[2]).toHaveTextContent('Tax units paying more / less');
     // Changed values in the comparison stand out (NJ's bold teal).
     expect(within(table).getAllByText('8.4%').some((c) => c.className.includes('text-primary-600'))).toBe(true);
+  });
+
+  it('says California’s rate thresholds are 2025 amounts', () => {
+    // The Overview hides the tables' notes, so the caption carries the year
+    renderWithQuery(<PolicyOverview measure={getMeasure('ca-prop-3')} />);
+    expect(
+      screen.getByRole('table', {
+        name: 'Income tax rates from 2031, single filers (2025 thresholds; they rise with inflation)',
+      }),
+    ).toHaveTextContent('$371,479 to $445,771');
+  });
+
+  it('states that Washington already bars local taxes on net income', () => {
+    renderWithQuery(<PolicyOverview measure={getMeasure('wa-i-645')} />);
+    const table = screen.getByRole('table', { name: /Tax on income over \$1 million/ });
+    expect(table).toHaveTextContent(
+      'No statutory ban on state income taxes; counties and cities may not tax net income (RCW 36.65.030)',
+    );
+    expect(table).not.toHaveTextContent('No statutory prohibition');
   });
 
   it('leaves context, ballot text and references to the Methods tab', () => {
