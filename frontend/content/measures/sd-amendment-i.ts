@@ -1,7 +1,7 @@
 import type { MeasureContent } from './types';
 
 const PAMPHLET_URL =
-  'https://sdsos.gov/elections-voting/upcoming-elections/general-information/2026%20Election%20Information/2026%20Ballot%20Question%20Information/2026%20Ballot%20Question%20Files/2026%20BQ/2026GeneralBQPamphletFINAL.pdf';
+  'https://sdsos.gov/elections-voting/upcoming-elections/general-information/2026%20Ballot%20Question%20Information/2026%20Ballot%20Question%20Files/2026%20BQ/2026GeneralBQPamphletFINAL.pdf';
 const AG_URL = 'https://atg.sd.gov/docs/May-18-2026_BallotIntiMeasureMedicCoverat-Final.pdf';
 const DSS_URL = 'https://dss.sd.gov/docs/medicaid/reports/2025_Medicaid_Report.pdf';
 

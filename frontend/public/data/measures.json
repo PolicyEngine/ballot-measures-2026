@@ -112,15 +112,28 @@
       ],
       "official_estimates": [
         {
+          "source": "Colorado Legislative Council Staff, 2026 Blue Book, Table 3",
+          "url": "https://leg.colorado.gov/ballots/graduated-income-tax-2/files/blue-book#page=6",
+          "period": "individual taxpayers, 2023 incomes",
+          "model_year": 2027,
+          "metric": "state_budget_impact",
+          "low": 635700000,
+          "high": 635700000,
+          "unit": "usd",
+          "note": "Net change in tax for individual taxpayers, summed over the table's income categories; estimated on tax year 2023 incomes, while the model scores tax year 2027.",
+          "compare": true
+        },
+        {
           "source": "Colorado Legislative Council Staff, 2026 Blue Book",
-          "url": "https://leg.colorado.gov/ballots/graduated-income-tax-2/files/blue-book",
+          "url": "https://leg.colorado.gov/ballots/graduated-income-tax-2/files/blue-book#page=7",
           "period": "FY 2027-28, incl. C corporations",
           "model_year": 2027,
           "metric": "state_budget_impact",
           "low": 1972000000,
           "high": 1972000000,
           "unit": "usd",
-          "note": "Fiscal-year revenue that also includes C corporations; the model scores individual income tax liability for tax year 2027."
+          "note": "Fiscal-year revenue that also includes C corporations, which the model leaves out, so the two figures aren't compared.",
+          "compare": false
         }
       ],
       "kind_params": {
@@ -247,7 +260,8 @@
           "low": 259800000,
           "high": 259800000,
           "unit": "usd",
-          "note": "Six-tier sales tax refunds only."
+          "note": "Six-tier sales tax refunds only.",
+          "compare": true
         },
         {
           "source": "Colorado Legislative Council Staff, September 2026 forecast",
@@ -258,7 +272,8 @@
           "low": 281100000,
           "high": 281100000,
           "unit": "usd",
-          "note": "Six-tier sales tax refunds only."
+          "note": "Six-tier sales tax refunds only.",
+          "compare": true
         },
         {
           "source": "Colorado Legislative Council Staff, 2026 Blue Book (June forecast)",
@@ -269,7 +284,8 @@
           "low": 329900000,
           "high": 329900000,
           "unit": "usd",
-          "note": "All TABOR refunds, including property tax exemption reimbursements paid to local governments, on the June forecast."
+          "note": "All TABOR refunds, including property tax exemption reimbursements paid to local governments, on the June forecast.",
+          "compare": false
         },
         {
           "source": "Colorado Legislative Council Staff, 2026 Blue Book (June forecast)",
@@ -280,7 +296,8 @@
           "low": 521000000,
           "high": 521000000,
           "unit": "usd",
-          "note": "All TABOR refunds on the June forecast, including property tax reimbursements and a temporary 4.36% income tax rate the September forecast no longer projects."
+          "note": "All TABOR refunds on the June forecast, including property tax reimbursements and a temporary 4.36% income tax rate the September forecast no longer projects.",
+          "compare": false
         }
       ],
       "kind_params": {
@@ -402,7 +419,8 @@
           "low": 5000000000,
           "high": 15000000000,
           "unit": "usd",
-          "note": "A range reflecting how volatile high incomes are."
+          "note": "A range reflecting how volatile high incomes are.",
+          "compare": true
         }
       ],
       "kind_params": {
@@ -524,7 +542,8 @@
           "low": -3108000000,
           "high": -3108000000,
           "unit": "usd",
-          "note": "State fiscal-year collections; the model scores tax year 2028 liability."
+          "note": "State fiscal-year collections; the model scores tax year 2028 liability.",
+          "compare": false
         },
         {
           "source": "Washington Office of Financial Management",
@@ -535,7 +554,8 @@
           "low": -4432000000,
           "high": -4432000000,
           "unit": "usd",
-          "note": "State fiscal-year collections; the model scores tax year 2029 liability."
+          "note": "State fiscal-year collections; the model scores tax year 2029 liability.",
+          "compare": false
         },
         {
           "source": "Washington Office of Financial Management",
@@ -546,7 +566,8 @@
           "low": 30000,
           "high": 30000,
           "unit": "people",
-          "note": "In its implementation cost assumptions for the Department of Revenue, the fiscal impact statement says: \u201cSavings are assumed for tax administration duties for approximately 30,000 taxpayers that will no longer be required.\u201d"
+          "note": "In its implementation cost assumptions for the Department of Revenue, the fiscal impact statement says: \u201cSavings are assumed for tax administration duties for approximately 30,000 taxpayers that will no longer be required.\u201d",
+          "compare": true
         }
       ],
       "kind_params": {
@@ -666,7 +687,8 @@
           "low": 124300000,
           "high": 134300000,
           "unit": "usd",
-          "note": "Meals ($124 million to $134 million) plus $300,000 for administration per two-year budget. The range reflects how much participation rises: $124 million if it rises as in other universal-meal states, $134 million if it rises more."
+          "note": "Meals ($124 million to $134 million) plus $300,000 for administration per two-year budget. The range reflects how much participation rises: $124 million if it rises as in other universal-meal states, $134 million if it rises more.",
+          "compare": true
         },
         {
           "source": "North Dakota Department of Public Instruction fiscal note (June 2026)",
@@ -677,7 +699,8 @@
           "low": 105300000,
           "high": 105300000,
           "unit": "usd",
-          "note": "DPI's scenario in which participation stays at current levels: $105 million for meals plus $300,000 for administration."
+          "note": "DPI's scenario in which participation stays at current levels: $105 million for meals plus $300,000 for administration.",
+          "compare": true
         }
       ],
       "kind_params": {
@@ -799,14 +822,15 @@
       "official_estimates": [
         {
           "source": "South Dakota Secretary of State, 2026 ballot question pamphlet",
-          "url": "https://sdsos.gov/elections-voting/upcoming-elections/general-information/2026%20Election%20Information/2026%20Ballot%20Question%20Information/2026%20Ballot%20Question%20Files/2026%20BQ/2026GeneralBQPamphletFINAL.pdf",
+          "url": "https://sdsos.gov/elections-voting/upcoming-elections/general-information/2026%20Ballot%20Question%20Information/2026%20Ballot%20Question%20Files/2026%20BQ/2026GeneralBQPamphletFINAL.pdf",
           "period": "Current expansion enrollment",
           "model_year": 2028,
           "metric": "baseline_expansion_enrollees",
           "low": 30000,
           "high": 30000,
           "unit": "people",
-          "note": "Approximate enrollment cited in the pamphlet; no official fiscal note exists."
+          "note": "Approximate enrollment cited in the pamphlet; no official fiscal note exists.",
+          "compare": true
         },
         {
           "source": "South Dakota Department of Social Services, South Dakota Medicaid Report SFY25 (January 2026)",
@@ -817,7 +841,8 @@
           "low": 29055,
           "high": 29055,
           "unit": "people",
-          "note": "Average monthly enrollment in the Medicaid expansion group (adults 19-64 with income up to 138% of the poverty line). The dashboard scales the model's coverage and budget figures to it."
+          "note": "Average monthly enrollment in the Medicaid expansion group (adults 19-64 with income up to 138% of the poverty line). The dashboard scales the model's coverage and budget figures to it.",
+          "compare": true
         }
       ],
       "kind_params": {

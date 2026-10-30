@@ -54,7 +54,7 @@ const content: MeasureContent = {
         { label: 'Charitable deduction', currentLaw: 'Up to $100,000', ifPasses: 'Not applicable' },
         {
           label: 'State and local taxes on individual income',
-          currentLaw: 'No statutory prohibition',
+          currentLaw: 'No statutory ban on state income taxes; counties and cities may not tax net income (RCW 36.65.030)',
           ifPasses: 'Prohibited by statute',
         },
       ],

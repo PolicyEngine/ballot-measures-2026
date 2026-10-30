@@ -90,7 +90,7 @@ export function KindHeadlineCards({ measure, metrics }: { measure: Measure; metr
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <StatCard
             highlight
-            label="Change in state income tax revenue"
+            label="Change in individual income tax revenue"
             value={show(metric(m, C.stateBudgetImpact), signedMoney)}
             detail="Positive means the state collects more"
           />

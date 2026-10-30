@@ -54,6 +54,10 @@ class OfficialEstimate:
     unit: Literal["usd", "people"] = "usd"
     # How the source's concept differs from the model's, in a sentence.
     note: str = ""
+    # False when the source measures something else (another scope, such as
+    # corporations the model leaves out): the Methodology tab then shows the
+    # two figures without a ratio or position between them.
+    compare: bool = True
 
 
 @dataclass(frozen=True)
@@ -236,18 +240,39 @@ CO_AMENDMENT_87 = Measure(
     # 4.4%), for the IRS SOI coverage scaling in metrics/top_tail.py.
     kind_params={"top_rate_change": 0.04},
     official_estimates=(
+        # The like-for-like comparison: the model scores individual income
+        # tax only. Table 3 gives the change in tax for individual taxpayers
+        # by federal AGI, on tax year 2023 Department of Revenue data; its 12
+        # rows net to +$635.7M ($1,208.5M more from incomes of $1 million or
+        # more, $572.8M less below that).
+        OfficialEstimate(
+            source="Colorado Legislative Council Staff, 2026 Blue Book, Table 3",
+            url="https://leg.colorado.gov/ballots/graduated-income-tax-2/files/blue-book#page=6",
+            period="individual taxpayers, 2023 incomes",
+            model_year=2027,
+            metric="state_budget_impact",
+            low=635_700_000,
+            high=635_700_000,
+            note=(
+                "Net change in tax for individual taxpayers, summed over the "
+                "table's income categories; estimated on tax year 2023 incomes, "
+                "while the model scores tax year 2027."
+            ),
+        ),
+        # The Blue Book's revenue estimate, which also counts C corporations
         OfficialEstimate(
             source="Colorado Legislative Council Staff, 2026 Blue Book",
-            url="https://leg.colorado.gov/ballots/graduated-income-tax-2/files/blue-book",
+            url="https://leg.colorado.gov/ballots/graduated-income-tax-2/files/blue-book#page=7",
             period="FY 2027-28, incl. C corporations",
             model_year=2027,
             metric="state_budget_impact",
             low=1_972_000_000,
             high=1_972_000_000,
             note=(
-                "Fiscal-year revenue that also includes C corporations; the "
-                "model scores individual income tax liability for tax year 2027."
+                "Fiscal-year revenue that also includes C corporations, which "
+                "the model leaves out, so the two figures aren't compared."
             ),
+            compare=False,
         ),
     ),
 )
@@ -333,6 +358,8 @@ CO_PROP_NN = Measure(
                 "All TABOR refunds, including property tax exemption "
                 "reimbursements paid to local governments, on the June forecast."
             ),
+            # The model scores the six-tier refunds alone (the rows above)
+            compare=False,
         ),
         OfficialEstimate(
             source="Colorado Legislative Council Staff, 2026 Blue Book (June forecast)",
@@ -347,6 +374,7 @@ CO_PROP_NN = Measure(
                 "reimbursements and a temporary 4.36% income tax rate the "
                 "September forecast no longer projects."
             ),
+            compare=False,
         ),
     ),
 )
@@ -454,6 +482,10 @@ WA_I_645 = Measure(
             low=-3_108_000_000,
             high=-3_108_000_000,
             note="State fiscal-year collections; the model scores tax year 2028 liability.",
+            # A fiscal year holds only part of a tax year's payments (the
+            # fiscal impact statement puts FY 2029 at about 89% of tax year
+            # 2028's), so a ratio between the two measures timing
+            compare=False,
         ),
         OfficialEstimate(
             source="Washington Office of Financial Management",
@@ -464,6 +496,7 @@ WA_I_645 = Measure(
             low=-4_432_000_000,
             high=-4_432_000_000,
             note="State fiscal-year collections; the model scores tax year 2029 liability.",
+            compare=False,
         ),
         OfficialEstimate(
             source="Washington Office of Financial Management",
@@ -654,7 +687,7 @@ SD_AMENDMENT_I = Measure(
     official_estimates=(
         OfficialEstimate(
             source="South Dakota Secretary of State, 2026 ballot question pamphlet",
-            url="https://sdsos.gov/elections-voting/upcoming-elections/general-information/2026%20Election%20Information/2026%20Ballot%20Question%20Information/2026%20Ballot%20Question%20Files/2026%20BQ/2026GeneralBQPamphletFINAL.pdf",
+            url="https://sdsos.gov/elections-voting/upcoming-elections/general-information/2026%20Ballot%20Question%20Information/2026%20Ballot%20Question%20Files/2026%20BQ/2026GeneralBQPamphletFINAL.pdf",
             period="Current expansion enrollment",
             model_year=2028,
             metric="baseline_expansion_enrollees",

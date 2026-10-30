@@ -57,6 +57,17 @@ describe('compact and percent formatters', () => {
     expect(formatIncomeTick(45_000)).toBe('$45k');
   });
 
+  it('labels income ticks below $10k to a tenth of a thousand, and puts a minus before the dollar sign', () => {
+    // School meals gridlines every $500: "$1.5k", not a second "$2k"
+    expect([0, 500, 1_000, 1_500, 2_000, 2_500].map(formatIncomeTick)).toEqual([
+      '$0', '$500', '$1k', '$1.5k', '$2k', '$2.5k',
+    ]);
+    expect(formatIncomeTick(10_000)).toBe('$10k');
+    expect(formatIncomeTick(-400_000)).toBe('-$400k');
+    expect(formatIncomeTick(-2_000_000)).toBe('-$2M');
+    expect(formatIncomeTick(-1_500)).toBe('-$1.5k');
+  });
+
   it('writes election dates without time-zone drift', () => {
     expect(formatLongDate('2026-11-03')).toBe('November 3, 2026');
   });

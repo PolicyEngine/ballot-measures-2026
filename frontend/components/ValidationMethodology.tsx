@@ -41,6 +41,7 @@ const POSITION_TEXT = {
 } as const;
 
 function differenceText(c: EstimateComparison): string {
+  if (c.model && c.estimate.compare === false) return 'Not compared; see the note';
   if (!c.model || c.position === null) return DASH;
   const official = c.estimate;
   const range = official.low !== official.high;
@@ -655,7 +656,9 @@ export default function ValidationMethodology({ measure, year, onYearChange }: P
         ]
       : []),
     'The household calculator models a household with employment income only, using the same model as the statewide results. Single adults with dependents file as head of household; married couples file jointly. Taxes are after refundable credits; net income is income after taxes plus benefits' +
-      (measure.kind === 'medicaid' ? ', counting the value of health coverage.' : '.'),
+      (measure.kind === 'medicaid'
+        ? '. For Medicaid, the calculator reports cash income, net income without the value of health coverage, and shows the coverage itself separately.'
+        : '.'),
     ...(effective !== null && effective < SMALL_EFFECTIVE_SAMPLE
       ? [
           `The statewide figures rest on ${sampled === null ? 'a small number of' : formatCount(sampled)} sampled households that the measure affects. Their survey weights vary, so together they carry the statistical weight of about ${formatCount(Math.max(1, effective))} independent households (the effective sample size), and the estimates are approximate.`,

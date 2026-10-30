@@ -309,3 +309,36 @@ def test_fast_modules_do_not_import_policyengine():
         "assert not bad, bad\n"
     )
     subprocess.run([sys.executable, "-c", code], check=True, cwd=REPO_ROOT)
+
+
+def test_amendment_87_compares_with_the_individual_taxpayer_table():
+    # The model scores individual income tax only. The Blue Book's Table 3
+    # (individual taxpayers, tax year 2023 incomes) nets to +$635.7M; its
+    # revenue estimate ($1.972B, FY 2027-28) also counts C corporations, so
+    # it is shown without a ratio.
+    table3, total = MEASURES["co-amendment-87"].official_estimates
+    assert table3.source.endswith("Table 3") and table3.compare
+    assert table3.low == table3.high == 635_700_000
+    assert "2023" in table3.period and table3.url.endswith("#page=6")
+    assert total.low == total.high == 1_972_000_000 and not total.compare
+    assert "C corporations" in total.period
+
+
+def test_sources_that_measure_something_else_are_not_compared():
+    nn = MEASURES["co-prop-nn"].official_estimates
+    assert [e.compare for e in nn if "June forecast" in e.source] == [False, False]
+    assert all(e.compare for e in nn if "September 2026 forecast" in e.source)
+    wa = [
+        e
+        for e in MEASURES["wa-i-645"].official_estimates
+        if e.metric == "state_budget_impact"
+    ]
+    assert wa and not any(e.compare for e in wa)
+
+
+def test_no_link_uses_the_sd_pamphlets_dead_path():
+    # The Secretary of State serves the pamphlet without "2026 Election
+    # Information/" in the path; with it, the link returns 404.
+    for m in MEASURES.values():
+        for e in m.official_estimates:
+            assert "2026%20Election%20Information" not in e.url, (m.slug, e.url)

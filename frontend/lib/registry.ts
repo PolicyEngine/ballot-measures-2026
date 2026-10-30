@@ -27,6 +27,9 @@ export interface OfficialEstimate {
   unit: 'usd' | 'people';
   /** How the source's concept differs from the model's. */
   note: string;
+  /** False when the source measures something else (another scope): shown
+   *  beside the model's figure without a ratio or position. */
+  compare: boolean;
 }
 
 export interface IncomeBand {

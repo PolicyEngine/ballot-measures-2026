@@ -165,6 +165,8 @@ const mid = (r: { low: number; high: number }) => (r.low + r.high) / 2;
 export function compareEstimate(estimate: OfficialEstimate, metrics: Metrics): EstimateComparison {
   const model = metricRange(metrics, estimate.metric);
   if (!model) return { estimate, model: null, ratioPercent: null, position: null, overlap: null };
+  // A source that measures something else gets the model's figure beside it, no more
+  if (estimate.compare === false) return { estimate, model, ratioPercent: null, position: null, overlap: null };
   const official = mid(estimate);
   const m = mid(model);
   const ratioPercent = official !== 0 ? (m / official) * 100 : null;
@@ -279,7 +281,8 @@ export function headlineFor(m: Measure, metrics: Metrics): Headline {
     case 'income_tax': {
       const v = metric(metrics, CORE_METRICS.stateBudgetImpact);
       return withOfficial(
-        `Change in state revenue, ${year}`,
+        // Individual income tax: the model leaves out corporations
+        `Change in individual income tax revenue, tax year ${year}`,
         v === null ? null : formatCompactUSD(v, { sign: true, sig3: true }),
         CORE_METRICS.stateBudgetImpact,
         'Official estimate',

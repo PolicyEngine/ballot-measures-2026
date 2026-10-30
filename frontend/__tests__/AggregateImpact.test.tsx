@@ -9,7 +9,7 @@ describe('AggregateImpact', () => {
   it('shows income tax cards and switches sections', async () => {
     mockDataFiles(fixtureFiles());
     renderWithQuery(<AggregateImpact measure={getMeasure('co-amendment-87')} year={2027} />);
-    expect(await screen.findByText('Change in state income tax revenue')).toBeInTheDocument();
+    expect(await screen.findByText('Change in individual income tax revenue')).toBeInTheDocument();
     expect(screen.getByText('+$1.81B')).toBeInTheDocument();
     expect(screen.getByText('Households gaining / losing')).toBeInTheDocument();
     expect(screen.getByText('71.5% / 3.2%')).toBeInTheDocument();
@@ -40,6 +40,12 @@ describe('AggregateImpact', () => {
     expect(screen.getByText('Winners')).toBeInTheDocument();
     expect(screen.getByText('Losers')).toBeInTheDocument();
     expect(screen.getByText('Gains and losses by income decile')).toBeInTheDocument();
+    // The chart's middle band holds changes under 0.1% of net income, gains
+    // and losses alike, so it isn't "No change"; the caption says how it
+    // differs from the cards' $1 rule (the cards keep their "No change")
+    expect(screen.getByText('Change under 0.1%')).toBeInTheDocument();
+    expect(screen.getByText(/counts gains and losses smaller than 0\.1% of net income; the cards above count every change of more than \$1/)).toBeInTheDocument();
+    expect(screen.getByText('No change')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('tab', { name: 'Poverty impact' }));
     expect(screen.getByText('Poverty rates')).toBeInTheDocument();
   });
@@ -50,7 +56,7 @@ describe('AggregateImpact', () => {
     renderWithQuery(
       <AggregateImpact measure={getMeasure('wa-i-645')} year={2028} onYearChange={(y) => (chosen = y)} />,
     );
-    await screen.findByText('Change in state income tax revenue');
+    await screen.findByText('Change in individual income tax revenue');
     fireEvent.click(screen.getByRole('radio', { name: '2029' }));
     expect(chosen).toBe(2029);
     // The download is in the page's title block, not repeated here.
@@ -195,7 +201,7 @@ describe('AggregateImpact', () => {
     expect(alert).toHaveTextContent("Couldn't load results.");
     mockDataFiles(fixtureFiles());
     fireEvent.click(within(alert).getByRole('button', { name: 'Retry' }));
-    expect(await screen.findByText('Change in state income tax revenue')).toBeInTheDocument();
+    expect(await screen.findByText('Change in individual income tax revenue')).toBeInTheDocument();
     expect(screen.queryByRole('alert')).toBeNull();
   }, 15_000);
 
