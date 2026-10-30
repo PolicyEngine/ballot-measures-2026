@@ -79,3 +79,18 @@
   --color-gray-800: var(--gray-800);
   --color-gray-900: var(--gray-900);
 }
+
+/* Scrolling shadows (Lea Verou): a table or tab bar that scrolls sideways
+   shows a soft shadow at each edge with more to see, so a phone reader knows
+   a column is off-screen. The two covers scroll with the content and hide
+   each shadow once its edge is reached, so nothing shows when it all fits.
+   Set --scroll-cue-bg to the background behind it. */
+.scroll-cue {
+  --scroll-cue-bg: #fff;
+  background:
+    linear-gradient(to right, var(--scroll-cue-bg) 30%, transparent) left center / 2.5rem 100% no-repeat local,
+    linear-gradient(to left, var(--scroll-cue-bg) 30%, transparent) right center / 2.5rem 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, rgb(0 0 0 / 0.18), transparent) left center / 0.875rem 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.18), transparent) right center / 0.875rem 100% no-repeat scroll,
+    var(--scroll-cue-bg);
+}

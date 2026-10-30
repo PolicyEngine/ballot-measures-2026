@@ -50,7 +50,7 @@ function SectionHeading({ children, id }: { children: React.ReactNode; id?: stri
 export function ComparisonTable({ comparison, showNote = true }: { comparison: Comparison; showNote?: boolean }) {
   const [current, passes] = comparison.columns ?? ['Current law', 'If it passes'];
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto scroll-cue">
       <table className="w-full text-sm">
         <caption className="text-left text-sm font-semibold text-gray-800 mb-2">{comparison.caption}</caption>
         <thead>
@@ -91,7 +91,7 @@ export function ComparisonTable({ comparison, showNote = true }: { comparison: C
 
 export function SimpleDataTable({ table }: { table: SimpleTable }) {
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto scroll-cue">
       <table className="w-full text-sm">
         <caption className="text-left text-sm font-semibold text-gray-800 mb-2">{table.caption}</caption>
         <thead>
@@ -143,18 +143,18 @@ export function thirdStat(measure: Measure, metrics: Metrics): ThirdStat {
       const more = metric(metrics, IT.taxUnitsPayingMore);
       const less = metric(metrics, IT.taxUnitsPayingLess);
       return {
-        label: 'Tax units paying more / less',
+        label: 'Tax returns paying more / less',
         value: more === null || less === null ? null : `${formatCompactCount(more)} / ${formatCompactCount(less)}`,
-        detail: 'Filers and their dependents whose state income tax rises or falls',
+        detail: 'Returns whose state income tax rises or falls (a joint return counts once)',
       };
     }
     case 'tabor_refund': {
       const recipients = metric(metrics, TR.refundRecipientsBaseline);
       const average = metric(metrics, TR.avgRefundBaseline);
       return {
-        label: 'Refund recipients under current law',
+        label: 'Returns receiving a refund under current law',
         value: recipients === null ? null : formatCompactCount(recipients),
-        detail: average === null ? 'People receiving the six-tier refund' : `${formatUSD(average)} on average`,
+        detail: average === null ? 'Returns receiving the six-tier refund' : `${formatUSD(average)} per return on average`,
       };
     }
     case 'school_meals': {

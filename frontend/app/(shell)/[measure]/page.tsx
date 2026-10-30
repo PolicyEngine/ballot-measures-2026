@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import MeasureDashboard from '@/components/MeasureDashboard';
 import { MEASURE_CONTENT, MEASURE_SLUGS } from '@/content/measures';
-import { SITE_URL } from '@/lib/config';
+import { OG_IMAGE, SITE_URL } from '@/lib/config';
 import { MEASURES_BY_SLUG, measureName } from '@/lib/registry';
 import { lowerFirst } from '@/lib/text';
 
@@ -33,8 +33,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       siteName: 'PolicyEngine',
       type: 'website',
       locale: 'en_US',
+      images: [OG_IMAGE],
     },
-    twitter: { card: 'summary_large_image', title, description: content.description },
+    twitter: { card: 'summary_large_image', title, description: content.description, images: [OG_IMAGE] },
   };
 }
 

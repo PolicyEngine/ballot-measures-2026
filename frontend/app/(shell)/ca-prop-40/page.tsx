@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import LinkedToolPage from '@/components/LinkedToolPage';
 import { CA_PROP_40 } from '@/content/linkedTools';
-import { SITE_URL } from '@/lib/config';
+import { OG_IMAGE, SITE_URL } from '@/lib/config';
 import { lowerFirst } from '@/lib/text';
 
 // A static folder, so it takes precedence over [measure] (whose dynamicParams is false).
@@ -20,8 +20,9 @@ export const metadata: Metadata = {
     siteName: 'PolicyEngine',
     type: 'website',
     locale: 'en_US',
+    images: [OG_IMAGE],
   },
-  twitter: { card: 'summary_large_image', title, description: tool.overview },
+  twitter: { card: 'summary_large_image', title, description: tool.overview, images: [OG_IMAGE] },
 };
 
 export default function CaProp40Page() {

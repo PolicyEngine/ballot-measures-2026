@@ -103,7 +103,7 @@ const content: MeasureContent = {
     'For individual taxpayers alone, the Blue Book’s Table 3 gives the change in tax by income, estimated on tax year 2023 Department of Revenue data: $1,208.5 million more from incomes of $1 million or more and $572.8 million less below that, a net $635.7 million. The dashboard compares PolicyEngine’s estimate with that figure.',
   ],
   householdNote:
-    'Enter your household to compare your 2027 Colorado and federal income taxes under current law and if Amendment 87 passes.',
+    'Enter your household to compare your 2027 Colorado income tax and net income under current law and if Amendment 87 passes.',
   references: [
     { label: '2026 Blue Book: Amendment 87 analysis (Legislative Council Staff)', url: `${BLUE_BOOK_URL}#page=34` },
     { label: 'Initiative 195 final text (Colorado Secretary of State)', url: TEXT_URL },

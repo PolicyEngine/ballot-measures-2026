@@ -190,3 +190,37 @@ describe('measure content', () => {
     expect(getContent('co-prop-nn').context.map((s) => s.title)).toContain('Proposition 137');
   });
 });
+
+describe('copy the final review corrected (29 October)', () => {
+  it('promises no federal comparison the household results no longer show', () => {
+    for (const slug of ['co-amendment-87', 'ca-prop-3'] as const) {
+      expect(getContent(slug).householdNote).not.toMatch(/federal/);
+      expect(getContent(slug).householdNote).toMatch(/income tax and net income/);
+    }
+  });
+
+  it('says North Dakota’s household figures assume every meal is eaten', () => {
+    expect(getContent('nd-measure-2').householdNote).toMatch(/each child eats both meals every school day/);
+  });
+
+  it('quotes the LAO in full and gives the school funding formula as PolicyEngine’s reading', () => {
+    const body = getContent('ca-prop-3').context.flatMap((s) => s.body).join(' ');
+    expect(body).toContain('budget reserves the state could use to fund these programs when revenues decline.”');
+    expect(body).toMatch(/In PolicyEngine's reading, .*school funding formula \(Proposition 98\)/);
+    expect(getContent('ca-prop-3').whatItDoes.join(' ')).not.toMatch(/after the school funding formula/);
+  });
+
+  it('dates Washington’s first inflation adjustment and lists the credits the model leaves out', () => {
+    const wa = getContent('wa-i-645');
+    expect(wa.comparisons[0].note).toMatch(/first adjusted for inflation for tax year 2030/);
+    expect(wa.notModeled.join(' ')).toMatch(/ESSB 6346, sections 203 to 206/);
+    expect(wa.notModeled.join(' ')).toMatch(/overstates the tax under current law/);
+  });
+
+  it('labels South Dakota’s 30,000 as the pamphlet statements’ figure, not an official estimate', () => {
+    const row = getMeasure('sd-amendment-i').official_estimates.find((e) => e.low === 30_000)!;
+    expect(row.source).toMatch(/Statements for and against.*\(not an official estimate\)/);
+    expect(row.compare).toBe(false);
+    expect(row.url).toMatch(/#page=2$/);
+  });
+});

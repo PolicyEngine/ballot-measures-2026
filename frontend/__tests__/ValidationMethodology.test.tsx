@@ -98,12 +98,10 @@ describe('ValidationMethodology', () => {
     expect(dss).toHaveTextContent('Model before adjustment; the dashboard scales');
     const pamphlet = within(validation).getByRole('link', { name: /ballot question pamphlet/ }).closest('tr')!;
     expect(pamphlet).toHaveTextContent('Model before adjustment to the Department');
-    // "Calibrated" now describes only the dataset's survey weights.
-    expect(screen.getByText(/weights are calibrated to administrative totals before the run/)).toBeInTheDocument();
-    expect(screen.getByText(/runs on a calibrated sample of US households/)).toBeInTheDocument();
-    expect(
-      screen.queryByText(/Calibrated to enrollment|before calibration|calibration factor|calibrated to the Department/i),
-    ).toBeNull();
+    // The survey weights are described in plain words; "calibrated" appears nowhere
+    expect(screen.getByText(/from survey households weighted to\s+match administrative totals/)).toBeInTheDocument();
+    expect(screen.getByText(/runs on a sample of US households \(Populace\), weighted to match administrative totals/)).toBeInTheDocument();
+    expect(screen.queryByText(/calibrat/i)).toBeNull();
     expect(screen.getByText(/After adjustment to enrollment, Medicaid/)).toBeInTheDocument();
   });
 
@@ -122,11 +120,9 @@ describe('ValidationMethodology', () => {
     // Once, in the basis table's poverty row.
     const notes = await screen.findAllByText(/Poverty figures add partnership and S corporation income, farm rental income/);
     expect(notes).toHaveLength(1);
-    expect(notes[0]).toHaveTextContent(/Alaska Permanent Fund dividend to SPM resources, which the released model omits \(policyengine-us#9919\)\./);
-    expect(within(notes[0]).getByRole('link', { name: 'policyengine-us#9919' })).toHaveAttribute(
-      'href',
-      'https://github.com/PolicyEngine/policyengine-us/issues/9919',
-    );
+    expect(notes[0]).toHaveTextContent(/Alaska Permanent Fund dividend to SPM resources, which the released model omits\./);
+    // Readers get the reason, not the issue tracker's number
+    expect(screen.queryByText(/policyengine-us#\d+/)).toBeNull();
   });
 
   it('marks the model figure pending when results are missing', async () => {

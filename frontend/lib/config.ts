@@ -16,6 +16,16 @@ export const BASE_PATH =
 /** Canonical public URL (policyengine.org serves the app through a zone rewrite). */
 export const SITE_URL = 'https://policyengine.org/us/ballot-measures-2026';
 
+/** Every page's share image (public/og-image.png, the landing map at
+ *  1200x630). Absolute, so Next doesn't join it to metadataBase's path, and
+ *  set on each page, since a page's own openGraph replaces the layout's. */
+export const OG_IMAGE = {
+  url: `${SITE_URL}/og-image.png`,
+  width: 1200,
+  height: 630,
+  alt: "Map of the United States from PolicyEngine's 2026 ballot measures dashboard, with California, Colorado, North Dakota, South Dakota and Washington highlighted",
+};
+
 /**
  * Folder under public/ that holds the microsimulation results (CSVs,
  * manifest.json and example_households.json). Defaults to `data`, the

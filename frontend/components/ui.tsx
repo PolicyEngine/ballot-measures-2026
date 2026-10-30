@@ -172,9 +172,9 @@ export function ResultsTable({
   reformLabel: string;
   rows: ResultsRow[];
 }) {
-  const head = 'px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-700';
+  const head = 'px-2 sm:px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-700';
   return (
-    <div className="overflow-x-auto rounded-xl border border-gray-200">
+    <div className="overflow-x-auto scroll-cue rounded-xl border border-gray-200">
       <table className="w-full text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead className="border-b border-gray-200 bg-gray-50">
@@ -196,12 +196,12 @@ export function ResultsTable({
         <tbody className="divide-y divide-gray-100">
           {rows.map((row) => (
             <tr key={row.label}>
-              <th scope="row" className="px-4 py-2 text-left font-normal text-gray-800">
+              <th scope="row" className="px-2 sm:px-4 py-2 text-left font-normal text-gray-800">
                 {row.label}
               </th>
-              <td className="px-4 py-2 text-right tabular-nums text-gray-800">{row.baseline}</td>
-              <td className="px-4 py-2 text-right tabular-nums text-gray-800">{row.reform}</td>
-              <td className={`px-4 py-2 text-right tabular-nums font-semibold ${toneText(row.tone ?? 'neutral')}`}>
+              <td className="px-2 sm:px-4 py-2 text-right tabular-nums text-gray-800">{row.baseline}</td>
+              <td className="px-2 sm:px-4 py-2 text-right tabular-nums text-gray-800">{row.reform}</td>
+              <td className={`px-2 sm:px-4 py-2 text-right tabular-nums font-semibold ${toneText(row.tone ?? 'neutral')}`}>
                 {row.change}
               </td>
             </tr>
@@ -304,7 +304,7 @@ export function CompareTable({
 }) {
   const cell = align === 'right' ? 'text-right' : 'text-left';
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto scroll-cue">
       <table className="w-full text-sm">
         <caption className="text-left text-sm font-semibold text-gray-800 mb-2">{caption}</caption>
         <thead>
