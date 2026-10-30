@@ -129,17 +129,21 @@ function resolve(url: string, forwardedHost: string, from: Tables = tables): Res
 }
 
 /**
- * Whether a request meets one `has` or `missing` condition. A value must
- * match the whole header, as in Next's matchHas. Vercel overwrites
- * x-forwarded-host, so whether its edge also anchors the match couldn't be
- * tried there. Condition types these rules don't use throw, so a rule that
- * adds one has to extend the model first.
+ * Whether a request meets one `has` or `missing` condition, as Next's
+ * matchHas judges it: an absent or empty header never meets it, an absent or
+ * empty value only asks for the header, and any other value is wrapped in
+ * `^…$` without a group. So `https|http` anchors only its ends; the escaped
+ * literal host these rules use has to match the whole header. Vercel
+ * overwrites x-forwarded-host, so whether its edge anchors the same way
+ * couldn't be tried there, nor how it treats an empty value. Condition types
+ * these rules don't use throw, so a rule that adds one has to extend the
+ * model first.
  */
 function meetsCondition(condition: NonNullable<Redirect['has']>[number], headers: Record<string, string>) {
   if (condition.type !== 'header') throw new Error(`the Vercel model doesn't handle ${condition.type} conditions`);
   const header = headers[condition.key.toLowerCase()];
-  if (header === undefined) return false;
-  return condition.value === undefined || new RegExp(`^${condition.value}$`).test(header);
+  if (!header) return false;
+  return !condition.value || new RegExp(`^${condition.value}$`).test(header);
 }
 
 /**
@@ -230,6 +234,8 @@ describe('direct visits to the production host', () => {
 
   // What a test deployment of these rules answered (2026-10-29): the path
   // byte for byte, and the query re-serialized with the same decoded pairs.
+  // Not here: an unnamed parameter. `?=val&blank=` came back `?val&blank=`,
+  // so the pair ('', 'val') became ('val', ''), while both models keep it.
   const ENCODED = [
     '/a%20b',
     '/caf%C3%A9',
@@ -422,6 +428,8 @@ describe("Vercel's routes for the same rules", () => {
     ['missing an absent header', { missing: [{ type: 'header', key: 'x-not-sent' }] }, true],
     ['missing the proxy host', { missing: [{ type: 'header', key: 'x-forwarded-host', value: 'www\\.policyengine\\.org' }] }, true],
     ['missing this host', { missing: [{ type: 'header', key: 'x-forwarded-host', value: 'ballot-measures-2026\\.vercel\\.app' }] }, false],
+    ['has x-forwarded-proto, value empty', { has: [{ type: 'header', key: 'x-forwarded-proto', value: '' }] }, true],
+    ['missing x-forwarded-proto, value empty', { missing: [{ type: 'header', key: 'x-forwarded-proto', value: '' }] }, false],
   ];
 
   it.each(CONDITIONS)('judge a rule with %s as Next does', async (_, condition, redirects) => {
@@ -434,6 +442,20 @@ describe("Vercel's routes for the same rules", () => {
     const url = direct(`${basePath}/x`);
     expect(Boolean(resolve(url, PRODUCTION_HOST, from))).toBe(redirects);
     expect(Boolean(resolveOnVercel(url, PRODUCTION_HOST, from))).toBe(redirects);
+  });
+
+  it("meet a header condition exactly when Next's matchHas does", () => {
+    const headerValues = [undefined, '', 'https', 'http', 'https-x'];
+    const values = [undefined, '', 'https', 'https|http', 'http.*', 'h'];
+    for (const header of headerValues) {
+      for (const value of values) {
+        const headers: Record<string, string> = header === undefined ? {} : { 'x-h': header };
+        const condition = { type: 'header' as const, key: 'X-H', ...(value === undefined ? {} : { value }) };
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matchHas reads only req.headers
+        const next = Boolean(matchHas({ headers } as any, {}, [condition], []));
+        expect(meetsCondition(condition, headers), `header ${header}, value ${value}`).toBe(next);
+      }
+    }
   });
 
   it('never send a proxied request off its host', () => {

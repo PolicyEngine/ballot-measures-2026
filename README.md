@@ -145,7 +145,7 @@ frontend, first note the deployment production serves now, so you can roll
 back to it; its `id` is the first field `vercel inspect` prints:
 
 ```bash
-cd frontend && vercel inspect ballot-measures-2026.vercel.app
+(cd frontend && vercel inspect ballot-measures-2026.vercel.app)
 ```
 
 Then run the tests and deploy from `frontend/`:
