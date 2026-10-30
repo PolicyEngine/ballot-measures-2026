@@ -22,13 +22,13 @@ const PRODUCTION_HOST = "ballot-measures-2026.vercel.app";
 // and policyengine-app-v2's preview deployments (which proxy to this same
 // host) unredirected.
 //
-// That relies on policyengine.org reaching this app through a Vercel rewrite,
-// the one hop that keeps www.policyengine.org in x-forwarded-host (seen on a
-// test deployment, 2026-10-29, with both projects in PolicyEngine's Vercel
-// team). A request that reaches PRODUCTION_HOST any other way, such as
-// through a proxy outside Vercel, arrives with PRODUCTION_HOST there, gets
-// the 308 and loops. After any change to how policyengine.org reaches this
-// app, check that PUBLIC_URL still answers 200 (README, Deploy).
+// That relies on policyengine.org reaching this app through a Vercel rewrite
+// that keeps www.policyengine.org in x-forwarded-host, as one did on a test
+// deployment (2026-10-29, both projects in PolicyEngine's Vercel team). A
+// proxy that forwarded PRODUCTION_HOST there instead would get the 308 back
+// and loop. Other paths in, such as another Vercel team or a proxy outside
+// Vercel, weren't tried, so after any change to how policyengine.org reaches
+// this app, check that PUBLIC_URL still answers 200 (README, Deploy).
 const directVisit = [
   { type: "header", key: "x-forwarded-host", value: PRODUCTION_HOST.replace(/\./g, "\\.") },
 ];

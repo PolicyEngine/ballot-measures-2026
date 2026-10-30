@@ -44,15 +44,22 @@ type Resolved = { status: number; location: URL } | null;
 type LoadedRedirect = Redirect & { internal?: boolean };
 type Route = LoadedRedirect & { match: ReturnType<typeof getPathMatch> };
 
-type VercelRoute = { src: RegExp; location: string; status: number; has?: Redirect['has'] };
+type VercelRoute = {
+  src: RegExp;
+  location: string;
+  status: number;
+  has?: Redirect['has'];
+  missing?: Redirect['missing'];
+};
 
-let routes: Route[];
-let vercelRoutes: VercelRoute[];
+type Tables = { routes: Route[]; vercelRoutes: VercelRoute[] };
+let tables: Tables;
 
-beforeAll(async () => {
-  const loaded = (await loadCustomRoutes(config)).redirects as LoadedRedirect[];
-  const restricted = [`${basePath}/_next`];
-  routes = loaded.map((route) => ({
+/** A config's redirects as Next's router and as Vercel's routes. */
+async function buildTables(fromConfig: NextConfig): Promise<Tables> {
+  const loaded = (await loadCustomRoutes(fromConfig)).redirects as LoadedRedirect[];
+  const restricted = [`${fromConfig.basePath ?? ''}/_next`];
+  const routes = loaded.map((route) => ({
     ...route,
     match: getPathMatch(route.source, {
       strict: true,
@@ -66,23 +73,39 @@ beforeAll(async () => {
   // Next's own trailing-slash redirects come first. Vercel matches paths
   // case-insensitively: on a test deployment of these rules (Next 16.2.6,
   // 2026-10-29), /US/ZONE-ECHO/x 308'd to the lowercase public path.
-  vercelRoutes = loaded.map((route) => {
+  const vercelRoutes = loaded.map((route) => {
     const converted = convertRedirects([route], 307)[0];
     return {
       src: new RegExp(route.internal ? converted.src : modifyRouteRegex(converted.src), 'i'),
       location: converted.headers.Location,
       status: converted.status,
       has: route.has,
+      missing: route.missing,
     };
   });
+  return { routes, vercelRoutes };
+}
+
+beforeAll(async () => {
+  tables = await buildTables(config);
 });
 
+/**
+ * The request headers the rules can see: Vercel sets x-forwarded-host and
+ * x-forwarded-proto on each request (both seen on a test deployment,
+ * 2026-10-29, x-forwarded-proto as https), so a rule that tests either is
+ * judged as it would be there.
+ */
+function requestHeaders(url: URL, forwardedHost: string): Record<string, string> {
+  return { host: url.host, 'x-forwarded-host': forwardedHost, 'x-forwarded-proto': 'https' };
+}
+
 /** The first redirect a request to `url` gets, given the x-forwarded-host Vercel sets. */
-function resolve(url: string, forwardedHost: string): Resolved {
+function resolve(url: string, forwardedHost: string, from: Tables = tables): Resolved {
   const requested = new URL(url);
   const query = parse(requested.search.slice(1));
-  const req = { headers: { host: requested.host, 'x-forwarded-host': forwardedHost } };
-  for (const route of routes) {
+  const req = { headers: requestHeaders(requested, forwardedHost) };
+  for (const route of from.routes) {
     const params = route.match(requested.pathname);
     if (!params) continue;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- matchHas reads only req.headers
@@ -106,22 +129,39 @@ function resolve(url: string, forwardedHost: string): Resolved {
 }
 
 /**
- * The first redirect a request to `url` gets from Vercel's routes. A header
- * condition matches the whole header, as on Vercel (seen on a test
- * deployment, 2026-10-29), and the request's query rides along.
+ * Whether a request meets one `has` or `missing` condition. A value must
+ * match the whole header, as in Next's matchHas. Vercel overwrites
+ * x-forwarded-host, so whether its edge also anchors the match couldn't be
+ * tried there. Condition types these rules don't use throw, so a rule that
+ * adds one has to extend the model first.
  */
-function resolveOnVercel(url: string, forwardedHost: string): Resolved {
+function meetsCondition(condition: NonNullable<Redirect['has']>[number], headers: Record<string, string>) {
+  if (condition.type !== 'header') throw new Error(`the Vercel model doesn't handle ${condition.type} conditions`);
+  const header = headers[condition.key.toLowerCase()];
+  if (header === undefined) return false;
+  return condition.value === undefined || new RegExp(`^${condition.value}$`).test(header);
+}
+
+/**
+ * The first redirect a request to `url` gets from Vercel's routes: every
+ * `has` condition met, no `missing` one, and the request's query riding
+ * along when the destination sets none.
+ *
+ * Both models take the URL as WHATWG URL parsing leaves it, so they don't
+ * cover what Vercel's edge does before any rule: it 308s /a//b to /a/b on the
+ * same host and answers an encoded NUL with 400 (both seen on the test
+ * deployment).
+ */
+function resolveOnVercel(url: string, forwardedHost: string, from: Tables = tables): Resolved {
   const requested = new URL(url);
-  for (const route of vercelRoutes) {
+  const headers = requestHeaders(requested, forwardedHost);
+  for (const route of from.vercelRoutes) {
     const match = route.src.exec(requested.pathname);
     if (!match) continue;
-    const headerMatches = (route.has ?? []).every(
-      (condition) =>
-        condition.type === 'header' &&
-        condition.key === 'x-forwarded-host' &&
-        new RegExp(`^${condition.value}$`).test(forwardedHost),
-    );
-    if (!headerMatches) continue;
+    const met =
+      (route.has ?? []).every((condition) => meetsCondition(condition, headers)) &&
+      !(route.missing ?? []).some((condition) => meetsCondition(condition, headers));
+    if (!met) continue;
     const location = new URL(
       route.location.replace(/\$(\d)/g, (_, index) => match[Number(index)] ?? ''),
       requested,
@@ -174,14 +214,49 @@ describe('direct visits to the production host', () => {
   });
 
   it('keep the query, including tracking parameters and repeated keys', () => {
-    const resolved = resolve(
-      direct(`${basePath}/ca-prop-40?utm_source=newsletter&utm_medium=email&tab=household&tab=statewide`),
-      PRODUCTION_HOST,
-    );
-    expect(resolved!.location.origin + resolved!.location.pathname).toBe(`${PUBLIC_ORIGIN}${basePath}/ca-prop-40`);
-    expect(pairs(resolved!.location.search)).toEqual(
-      pairs('utm_source=newsletter&utm_medium=email&tab=household&tab=statewide'),
-    );
+    for (const resolver of [resolve, resolveOnVercel]) {
+      const resolved = resolver(
+        direct(`${basePath}/ca-prop-40?utm_source=newsletter&utm_medium=email&tab=household&tab=statewide`),
+        PRODUCTION_HOST,
+      );
+      expect(resolved!.location.origin + resolved!.location.pathname, resolver.name).toBe(
+        `${PUBLIC_ORIGIN}${basePath}/ca-prop-40`,
+      );
+      expect(pairs(resolved!.location.search), resolver.name).toEqual(
+        pairs('utm_source=newsletter&utm_medium=email&tab=household&tab=statewide'),
+      );
+    }
+  });
+
+  // What a test deployment of these rules answered (2026-10-29): the path
+  // byte for byte, and the query re-serialized with the same decoded pairs.
+  const ENCODED = [
+    '/a%20b',
+    '/caf%C3%A9',
+    '/%F0%9F%97%B3',
+    '/a%2Fb',
+    '/a%2520b',
+    '/x?q=1+2',
+    '/x?q=%3B',
+    '/x?a=&b',
+    '/x?flag',
+    '/x?a=1&&b=2',
+    '/x?q=a%26b',
+  ];
+
+  it('keep encoded paths and awkward queries, as Vercel did', () => {
+    for (const resolver of [resolve, resolveOnVercel]) {
+      for (const suffix of ENCODED) {
+        const requested = new URL(direct(`${basePath}${suffix}`));
+        const resolved = resolver(requested.href, PRODUCTION_HOST);
+        const label = `${resolver.name} ${suffix}`;
+        expect(resolved?.status, label).toBe(308);
+        expect(resolved!.location.origin + resolved!.location.pathname, label).toBe(
+          `${PUBLIC_ORIGIN}${requested.pathname}`,
+        );
+        expect(pairs(resolved!.location.search), label).toEqual(pairs(requested.search));
+      }
+    }
   });
 
   it('send the host root to the dashboard', () => {
@@ -215,9 +290,11 @@ describe('requests that must not redirect', () => {
   ];
 
   it('leave policyengine.org, previews and other hosts on the page', () => {
-    for (const host of OTHER_HOSTS) {
-      for (const suffix of [...NEWSLETTER_PATHS, '/ca-prop-40', '/data/manifest.json']) {
-        expect(resolve(direct(`${basePath}${suffix}`), host), `${host} ${suffix}`).toBeNull();
+    for (const resolver of [resolve, resolveOnVercel]) {
+      for (const host of OTHER_HOSTS) {
+        for (const suffix of [...NEWSLETTER_PATHS, '/ca-prop-40', '/data/manifest.json']) {
+          expect(resolver(direct(`${basePath}${suffix}`), host), `${resolver.name} ${host} ${suffix}`).toBeNull();
+        }
       }
     }
   });
@@ -330,6 +407,33 @@ describe("Vercel's routes for the same rules", () => {
     expect(
       resolveOnVercel(direct(`${basePath.toUpperCase()}/ca-prop-40`), PRODUCTION_HOST)?.location.href,
     ).toBe(`${PUBLIC_ORIGIN}${basePath}/ca-prop-40`);
+  });
+
+  // Each condition on one catch-all rule, judged for a direct visit by both
+  // models. Next's matchHas is the reference; a rule these rules might take
+  // next, such as a `missing` header, has to come out the same in both.
+  const CONDITIONS: [string, Pick<Redirect, 'has' | 'missing'>, boolean][] = [
+    ['no condition', {}, true],
+    ['has this host', { has: [{ type: 'header', key: 'x-forwarded-host', value: 'ballot-measures-2026\\.vercel\\.app' }] }, true],
+    ['has another host', { has: [{ type: 'header', key: 'x-forwarded-host', value: 'www\\.policyengine\\.org' }] }, false],
+    ['has x-forwarded-proto', { has: [{ type: 'header', key: 'x-forwarded-proto' }] }, true],
+    ['has x-forwarded-proto http', { has: [{ type: 'header', key: 'x-forwarded-proto', value: 'http' }] }, false],
+    ['missing x-forwarded-proto', { missing: [{ type: 'header', key: 'x-forwarded-proto' }] }, false],
+    ['missing an absent header', { missing: [{ type: 'header', key: 'x-not-sent' }] }, true],
+    ['missing the proxy host', { missing: [{ type: 'header', key: 'x-forwarded-host', value: 'www\\.policyengine\\.org' }] }, true],
+    ['missing this host', { missing: [{ type: 'header', key: 'x-forwarded-host', value: 'ballot-measures-2026\\.vercel\\.app' }] }, false],
+  ];
+
+  it.each(CONDITIONS)('judge a rule with %s as Next does', async (_, condition, redirects) => {
+    const from = await buildTables({
+      basePath,
+      async redirects() {
+        return [{ source: '/:path*', destination: `${PUBLIC_ORIGIN}${basePath}/:path*`, permanent: true, ...condition }];
+      },
+    });
+    const url = direct(`${basePath}/x`);
+    expect(Boolean(resolve(url, PRODUCTION_HOST, from))).toBe(redirects);
+    expect(Boolean(resolveOnVercel(url, PRODUCTION_HOST, from))).toBe(redirects);
   });
 
   it('never send a proxied request off its host', () => {
