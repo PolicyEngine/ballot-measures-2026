@@ -41,7 +41,9 @@ export const CA_PROP_40: LinkedTool = {
     'California Proposition 40 would levy a one-time tax of 5% of the net worth of people who were California residents on January 1, 2026 and are worth $1 billion or more, valued on December 31, 2026, with the rate phasing in from 0% to 5% between $1.0 billion and $1.1 billion.',
   intro:
     'PolicyEngine’s calculator estimates receipts from the tax using Forbes data on California billionaires, with adjustable assumptions about residency, departures and future California income tax.',
-  embedUrl: 'https://california-wealth-tax.vercel.app/us/california-wealth-tax',
+  // Embedded through policyengine.org, which serves the same page, so the
+  // iframe keeps working if the calculator's own host starts redirecting there.
+  embedUrl: 'https://www.policyengine.org/us/california-wealth-tax',
   calculatorUrl: 'https://www.policyengine.org/us/california-wealth-tax',
   embedTitle: 'PolicyEngine’s California Proposition 40 billionaire tax calculator',
 };

@@ -121,3 +121,56 @@ npm run build  # production build (basePath /us/ballot-measures-2026)
 
 Branch + pull request + Vercel preview; production deploys (Vercel and the
 Modal household endpoint) only after the dashboard PR is approved.
+
+policyengine.org serves the dashboard through policyengine-app-v2's zone
+rewrite (`website/src/data/appZoneRoutes.ts`) to the production host,
+`ballot-measures-2026.vercel.app`. `frontend/next.config.js` 308s visits
+straight to that host to the same page and query on
+`www.policyengine.org/us/ballot-measures-2026`. It keys on `x-forwarded-host`,
+which Vercel sets to the host the visitor asked for: the production host on a
+direct visit, `www.policyengine.org` on a proxied request. Previews keep their
+own host, so the rule leaves them alone.
+
+That relies on policyengine.org reaching the app through a Vercel rewrite that
+keeps `www.policyengine.org` in `x-forwarded-host`, as one did on a test
+deployment (2026-10-29, both projects in PolicyEngine's Vercel team). A proxy
+that forwarded the production host there instead would get the 308 back and
+loop. Other paths in, such as another Vercel team or a proxy outside Vercel,
+weren't tried. After any change to how policyengine.org reaches the app,
+check that `https://www.policyengine.org/us/ballot-measures-2026` still
+answers 200.
+
+The project isn't linked to git, so a merge doesn't deploy. To deploy the
+frontend, first note the deployment production serves now, so you can roll
+back to it; its `id` is the first field `vercel inspect` prints:
+
+```bash
+(cd frontend && vercel inspect ballot-measures-2026.vercel.app)
+```
+
+Then run the tests and deploy from `frontend/`:
+
+```bash
+make test
+cd frontend && vercel deploy --prod
+```
+
+Then check that a direct visit 308s and that policyengine.org still serves the
+dashboard:
+
+```bash
+curl -sI https://ballot-measures-2026.vercel.app/us/ballot-measures-2026/ca-prop-3
+curl -sI https://www.policyengine.org/us/ballot-measures-2026
+```
+
+The first should answer 308 with `location:
+https://www.policyengine.org/us/ballot-measures-2026/ca-prop-3`, the second
+200. If policyengine.org stops serving the dashboard, roll back to the
+deployment you noted, from `frontend/`, or promote it in the Vercel dashboard:
+
+```bash
+vercel rollback <deployment id>
+```
+
+`vercel rollback` without a deployment only reports rollback status (Vercel
+CLI 56.2.1).
