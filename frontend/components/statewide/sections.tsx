@@ -208,9 +208,12 @@ export function WinnersSection({ data }: { data: StatewideResults }) {
     label,
     ...Object.fromEntries(WL_CATEGORIES.map((c) => [c.key, shares[c.key] * 100])),
   });
+  // The pipeline's "All" row averages the ten deciles' shares
+  // (scripts/DATA_SCHEMA.md), which isn't the statewide share of people, so
+  // it is labelled as the average it is
   const stacked = wl
     ? [
-        toRow('All', wl.all as unknown as Record<string, number>),
+        toRow('Avg', wl.all as unknown as Record<string, number>),
         ...[...wl.deciles]
           .sort((a, b) => b.decile - a.decile)
           .map((d) => toRow(String(d.decile), d as unknown as Record<string, number>)),
@@ -268,7 +271,7 @@ export function WinnersSection({ data }: { data: StatewideResults }) {
         <ChartFigure
           title="Gains and losses by income decile"
           legend={WL_CATEGORIES.map((c) => ({ label: c.label, color: c.color }))}
-          caption="Share of people in each decile by their household's percent change in net income. “Change under 0.1%” counts gains and losses smaller than 0.1% of net income; the cards above count every change of more than $1."
+          caption="Share of people in each decile by their household's percent change in net income; the top bar (Avg) averages the ten deciles. “Change under 0.1%” counts gains and losses smaller than 0.1% of net income; the cards above count every change of more than $1."
         >
           <ResponsiveContainer width="100%" height={380}>
             <BarChart data={stacked} layout="vertical" stackOffset="expand" barSize={22} margin={CHART_MARGIN}>
@@ -302,7 +305,7 @@ export function WinnersSection({ data }: { data: StatewideResults }) {
 function BandsTable({ data }: { data: StatewideResults }) {
   const bands = data.incomeBrackets ?? [];
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto scroll-cue">
       <table className="w-full text-sm">
         <caption className="sr-only">Impact by income band, {data.year}</caption>
         <thead>

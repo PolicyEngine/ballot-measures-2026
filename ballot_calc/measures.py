@@ -685,16 +685,27 @@ SD_AMENDMENT_I = Measure(
         _profile("Married couple, $28k, no children", 28_000, 55, married=True),
     ),
     official_estimates=(
+        # "About 30,000" appears only in the statements for and against the
+        # amendment (pamphlet page 2); page 1 says the Secretary of State is
+        # not responsible for their accuracy. So it isn't an official estimate
         OfficialEstimate(
-            source="South Dakota Secretary of State, 2026 ballot question pamphlet",
-            url="https://sdsos.gov/elections-voting/upcoming-elections/general-information/2026%20Ballot%20Question%20Information/2026%20Ballot%20Question%20Files/2026%20BQ/2026GeneralBQPamphletFINAL.pdf",
+            source=(
+                "Statements for and against, 2026 ballot question pamphlet "
+                "(not an official estimate)"
+            ),
+            url="https://sdsos.gov/elections-voting/upcoming-elections/general-information/2026%20Ballot%20Question%20Information/2026%20Ballot%20Question%20Files/2026%20BQ/2026GeneralBQPamphletFINAL.pdf#page=2",
             period="Current expansion enrollment",
             model_year=2028,
             metric="baseline_expansion_enrollees",
             low=30_000,
             high=30_000,
             unit="people",
-            note="Approximate enrollment cited in the pamphlet; no official fiscal note exists.",
+            note=(
+                "Both statements cite about 30,000 people covered; the Secretary "
+                "of State is not responsible for their accuracy, and no official "
+                "fiscal note exists."
+            ),
+            compare=False,
         ),
         OfficialEstimate(
             source=(

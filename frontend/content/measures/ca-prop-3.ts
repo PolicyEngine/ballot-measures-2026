@@ -36,7 +36,7 @@ const content: MeasureContent = {
     'Proposition 3 would make the three rates permanent. It changes no taxes before 2031, so PolicyEngine scores tax year 2031.',
   ],
   whatItDoes: [
-    'Keeps the revenue in the Education Protection Account, which allocates it 89% to K-12 schools and 11% to community colleges; the Legislative Analyst’s Office expects roughly 40% to reach schools and community colleges after the school funding formula, with the rest going to other programs and reserves.',
+    'Keeps the revenue in the Education Protection Account, which allocates it 89% to K-12 schools and 11% to community colleges. The Legislative Analyst’s Office expects roughly 40% of the funding to go to schools and community colleges and the rest to other state programs, part of it to budget reserves.',
     'Leaves the other rates, and the 1% Mental Health Services Act tax on taxable income above $1 million, unchanged.',
   ],
   comparisons: [
@@ -67,7 +67,8 @@ const content: MeasureContent = {
     {
       title: 'Where the revenue goes',
       body: [
-        "The measure keeps the revenue in the Education Protection Account (89% K-12 schools, 11% community colleges). The Legislative Analyst's Office expects that, after the state's school funding formula, “roughly 40 percent of the funding would go to schools and community colleges. The rest would go to other state programs. Part of this amount would be set aside in budget reserves.”",
+        "The measure keeps the revenue in the Education Protection Account (89% K-12 schools, 11% community colleges). The Legislative Analyst's Office expects that “roughly 40 percent of the funding would go to schools and community colleges. The rest would go to other state programs. Part of this amount would be set aside in budget reserves the state could use to fund these programs when revenues decline.”",
+        "In PolicyEngine's reading, the difference from the account's 89% and 11% comes from the state's school funding formula (Proposition 98), which counts the account's revenue toward the minimum it guarantees schools and community colleges.",
       ],
     },
   ],
@@ -83,7 +84,7 @@ const content: MeasureContent = {
     "California's Legislative Analyst's Office estimates that the measure brings in $5 billion to $15 billion a year: about $5 billion in a weak year and $15 billion in a strong one, because much of the revenue comes from income tied to the stock market.",
   ],
   householdNote:
-    'Enter your household to compare your 2031 California and federal income taxes under current law and if Proposition 3 passes. Only high incomes are affected.',
+    'Enter your household to compare your 2031 California income tax and net income under current law and if Proposition 3 passes. The measure changes taxes only on high incomes.',
   references: [
     { label: "Legislative Analyst's Office analysis of Proposition 3", url: LAO_URL },
     { label: 'Official voter information guide: Proposition 3', url: GUIDE_URL },

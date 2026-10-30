@@ -34,7 +34,7 @@ describe('PolicyOverview', () => {
     expect(stats[1]).toHaveTextContent('+$635.7M');
     expect(stats[1]).toHaveTextContent('2026 Blue Book, Table 3, individual taxpayers, 2023 incomes');
     expect(screen.queryByText('+$1.97B')).toBeNull();
-    expect(stats[2]).toHaveTextContent('Tax units paying more / less');
+    expect(stats[2]).toHaveTextContent('Tax returns paying more / less');
     // Changed values in the comparison stand out (NJ's bold teal).
     expect(within(table).getAllByText('8.4%').some((c) => c.className.includes('text-primary-600'))).toBe(true);
   });

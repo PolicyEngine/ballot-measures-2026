@@ -102,7 +102,7 @@ export default function CongressionalDistrictImpact({ measure, year, onYearChang
         </p>
       )}
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto scroll-cue">
         <h3 id="all-districts-heading" className="text-lg font-semibold text-gray-900 mb-3">
           All {measure.state_name} districts
         </h3>

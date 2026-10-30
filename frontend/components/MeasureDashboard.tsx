@@ -132,7 +132,7 @@ export default function MeasureDashboard({ slug }: Props) {
         </div>
         <div className="border-t border-gray-200 bg-gray-50">
           <div
-            className="max-w-7xl mx-auto px-4 flex gap-1 overflow-x-auto"
+            className="max-w-7xl mx-auto px-4 flex gap-1 overflow-x-auto scroll-cue [--scroll-cue-bg:var(--gray-50)]"
             role="tablist"
             aria-label="Measure sections"
             onKeyDown={(e) => rovingKeyDown(e, tabs, tab, selectTab)}

@@ -48,3 +48,16 @@ describe('robots and sitemap', () => {
     await expect(import('../lib/config')).rejects.toThrow(/NEXT_PUBLIC_DATA_DIR is "data-fixtures"/);
   });
 });
+
+describe('share image', () => {
+  it('is the 1200x630 landing map in public/, at an absolute URL under the dashboard', async () => {
+    const { readFileSync } = await import('fs');
+    const { join } = await import('path');
+    const { OG_IMAGE, SITE_URL } = await import('../lib/config');
+    expect(OG_IMAGE.url).toBe(`${SITE_URL}/og-image.png`);
+    const png = readFileSync(join(__dirname, '..', 'public', 'og-image.png'));
+    // PNG IHDR: width and height, big-endian, at bytes 16 and 20
+    expect([png.readUInt32BE(16), png.readUInt32BE(20)]).toEqual([OG_IMAGE.width, OG_IMAGE.height]);
+    expect([OG_IMAGE.width, OG_IMAGE.height]).toEqual([1200, 630]);
+  });
+});

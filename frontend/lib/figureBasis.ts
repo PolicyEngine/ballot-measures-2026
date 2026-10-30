@@ -56,7 +56,7 @@ export const FORECAST_INPUT_NOTE =
   'Current-law refund amounts come from the Legislative Council Staff’s September 2026 forecast.';
 
 export const SPM_ADJUSTMENT_NOTE =
-  'Poverty figures add partnership and S corporation income, farm rental income and the Alaska Permanent Fund dividend to SPM resources, which the released model omits (policyengine-us#9919).';
+  'Poverty figures add partnership and S corporation income, farm rental income and the Alaska Permanent Fund dividend to SPM resources, which the released model omits.';
 
 const usd = (v: number) => formatCompactUSD(v, { sig3: true });
 

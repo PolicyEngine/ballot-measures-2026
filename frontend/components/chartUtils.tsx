@@ -41,18 +41,28 @@ export function niceStep(maxAbs: number, ticksPerSide = 3): number {
 
 /**
  * Domain and ticks covering `values` on round steps. The axis collapses to
- * one side of zero (about five ticks) when every value shares a sign, and
- * is symmetric (about three ticks per side) otherwise.
+ * one side of zero (about five ticks) when every value shares a sign. With
+ * both signs, each side reaches only as far as its own values, on one step
+ * (about three ticks for the larger side): a dip of $1 below zero adds one
+ * step below it, not a mirror of the whole axis.
  */
 export function niceDomain(values: number[]): { domain: [number, number]; ticks: number[] } {
   const finite = values.filter((v) => Number.isFinite(v));
-  const maxAbs = Math.max(...finite.map(Math.abs), 0);
-  const hasPositive = finite.some((v) => v > 0);
-  const hasNegative = finite.some((v) => v < 0);
+  const maxPos = Math.max(0, ...finite);
+  const maxNeg = Math.max(0, ...finite.map((v) => -v));
+  const maxAbs = Math.max(maxPos, maxNeg);
+  const hasPositive = maxPos > 0;
+  const hasNegative = maxNeg > 0;
   const step = niceStep(maxAbs, hasPositive && hasNegative ? 3 : 5);
-  const top = Math.max(step, Math.ceil(maxAbs / step) * step);
+  const reach = (m: number) => Math.max(step, Math.ceil(m / step) * step);
   const domain: [number, number] =
-    hasNegative && !hasPositive ? [-top, 0] : hasPositive && !hasNegative ? [0, top] : [-top, top];
+    hasNegative && !hasPositive
+      ? [-reach(maxNeg), 0]
+      : hasPositive && !hasNegative
+        ? [0, reach(maxPos)]
+        : hasPositive && hasNegative
+          ? [-reach(maxNeg), reach(maxPos)]
+          : [-step, step];
   const count = Math.round((domain[1] - domain[0]) / step) + 1;
   const ticks = Array.from({ length: count }, (_, i) =>
     Number((domain[0] + i * step).toPrecision(12)),

@@ -169,7 +169,7 @@ export function ValidationTable({
     return <p className="text-sm text-gray-600">No official estimate has been published for this measure.</p>;
   }
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto scroll-cue">
       <table className="w-full text-sm">
         <caption className="text-left text-sm font-semibold text-gray-800 mb-2">
           PolicyEngine and official estimates
@@ -472,50 +472,58 @@ function ModelAndData({ measure, manifest }: { measure: Measure; manifest: Manif
   const reform = overrideLines(measure.reform_overrides);
   return (
     <div className="space-y-4 text-sm text-gray-700">
-      <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="rounded-lg border border-gray-200 p-3">
-          <dt className="text-xs text-gray-500">Model</dt>
-          <dd className="mt-0.5 font-mono text-xs break-all">{manifest?.pin ?? REGISTRY.pin}</dd>
-        </div>
-        <div className="rounded-lg border border-gray-200 p-3">
-          <dt className="text-xs text-gray-500">Dataset revision</dt>
-          <dd className="mt-0.5 font-mono text-xs break-all">{manifest?.dataset_revision ?? 'Pending'}</dd>
-        </div>
-        <div className="rounded-lg border border-gray-200 p-3">
-          <dt className="text-xs text-gray-500">Results generated</dt>
-          <dd className="mt-0.5 text-xs">
-            {manifest?.generated_at_utc ? formatTimestamp(manifest.generated_at_utc) : 'Pending'}
-          </dd>
-        </div>
-        <div className="rounded-lg border border-gray-200 p-3">
-          <dt className="text-xs text-gray-500">Measure registry</dt>
-          <dd className="mt-0.5 text-xs">
-            <span className="font-mono">{REGISTRY.registry_hash}</span>
-            {hashMatches === false && (
-              <span className="block text-gray-600 mt-1">
-                The results were generated from registry {manifest?.registry_hash}; rerun the
-                pipeline to match.
-              </span>
-            )}
-          </dd>
-        </div>
-      </dl>
       <div>
         <p className="font-semibold text-gray-900">How the measure is modeled</p>
         <p className="mt-1">
           Every figure is the difference between two simulations of the same households in the same
           year: one under current law and one{' '}
-          {measure.kind_params?.conditional === true ? 'under the scenario' : 'with the measure in effect'}
-          . Parameter changes:
+          {measure.kind_params?.conditional === true ? 'under the scenario' : 'with the measure in effect'}.
         </p>
-        <pre className="mt-2 overflow-x-auto rounded-lg bg-gray-50 border border-gray-200 p-3 text-xs leading-5 text-gray-800">
-          {[
-            ...(baseline.length ? ['# Both simulations (current law assumptions)', ...baseline, ''] : []),
-            measure.kind_params?.conditional === true ? '# The scenario' : '# The measure passes',
-            ...reform,
-          ].join('\n')}
-        </pre>
       </div>
+      {/* Versions, hashes and parameter paths, for anyone reproducing the run */}
+      <details className="rounded-lg border border-gray-200 bg-white p-4">
+        <summary className="cursor-pointer font-semibold text-gray-900">Technical details</summary>
+        <div className="mt-3 space-y-4">
+          <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="rounded-lg border border-gray-200 p-3">
+              <dt className="text-xs text-gray-500">Model</dt>
+              <dd className="mt-0.5 font-mono text-xs break-all">{manifest?.pin ?? REGISTRY.pin}</dd>
+            </div>
+            <div className="rounded-lg border border-gray-200 p-3">
+              <dt className="text-xs text-gray-500">Dataset revision</dt>
+              <dd className="mt-0.5 font-mono text-xs break-all">{manifest?.dataset_revision ?? 'Pending'}</dd>
+            </div>
+            <div className="rounded-lg border border-gray-200 p-3">
+              <dt className="text-xs text-gray-500">Results generated</dt>
+              <dd className="mt-0.5 text-xs">
+                {manifest?.generated_at_utc ? formatTimestamp(manifest.generated_at_utc) : 'Pending'}
+              </dd>
+            </div>
+            <div className="rounded-lg border border-gray-200 p-3">
+              <dt className="text-xs text-gray-500">Measure registry</dt>
+              <dd className="mt-0.5 text-xs">
+                <span className="font-mono">{REGISTRY.registry_hash}</span>
+                {hashMatches === false && (
+                  <span className="block text-gray-600 mt-1">
+                    The results were generated from registry {manifest?.registry_hash}; rerun the
+                    pipeline to match.
+                  </span>
+                )}
+              </dd>
+            </div>
+          </dl>
+          <div>
+            <p className="font-semibold text-gray-900">Parameter changes</p>
+            <pre className="mt-2 overflow-x-auto rounded-lg bg-gray-50 border border-gray-200 p-3 text-xs leading-5 text-gray-800">
+              {[
+                ...(baseline.length ? ['# Both simulations (current law assumptions)', ...baseline, ''] : []),
+                measure.kind_params?.conditional === true ? '# The scenario' : '# The measure passes',
+                ...reform,
+              ].join('\n')}
+            </pre>
+          </div>
+        </div>
+      </details>
     </div>
   );
 }
@@ -675,8 +683,8 @@ export default function ValidationMethodology({ measure, year, onYearChange }: P
           How these figures are produced
         </h2>
         <p className="text-sm text-gray-700">
-          Model estimates are PolicyEngine&apos;s output as is, from survey households whose
-          weights are calibrated to administrative totals before the run. Adjusted figures change
+          Model estimates are PolicyEngine&apos;s output as is, from survey households weighted to
+          match administrative totals. Adjusted figures change
           that output after the run to come closer to official statistics, such as enrollment,
           or add income that the released model leaves out of poverty resources. Figures with a
           forecast input use an official forecast in place of a model input.
@@ -850,8 +858,8 @@ export default function ValidationMethodology({ measure, year, onYearChange }: P
         <Callout>
           PolicyEngine&apos;s microsimulation model,{' '}
           <ExternalLink href="https://github.com/PolicyEngine/policyengine-us">policyengine-us</ExternalLink>
-          , runs on a calibrated sample of US households (Populace), assigned to states and
-          congressional districts.
+          , runs on a sample of US households (Populace), weighted to match administrative totals
+          and assigned to states and congressional districts.
         </Callout>
       </section>
     </div>

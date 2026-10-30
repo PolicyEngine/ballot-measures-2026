@@ -96,13 +96,13 @@ export function KindHeadlineCards({ measure, metrics }: { measure: Measure; metr
           />
           <GainingLosingCard metrics={m} />
           <StatCard
-            label="Tax units paying more / less"
+            label="Tax returns paying more / less"
             value={
               more === null || less === null
                 ? DASH
                 : `${formatCompactCount(more)} / ${formatCompactCount(less)}`
             }
-            detail="Filers and their dependents whose state income tax rises or falls"
+            detail="Returns whose state income tax rises or falls (a joint return counts once)"
           />
         </div>
       );
@@ -124,10 +124,10 @@ export function KindHeadlineCards({ measure, metrics }: { measure: Measure; metr
             detail={
               recipients === null
                 ? undefined
-                : `${formatCount(recipients)} recipients; ${show(
+                : `${formatCount(recipients)} returns; ${show(
                     metric(m, TR.avgRefundBaseline),
                     formatUSD,
-                  )} on average`
+                  )} per return on average`
             }
           />
         </div>
@@ -183,16 +183,16 @@ export function kindDetailRows(measure: Measure, metrics: Metrics): DetailRow[] 
             baseline && change !== null ? formatPercent((change / baseline) * 100, 1, { sign: true }) : DASH,
         },
         {
-          // Exceeds 100% when tax units below $1 million pay less in total.
-          label: 'Share of the change from tax units with income of $1 million or more',
+          // Exceeds 100% when returns below $1 million pay less in total, so the label says so
+          label: 'Share of the change from returns with income of $1 million or more (over 100% when returns below $1 million pay less in total)',
           value: show(metric(m, IT.revenueShareAgi1mPlus), (v) => formatShare(v)),
         },
         {
-          label: 'Average tax increase, tax units paying more',
+          label: 'Average tax change, returns paying more',
           value: show(metric(m, IT.avgTaxChangePayingMore), formatUSDWithSign),
         },
         {
-          label: 'Average tax decrease, tax units paying less',
+          label: 'Average tax change, returns paying less',
           value: show(metric(m, IT.avgTaxChangePayingLess), formatUSDWithSign),
         },
       ];

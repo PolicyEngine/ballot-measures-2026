@@ -58,13 +58,13 @@ const content: MeasureContent = {
           ifPasses: 'Prohibited by statute',
         },
       ],
-      note: 'Under current law, the $1 million deduction is adjusted for inflation beginning in 2029.',
+      note: 'Under current law, the $1 million deduction is first adjusted for inflation for tax year 2030, and every two years after (ESSB 6346, section 316).',
     },
   ],
   whoIsAffectedSummary:
     'Only households with income above the $1 million deduction owe the tax under current law, so only they see a change.',
   whoIsAffected: [
-    'Only households with income above the $1 million deduction owe the tax under current law, so only they see a change. The fiscal impact statement’s count of affected taxpayers is under official estimates.',
+    'Only households with income above the $1 million deduction owe the tax under current law, so only they see a change. The Official estimates section gives the fiscal impact statement’s count of affected taxpayers.',
     'A household whose income subject to the tax is $2 million owes 9.9% of the $1 million above the deduction, or $99,000, under current law in 2028, and nothing if Initiative 645 passes.',
   ],
   effectiveDate:
@@ -73,6 +73,7 @@ const content: MeasureContent = {
   notModeled: [
     'How the state would adjust spending. The ballot title says the measure “would decrease funding for public K-12 education, higher education (including universities and community colleges), and human services (primarily healthcare).”',
     'The statutory prohibition on state and local income taxes; the model covers only the tax the measure repeals.',
+    'The credits the tax allows (ESSB 6346, sections 203 to 206): for income tax paid to other states, business and occupation and public utility taxes, Washington capital gains tax, and pass-through entity tax. The model applies none of them, and without the capital gains credit it taxes some gains under both the capital gains tax and this one, so it overstates the tax under current law, and the revenue the repeal would lose, by an amount not yet measured.',
     'Behavioral responses, such as changes in when people realize income, or moves into or out of the state.',
   ],
   caveats: [

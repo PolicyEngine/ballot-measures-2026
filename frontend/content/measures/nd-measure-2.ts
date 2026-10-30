@@ -92,7 +92,7 @@ const content: MeasureContent = {
     "The Legislative Council's fiscal impact report, based on Department of Public Instruction figures, puts the measure's cost at $124 million to $134 million for free meals and $300,000 for administration in the 2027-29 biennium: $124.3 million to $134.3 million in total, as the ballot states.",
   ],
   householdNote:
-    'Enter your household to see the value of school meals for your children in 2028 under current law and if Measure No. 2 passes.',
+    'Enter your household to see the value of school meals for your children in 2028 under current law and if Measure No. 2 passes. The figures assume each child eats both meals every school day, so they are the most a household could gain.',
   references: [
     { label: 'North Dakota Secretary of State, 2026 general election measure guide', url: GUIDE_URL },
     { label: 'Measure No. 2 full text', url: TEXT_URL },
