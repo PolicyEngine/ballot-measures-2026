@@ -66,28 +66,28 @@ describe('LandingPage', () => {
     expect(routerMock.push).not.toHaveBeenCalled();
   });
 
-  it('tags each decided measure in the popup as approved or rejected, and leaves undecided ones untagged', () => {
+  it('shows the result of the vote for each decided measure in the popup, and nothing for undecided ones', () => {
     renderWithQuery(<LandingPage />);
-    const tags = (state: string) => {
+    const results = (state: string) => {
       fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${state}`) }));
       const dialog = screen.getByRole('dialog', { name: state });
       const found = within(dialog)
         .getAllByRole('listitem')
-        .map((li) => [li.querySelector('p')?.textContent, within(li).queryByTestId('outcome-tag')?.textContent ?? null]);
+        .map((li) => [li.querySelector('p')?.textContent, within(li).queryByTestId('election-result')?.textContent ?? null]);
       fireEvent.keyDown(document, { key: 'Escape' });
       return found;
     };
-    expect(tags('California')).toEqual([
-      ['Proposition 3', 'Approved'],
+    expect(results('California')).toEqual([
+      ['Proposition 3', 'Voters approved this measure on November 3, 2026.'],
       ['Proposition 40', null],
     ]);
-    expect(tags('Colorado')).toEqual([
+    expect(results('Colorado')).toEqual([
       ['Amendment 87', null],
-      ['Proposition NN', 'Approved'],
+      ['Proposition NN', 'Voters approved this measure on November 3, 2026.'],
     ]);
-    expect(tags('Washington')).toEqual([['Initiative 645', 'Rejected']]);
-    expect(tags('South Dakota')).toEqual([['Constitutional Amendment I', 'Rejected']]);
-    expect(tags('North Dakota')).toEqual([['Constitutional Measure No. 2', null]]);
+    expect(results('Washington')).toEqual([['Initiative 645', 'Voters rejected this measure on November 3, 2026.']]);
+    expect(results('South Dakota')).toEqual([['Constitutional Amendment I', 'Voters rejected this measure on November 3, 2026.']]);
+    expect(results('North Dakota')).toEqual([['Constitutional Measure No. 2', null]]);
   });
 
   it('forwards a #measure= link to the measure page', async () => {

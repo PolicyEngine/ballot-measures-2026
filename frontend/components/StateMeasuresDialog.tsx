@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef } from 'react';
 import Link from 'next/link';
 import type { LandingState } from '@/lib/landing';
-import { OUTCOME_TAGS } from './ElectionResultBanner';
+import ElectionResultBanner from './ElectionResultBanner';
 
 /** Beside the state on wider screens (offsets within the map); a centered sheet on phones. */
 export type DialogPlacement = { kind: 'anchored'; x: number; y: number } | { kind: 'sheet' };
@@ -17,8 +17,8 @@ interface Props {
 }
 
 /**
- * A state's measures: designation (with an Approved or Rejected tag once the
- * result is confirmed), short title, policy overview and a link for each, so
+ * A state's measures: designation, short title, the result of the vote once
+ * confirmed (the measure page's banner sentence), policy overview and a link for each, so
  * a state with several (Colorado, California) can be compared before
  * choosing one. Focus moves into the dialog and stays there until it
  * closes (close button, Escape or a click outside).
@@ -103,18 +103,9 @@ export default function StateMeasuresDialog({ state, placement, onClose }: Props
       <ul className="mt-3 divide-y divide-gray-100">
         {state.measures.map((m) => (
           <li key={m.slug} className="py-3 first:pt-0 last:pb-0">
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{m.designation}</p>
-              {m.outcome && (
-                <span
-                  data-testid="outcome-tag"
-                  className="rounded border border-gray-300 bg-gray-50 px-1.5 py-px text-xs font-medium text-gray-700"
-                >
-                  {OUTCOME_TAGS[m.outcome]}
-                </span>
-              )}
-            </div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-gray-500">{m.designation}</p>
             <p className="mt-0.5 font-semibold text-gray-900">{m.shortTitle}</p>
+            {m.result && <ElectionResultBanner result={m.result} withNote={false} className="mt-2" />}
             <p className="mt-1 text-sm text-gray-600">{m.overview}</p>
             <Link
               href={`/${m.slug}`}

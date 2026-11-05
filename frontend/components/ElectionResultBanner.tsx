@@ -1,12 +1,6 @@
 import type { ElectionResult } from '@/content/measures';
 import { formatLongDate } from '@/lib/format';
 
-/** The landing popup's tag for each outcome. */
-export const OUTCOME_TAGS: Record<ElectionResult['outcome'], string> = {
-  approved: 'Approved',
-  rejected: 'Rejected',
-};
-
 /** What the result means for a measure page's figures, unless the content gives its own note. */
 export const MEASURE_NOTES: Record<ElectionResult['outcome'], string> = {
   approved:
@@ -28,6 +22,8 @@ interface Props {
   result: ElectionResult;
   /** Default notes by outcome; the result's analysisNote overrides them. */
   notes?: Record<ElectionResult['outcome'], string>;
+  /** False for the landing popup, which shows the sentence alone (its notes refer to figures on the page). */
+  withNote?: boolean;
   className?: string;
 }
 
@@ -35,14 +31,16 @@ interface Props {
  * The result of the vote under a measure's title: plain text in the same
  * neutral box for either outcome, so it reads without color.
  */
-export default function ElectionResultBanner({ result, notes = MEASURE_NOTES, className = '' }: Props) {
+export default function ElectionResultBanner({ result, notes = MEASURE_NOTES, withNote = true, className = '' }: Props) {
   return (
     <p
       data-testid="election-result"
-      className={`rounded-lg border border-gray-200 border-l-4 border-l-primary-500 bg-gray-50 px-4 py-3 text-sm text-gray-700 ${className}`}
+      className={`rounded-lg border border-gray-200 border-l-4 border-l-primary-500 bg-gray-50 text-sm text-gray-700 ${
+        withNote ? 'px-4 py-3' : 'px-3 py-2'
+      } ${className}`}
     >
-      <strong className="font-semibold text-gray-900">{resultSentence(result)}</strong>{' '}
-      {result.analysisNote ?? notes[result.outcome]}
+      <strong className="font-semibold text-gray-900">{resultSentence(result)}</strong>
+      {withNote && <> {result.analysisNote ?? notes[result.outcome]}</>}
     </p>
   );
 }

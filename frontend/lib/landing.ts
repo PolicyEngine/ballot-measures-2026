@@ -18,8 +18,8 @@ export interface LandingMeasure {
   overview: string;
   /** "View analysis" for a dashboard page, "Open the calculator" for a linked calculator. */
   linkLabel: string;
-  /** How voters decided it, once confirmed; undefined while undecided. */
-  outcome?: ElectionResult['outcome'];
+  /** How and when voters decided it, once confirmed; undefined while undecided. */
+  result?: ElectionResult;
 }
 
 export interface LandingState {
@@ -40,7 +40,7 @@ export function landingStates(): LandingState[] {
       shortTitle: m.short_title,
       overview: getContent(m.slug).description,
       linkLabel: 'View analysis',
-      outcome: getContent(m.slug).result?.outcome,
+      result: getContent(m.slug).result,
     })),
   }));
   for (const tool of LINKED_TOOLS) {
@@ -50,7 +50,7 @@ export function landingStates(): LandingState[] {
       shortTitle: tool.shortTitle,
       overview: tool.overview,
       linkLabel: 'Open the calculator',
-      outcome: tool.result?.outcome,
+      result: tool.result,
     };
     const state = states.find((s) => s.code === tool.state);
     if (state) state.measures.push(entry);
