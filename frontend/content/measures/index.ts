@@ -17,6 +17,7 @@ export type {
   Comparison,
   ComparisonRow,
   ContentSection,
+  ElectionResult,
   MeasureContent,
   Reference,
   SimpleTable,

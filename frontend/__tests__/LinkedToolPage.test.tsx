@@ -1,6 +1,7 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import CaProp40Page, { metadata } from '../app/(shell)/ca-prop-40/page';
+import LinkedToolPage from '../components/LinkedToolPage';
 import { generateStaticParams } from '../app/(shell)/[measure]/page';
 import { CA_PROP_40, LINKED_TOOLS } from '../content/linkedTools';
 import { landingStates } from '../lib/landing';
@@ -24,6 +25,17 @@ describe('California Proposition 40 page', () => {
     expect(open).toHaveAttribute('rel', 'noopener noreferrer');
     // No tabs on this page.
     expect(screen.queryByRole('tablist')).toBeNull();
+  });
+
+  it('shows no election result while Proposition 40 is undecided, and a banner once one is set', () => {
+    expect(CA_PROP_40.result).toBeUndefined();
+    const { unmount } = render(<CaProp40Page />);
+    expect(screen.queryByTestId('election-result')).toBeNull();
+    unmount();
+    render(<LinkedToolPage tool={{ ...CA_PROP_40, result: { outcome: 'rejected', date: '2026-11-03' } }} />);
+    expect(screen.getByTestId('election-result')).toHaveTextContent(
+      'Voters rejected this measure on November 3, 2026. The calculator below estimates what it would have done.',
+    );
   });
 
   it('describes the measure as the calculator does', () => {

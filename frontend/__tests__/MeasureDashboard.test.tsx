@@ -75,6 +75,42 @@ describe('MeasureDashboard tabs', () => {
   });
 });
 
+describe('election result banner', () => {
+  const banner = () => screen.queryByTestId('election-result');
+
+  it('says voters approved California Proposition 3, under the title on every tab', () => {
+    renderWithQuery(<MeasureDashboard slug="ca-prop-3" />);
+    for (const name of ['Overview', 'Statewide', 'Household', 'Methodology']) {
+      fireEvent.click(screen.getByRole('tab', { name }));
+      expect(banner()).toHaveTextContent(
+        'Voters approved this measure on November 3, 2026. The estimates below show its effects compared with the law before the vote, which this page calls current law.',
+      );
+    }
+    // Above the tab panel, not inside it.
+    expect(screen.getByRole('tabpanel')).not.toContainElement(banner());
+  });
+
+  it('says voters rejected Washington Initiative 645', () => {
+    renderWithQuery(<MeasureDashboard slug="wa-i-645" />);
+    expect(banner()).toHaveTextContent(
+      'Voters rejected this measure on November 3, 2026. The estimates below show what it would have done.',
+    );
+  });
+
+  it('describes South Dakota’s figures as the scenario it was modeled under', () => {
+    renderWithQuery(<MeasureDashboard slug="sd-amendment-i" />);
+    expect(banner()).toHaveTextContent(
+      'Voters rejected this measure on November 3, 2026. The estimates below show the scenario modeled for it, in which the federal share of the cost of expansion falls below 90% and expansion ends.',
+    );
+  });
+
+  it.each(['co-amendment-87', 'nd-measure-2'])('shows nothing for %s, which is undecided', (slug) => {
+    renderWithQuery(<MeasureDashboard slug={slug} />);
+    expect(banner()).toBeNull();
+    expect(screen.queryByText(/Voters (approved|rejected)/)).toBeNull();
+  });
+});
+
 describe('year selector and hash', () => {
   it('appears only for measures scored in several years, off the overview', () => {
     renderWithQuery(<MeasureDashboard slug="wa-i-645" />);

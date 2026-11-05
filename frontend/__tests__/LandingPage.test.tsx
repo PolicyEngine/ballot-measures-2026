@@ -66,6 +66,30 @@ describe('LandingPage', () => {
     expect(routerMock.push).not.toHaveBeenCalled();
   });
 
+  it('tags each decided measure in the popup as approved or rejected, and leaves undecided ones untagged', () => {
+    renderWithQuery(<LandingPage />);
+    const tags = (state: string) => {
+      fireEvent.click(screen.getByRole('button', { name: new RegExp(`^${state}`) }));
+      const dialog = screen.getByRole('dialog', { name: state });
+      const found = within(dialog)
+        .getAllByRole('listitem')
+        .map((li) => [li.querySelector('p')?.textContent, within(li).queryByTestId('outcome-tag')?.textContent ?? null]);
+      fireEvent.keyDown(document, { key: 'Escape' });
+      return found;
+    };
+    expect(tags('California')).toEqual([
+      ['Proposition 3', 'Approved'],
+      ['Proposition 40', null],
+    ]);
+    expect(tags('Colorado')).toEqual([
+      ['Amendment 87', null],
+      ['Proposition NN', 'Approved'],
+    ]);
+    expect(tags('Washington')).toEqual([['Initiative 645', 'Rejected']]);
+    expect(tags('South Dakota')).toEqual([['Constitutional Amendment I', 'Rejected']]);
+    expect(tags('North Dakota')).toEqual([['Constitutional Measure No. 2', null]]);
+  });
+
   it('forwards a #measure= link to the measure page', async () => {
     window.location.hash = '#measure=nd-measure-2&tab=household';
     renderWithQuery(<LandingPage />);

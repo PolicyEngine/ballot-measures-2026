@@ -4,7 +4,7 @@
  * so a state lists every measure on its ballot that PolicyEngine covers.
  */
 
-import { getContent } from '@/content/measures';
+import { getContent, type ElectionResult } from '@/content/measures';
 import { LINKED_TOOLS } from '@/content/linkedTools';
 import { measuresByState } from './registry';
 
@@ -18,6 +18,8 @@ export interface LandingMeasure {
   overview: string;
   /** "View analysis" for a dashboard page, "Open the calculator" for a linked calculator. */
   linkLabel: string;
+  /** How voters decided it, once confirmed; undefined while undecided. */
+  outcome?: ElectionResult['outcome'];
 }
 
 export interface LandingState {
@@ -38,6 +40,7 @@ export function landingStates(): LandingState[] {
       shortTitle: m.short_title,
       overview: getContent(m.slug).description,
       linkLabel: 'View analysis',
+      outcome: getContent(m.slug).result?.outcome,
     })),
   }));
   for (const tool of LINKED_TOOLS) {
@@ -47,6 +50,7 @@ export function landingStates(): LandingState[] {
       shortTitle: tool.shortTitle,
       overview: tool.overview,
       linkLabel: 'Open the calculator',
+      outcome: tool.result?.outcome,
     };
     const state = states.find((s) => s.code === tool.state);
     if (state) state.measures.push(entry);
