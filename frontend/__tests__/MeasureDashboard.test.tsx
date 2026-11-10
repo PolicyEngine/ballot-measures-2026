@@ -90,6 +90,13 @@ describe('election result banner', () => {
     expect(screen.getByRole('tabpanel')).not.toContainElement(banner());
   });
 
+  it('says voters approved Colorado Amendment 87', () => {
+    renderWithQuery(<MeasureDashboard slug="co-amendment-87" />);
+    expect(banner()).toHaveTextContent(
+      'Voters approved this measure on November 3, 2026. The estimates below show its effects compared with the law before the vote, which this page calls current law.',
+    );
+  });
+
   it('says voters rejected Washington Initiative 645', () => {
     renderWithQuery(<MeasureDashboard slug="wa-i-645" />);
     expect(banner()).toHaveTextContent(
@@ -104,7 +111,7 @@ describe('election result banner', () => {
     );
   });
 
-  it.each(['co-amendment-87', 'nd-measure-2'])('shows nothing for %s, which is undecided', (slug) => {
+  it.each(['nd-measure-2'])('shows nothing for %s, which is undecided', (slug) => {
     renderWithQuery(<MeasureDashboard slug={slug} />);
     expect(banner()).toBeNull();
     expect(screen.queryByText(/Voters (approved|rejected)/)).toBeNull();

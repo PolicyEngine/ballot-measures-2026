@@ -27,15 +27,15 @@ describe('California Proposition 40 page', () => {
     expect(screen.queryByRole('tablist')).toBeNull();
   });
 
-  it('shows no election result while Proposition 40 is undecided, and a banner once one is set', () => {
-    expect(CA_PROP_40.result).toBeUndefined();
+  it('says voters rejected Proposition 40, and shows nothing for a tool with no result', () => {
+    expect(CA_PROP_40.result).toEqual({ outcome: 'rejected', date: '2026-11-03' });
     const { unmount } = render(<CaProp40Page />);
-    expect(screen.queryByTestId('election-result')).toBeNull();
-    unmount();
-    render(<LinkedToolPage tool={{ ...CA_PROP_40, result: { outcome: 'rejected', date: '2026-11-03' } }} />);
     expect(screen.getByTestId('election-result')).toHaveTextContent(
       'Voters rejected this measure on November 3, 2026. The calculator below estimates what it would have done.',
     );
+    unmount();
+    render(<LinkedToolPage tool={{ ...CA_PROP_40, result: undefined }} />);
+    expect(screen.queryByTestId('election-result')).toBeNull();
   });
 
   it('describes the measure as the calculator does', () => {

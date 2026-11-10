@@ -178,7 +178,7 @@ describe('measure content', () => {
 
   it('records only the confirmed election results, all on election day', () => {
     expect(Object.fromEntries(MEASURE_SLUGS.map((slug) => [slug, getContent(slug).result?.outcome ?? null]))).toEqual({
-      'co-amendment-87': null,
+      'co-amendment-87': 'approved',
       'co-prop-nn': 'approved',
       'ca-prop-3': 'approved',
       'wa-i-645': 'rejected',

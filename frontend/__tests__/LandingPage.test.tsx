@@ -79,10 +79,10 @@ describe('LandingPage', () => {
     };
     expect(results('California')).toEqual([
       ['Proposition 3', 'Voters approved this measure on November 3, 2026.'],
-      ['Proposition 40', null],
+      ['Proposition 40', 'Voters rejected this measure on November 3, 2026.'],
     ]);
     expect(results('Colorado')).toEqual([
-      ['Amendment 87', null],
+      ['Amendment 87', 'Voters approved this measure on November 3, 2026.'],
       ['Proposition NN', 'Voters approved this measure on November 3, 2026.'],
     ]);
     expect(results('Washington')).toEqual([['Initiative 645', 'Voters rejected this measure on November 3, 2026.']]);

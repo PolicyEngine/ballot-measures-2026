@@ -37,6 +37,7 @@ export interface LinkedTool {
  */
 export const CA_PROP_40: LinkedTool = {
   slug: 'ca-prop-40',
+  result: { outcome: 'rejected', date: '2026-11-03' },
   state: 'CA',
   stateName: 'California',
   designation: 'Proposition 40',
