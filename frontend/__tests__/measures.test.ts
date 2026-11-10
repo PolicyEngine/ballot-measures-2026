@@ -182,7 +182,7 @@ describe('measure content', () => {
       'co-prop-nn': 'approved',
       'ca-prop-3': 'approved',
       'wa-i-645': 'rejected',
-      'nd-measure-2': null,
+      'nd-measure-2': 'rejected',
       'sd-amendment-i': 'rejected',
     });
     for (const slug of MEASURE_SLUGS) {

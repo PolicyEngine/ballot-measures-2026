@@ -87,7 +87,7 @@ describe('LandingPage', () => {
     ]);
     expect(results('Washington')).toEqual([['Initiative 645', 'Voters rejected this measure on November 3, 2026.']]);
     expect(results('South Dakota')).toEqual([['Constitutional Amendment I', 'Voters rejected this measure on November 3, 2026.']]);
-    expect(results('North Dakota')).toEqual([['Constitutional Measure No. 2', null]]);
+    expect(results('North Dakota')).toEqual([['Constitutional Measure No. 2', 'Voters rejected this measure on November 3, 2026.']]);
   });
 
   it('forwards a #measure= link to the measure page', async () => {
