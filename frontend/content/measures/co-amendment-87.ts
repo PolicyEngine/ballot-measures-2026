@@ -4,6 +4,8 @@ const BLUE_BOOK_URL = 'https://content.leg.colorado.gov/sites/default/files/2026
 const TEXT_URL =
   'https://www.sos.state.co.us/pubs/elections/Initiatives/titleBoard/filings/2025-2026/195Final.pdf';
 const INITIAL_FIS_URL = 'https://leg.colorado.gov/initiative_files/3320/download';
+const PROP_136_RESULT_URL =
+  'https://coloradosun.com/2026/11/06/proposition-136-results-amendment-87-income-tax-limit/';
 
 const content: MeasureContent = {
   slug: 'co-amendment-87',
@@ -80,11 +82,12 @@ const content: MeasureContent = {
     {
       title: 'Proposition 136',
       body: [
-        "Proposition 136, also on Colorado's ballot, would cap the state income tax rate at 4.4% starting January 1, 2027. The Blue Book says that if both measures pass, “the exact outcome is unclear. The state legislature or a court will need to determine how to resolve any conflicts.” This dashboard models Amendment 87 on its own.",
+        "Proposition 136, also on Colorado's ballot, would have capped the state income tax rate at 4.4% starting January 1, 2027. The Blue Book said that if both measures passed, “the exact outcome is unclear. The state legislature or a court will need to determine how to resolve any conflicts.” Voters rejected Proposition 136 on November 3, 2026, so that conflict does not arise. This dashboard models Amendment 87 on its own.",
       ],
       sources: [
         { label: '2026 Blue Book, page 62 (Proposition 136: the 4.4% limit)', url: `${BLUE_BOOK_URL}#page=62` },
         { label: '2026 Blue Book, page 36 (if both measures pass)', url: `${BLUE_BOOK_URL}#page=36` },
+        { label: 'The Colorado Sun, November 6, 2026 (Proposition 136 result)', url: PROP_136_RESULT_URL },
       ],
     },
   ],
