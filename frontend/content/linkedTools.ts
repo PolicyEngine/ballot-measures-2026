@@ -5,9 +5,13 @@
  * not in ballot_calc/measures.py or measures.json.
  */
 
+import type { ElectionResult } from './measures/types';
+
 export interface LinkedTool {
   /** Page path under the dashboard, e.g. "ca-prop-40". */
   slug: string;
+  /** The election result once it is confirmed; no banner while it is left out. */
+  result?: ElectionResult;
   /** Two-letter state code, e.g. "CA". */
   state: string;
   stateName: string;
@@ -33,6 +37,7 @@ export interface LinkedTool {
  */
 export const CA_PROP_40: LinkedTool = {
   slug: 'ca-prop-40',
+  result: { outcome: 'rejected', date: '2026-11-03' },
   state: 'CA',
   stateName: 'California',
   designation: 'Proposition 40',

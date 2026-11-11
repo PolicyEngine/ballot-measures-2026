@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { getContent } from '@/content/measures';
 import { formatLongDate } from '@/lib/format';
 import { ELECTION_DATE } from '@/lib/measures';
 import { getMeasure, isMeasureSlug, measureName, resolveYear, type Measure } from '@/lib/registry';
@@ -23,6 +24,7 @@ import ValidationMethodology from './ValidationMethodology';
 import DownloadResults from './DownloadResults';
 import { noDistrictsText } from './AggregateImpact';
 import Breadcrumb from './Breadcrumb';
+import ElectionResultBanner from './ElectionResultBanner';
 import { rovingKeyDown } from './ui';
 
 /** Short tab names (the state legislative tracker's style). */
@@ -54,6 +56,7 @@ interface Props {
 export default function MeasureDashboard({ slug }: Props) {
   const router = useRouter();
   const measure = getMeasure(slug);
+  const { result } = getContent(slug);
   const tabs = measureTabs(slug);
   const [tab, setTab] = useState<TabId>('overview');
   // A districts link on a measure without districts opens the overview with a note saying why.
@@ -129,6 +132,8 @@ export default function MeasureDashboard({ slug }: Props) {
             </div>
             <DownloadResults slug={measure.slug} file="metrics.csv" label="Download CSV" />
           </div>
+          {/* Above the tabs, so it shows on every tab. */}
+          {result && <ElectionResultBanner result={result} className="mb-5" />}
         </div>
         <div className="border-t border-gray-200 bg-gray-50">
           <div

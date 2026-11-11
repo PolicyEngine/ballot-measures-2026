@@ -1,12 +1,13 @@
 import Breadcrumb from './Breadcrumb';
+import ElectionResultBanner, { CALCULATOR_NOTES } from './ElectionResultBanner';
 import type { LinkedTool } from '@/content/linkedTools';
 import { formatLongDate } from '@/lib/format';
 import { ELECTION_DATE } from '@/lib/registry';
 
 /**
  * A measure PolicyEngine covers with a separate calculator: the measure
- * pages' white title block, one intro line, then the calculator embedded at
- * full width. No tabs.
+ * pages' white title block (with the election result once it is confirmed),
+ * one intro line, then the calculator embedded at full width. No tabs.
  */
 export default function LinkedToolPage({ tool }: { tool: LinkedTool }) {
   return (
@@ -20,6 +21,7 @@ export default function LinkedToolPage({ tool }: { tool: LinkedTool }) {
           <p className="mt-1 text-sm text-gray-600">
             {tool.shortTitle} · {formatLongDate(ELECTION_DATE)}
           </p>
+          {tool.result && <ElectionResultBanner result={tool.result} notes={CALCULATOR_NOTES} className="mt-5" />}
         </div>
       </div>
 

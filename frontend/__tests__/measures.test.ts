@@ -170,8 +170,24 @@ describe('measure content', () => {
         ...c.officialEstimateProse,
         c.householdNote,
         ...c.context.flatMap((s) => s.body),
+        c.result?.analysisNote ?? '',
       ].join(' ');
       expect(ownWords).not.toMatch(banned);
+    }
+  });
+
+  it('records only the confirmed election results, all on election day', () => {
+    expect(Object.fromEntries(MEASURE_SLUGS.map((slug) => [slug, getContent(slug).result?.outcome ?? null]))).toEqual({
+      'co-amendment-87': 'approved',
+      'co-prop-nn': 'approved',
+      'ca-prop-3': 'approved',
+      'wa-i-645': 'rejected',
+      'nd-measure-2': 'rejected',
+      'sd-amendment-i': 'rejected',
+    });
+    for (const slug of MEASURE_SLUGS) {
+      const result = getContent(slug).result;
+      if (result) expect(result.date).toBe(REGISTRY.election_date);
     }
   });
 

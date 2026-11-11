@@ -12,6 +12,7 @@ const HB1013_URL = 'https://ndlegis.gov/assembly/69-2025/regular/documents/25-01
 
 const content: MeasureContent = {
   slug: 'nd-measure-2',
+  result: { outcome: 'rejected', date: '2026-11-03' },
   description:
     'North Dakota Constitutional Measure No. 2 would require every public school to serve one free breakfast and one free lunch each school day to all enrolled students, starting in the 2027-28 school year.',
   measureType: 'Citizen-initiated constitutional amendment',

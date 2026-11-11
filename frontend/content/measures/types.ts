@@ -56,8 +56,25 @@ export interface BallotText {
   source: Reference;
 }
 
+/**
+ * How voters decided a measure, for the banner under the page title and the
+ * tag in the landing popup. Leave it out until the result is confirmed.
+ */
+export interface ElectionResult {
+  outcome: 'approved' | 'rejected';
+  /** Election day, ISO date, e.g. "2026-11-03". */
+  date: string;
+  /**
+   * Replaces the default sentence on what the result means for the figures
+   * (components/ElectionResultBanner), e.g. for a measure modeled as a scenario.
+   */
+  analysisNote?: string;
+}
+
 export interface MeasureContent {
   slug: string;
+  /** The election result once it is confirmed; no banner while it is left out. */
+  result?: ElectionResult;
   /** One sentence for the overview intro, the landing card and the page metadata. */
   description: string;
   /** How the measure reaches the ballot, e.g. "Citizen-initiated constitutional amendment". */
