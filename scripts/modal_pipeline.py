@@ -3,7 +3,7 @@
 Every number on the dashboard's statewide, distributional and district
 views comes from this file:
 
-1. ``build_subsets`` (one 64 GB container) downloads the national Populace
+1. ``build_subsets`` (one 64 GB container) downloads the national Microcosm
    ACS local-area file once, writes a subset for each state with a measure
    (CO, CA, WA, ND, SD) and gives every SPM unit an adult. Subsets are
    cached on the results Volume under ``cache/``, keyed by dataset revision.
@@ -51,9 +51,9 @@ if str(REPO_ROOT) not in sys.path:
 
 from ballot_calc.config import (
     DEFAULT_REVISION,
+    MICROCOSM_FILENAME,
+    MICROCOSM_REPO,
     PIPELINE_APP_NAME,
-    POPULACE_FILENAME,
-    POPULACE_REPO,
     RESULTS_VOLUME_NAME,
     resolve_revision,
 )
@@ -494,9 +494,9 @@ def run_all(revision: str = DEFAULT_REVISION, only: str = "") -> dict:
     manifest = {
         "generated_at_utc": datetime.now(UTC).isoformat(),
         "pin": POLICYENGINE_US_PIN,
-        "dataset_repo": POPULACE_REPO,
+        "dataset_repo": MICROCOSM_REPO,
         "dataset_revision": revision,
-        "dataset_filename": POPULACE_FILENAME,
+        "dataset_filename": MICROCOSM_FILENAME,
         "registry_hash": registry_hash(),
         # Income added to SPM resources for the poverty metrics, and why.
         "spm_resources_adjustment": SPM_RESOURCES_ADJUSTMENT,

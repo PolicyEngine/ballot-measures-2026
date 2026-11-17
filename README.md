@@ -43,7 +43,7 @@ estimates and the North Dakota participation inputs. Impact everywhere is
 
 - **Model**: `policyengine-us==2.72.4` (pinned in `pyproject.toml`,
   `ballot_calc/config.py` and the Modal scripts; a test keeps them equal).
-- **Data**: the Populace ACS local-area national file
+- **Data**: the Microcosm ACS local-area national file
   (`policyengine/populace-us`, `populace_us_2024_acs_local.h5`, revision
   `populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z`).
 - **Subsets**: one 64 GB Modal container loads the national tables once and

@@ -1,4 +1,4 @@
-"""Per-state subsets of the national Populace ACS local-area file.
+"""Per-state subsets of the national Microcosm ACS local-area file.
 
 Each measure changes taxes or benefits in one state, so the pipeline
 simulates that state's households only. ``build_state_subsets`` opens the
@@ -25,7 +25,7 @@ import os
 import numpy as np
 import pandas as pd
 
-from .config import POPULACE_FILENAME, POPULACE_REPO, resolve_revision
+from .config import MICROCOSM_FILENAME, MICROCOSM_REPO, resolve_revision
 from .states import STATES, StateGeo
 
 ENTITY_TABLES = (
@@ -65,10 +65,10 @@ def load_dataset_path(revision: str | None = None) -> str:
     from huggingface_hub import hf_hub_download
 
     return hf_hub_download(
-        repo_id=POPULACE_REPO,
+        repo_id=MICROCOSM_REPO,
         repo_type="dataset",
         revision=resolve_revision(revision),
-        filename=POPULACE_FILENAME,
+        filename=MICROCOSM_FILENAME,
     )
 
 

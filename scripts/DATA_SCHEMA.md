@@ -106,7 +106,7 @@ the same current-law amounts:
 
 Census money income counts all three. The fourth, cancelled debt
 (`debt_relief`), is not cash income and is not added (it is 0 in the
-Populace data). Without the adjustment, some households with AGI above
+Microcosm data). Without the adjustment, some households with AGI above
 $500k count as poor and cross the line when their state income tax changes:
 CA Proposition 3 "pushed" 1,707 people into poverty, WA I-645 "lifted" 414
 out, and CO Amendment 87 raised deep poverty 0.38%. With it, none of those
@@ -268,7 +268,7 @@ SD `-inf` income limit are the strings `"Infinity"` / `"-Infinity"`.
 |---|---|
 | `generated_at_utc` | When `run_all` wrote the files |
 | `pin` | policyengine-us pin used |
-| `dataset_repo`, `dataset_revision`, `dataset_filename` | Populace source file |
+| `dataset_repo`, `dataset_revision`, `dataset_filename` | Microcosm source file |
 | `registry_hash` | Hash of the registry's computational fields; must equal `measures.json`'s |
 | `measure_years`, `missing_measure_years`, `complete`, `failures` | Coverage of the run |
 | `files` | Files written |
@@ -282,7 +282,7 @@ SD `-inf` income limit are the strings `"Infinity"` / `"-Infinity"`.
 
 ## Dataset
 
-Populace ACS local-area national file (`policyengine/populace-us`,
+Microcosm ACS local-area national file (`policyengine/populace-us`,
 `populace_us_2024_acs_local.h5`), default revision
 `populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z`. State subsets
 keep each state's households with all their people and group units and

@@ -85,7 +85,7 @@ def test_districts_only_in_co_ca_wa():
             assert all(g // 100 == geo.fips for g in geo.district_geoids)
             assert geo.district_label(geo.district_geoids[0]) == f"{code}-01"
     # At-large states: one geoid, fips x 100 (confirmed in the 2026-10-17
-    # Populace build: ND 3800, SD 4600).
+    # Microcosm build: ND 3800, SD 4600).
     assert STATES["ND"].district_geoids == (3800,)
     assert STATES["SD"].district_geoids == (4600,)
     assert STATES["ND"].district_label(3800) == "ND-AL"
@@ -281,6 +281,18 @@ def test_no_spm_calculator_0_3_1():
 def test_modal_names():
     assert PIPELINE_APP_NAME == "ballot-measures-2026-pipeline"
     assert RESULTS_VOLUME_NAME == "ballot-measures-2026-results"
+
+
+def test_old_dataset_constant_names_still_import():  # compat: populace alias, remove after 2.1.0
+    from ballot_calc.config import (  # compat: populace alias, remove after 2.1.0
+        MICROCOSM_FILENAME,  # compat: populace alias, remove after 2.1.0
+        MICROCOSM_REPO,  # compat: populace alias, remove after 2.1.0
+        POPULACE_FILENAME,  # compat: populace alias, remove after 2.1.0
+        POPULACE_REPO,  # compat: populace alias, remove after 2.1.0
+    )  # compat: populace alias, remove after 2.1.0
+
+    assert POPULACE_REPO == MICROCOSM_REPO  # compat: populace alias, remove after 2.1.0
+    assert POPULACE_FILENAME == MICROCOSM_FILENAME  # compat: populace alias, remove after 2.1.0
 
 
 def test_pipeline_scripts_are_ascii():

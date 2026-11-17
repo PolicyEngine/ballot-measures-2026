@@ -5,7 +5,7 @@ where survey-based microdata are thin. The pipeline tabulates each state's
 filers in the dataset's own year (``FILER_YEAR``) and compares them with
 IRS SOI Historic Table 2 for the latest published tax year (``SOI``).
 
-The Populace build has more $1M+ filers than SOI but less income above $1M
+The Microcosm build has more $1M+ filers than SOI but less income above $1M
 (fewer very high incomes), so the coverage-scaled revenue change scales:
 
 - the $500k-$1M band's change by SOI / model AGI in that band;
