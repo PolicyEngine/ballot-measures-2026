@@ -283,6 +283,18 @@ def test_modal_names():
     assert RESULTS_VOLUME_NAME == "ballot-measures-2026-results"
 
 
+def test_old_dataset_constant_names_still_import():  # compat: populace alias, remove after 2.1.0
+    from ballot_calc.config import (  # compat: populace alias, remove after 2.1.0
+        MICROCOSM_FILENAME,  # compat: populace alias, remove after 2.1.0
+        MICROCOSM_REPO,  # compat: populace alias, remove after 2.1.0
+        POPULACE_FILENAME,  # compat: populace alias, remove after 2.1.0
+        POPULACE_REPO,  # compat: populace alias, remove after 2.1.0
+    )  # compat: populace alias, remove after 2.1.0
+
+    assert POPULACE_REPO == MICROCOSM_REPO  # compat: populace alias, remove after 2.1.0
+    assert POPULACE_FILENAME == MICROCOSM_FILENAME  # compat: populace alias, remove after 2.1.0
+
+
 def test_pipeline_scripts_are_ascii():
     """Windows consoles crash on non-ASCII prints from the Modal driver."""
     for path in [SCRIPTS / "modal_pipeline.py", SCRIPTS / "modal_tests.py"]:

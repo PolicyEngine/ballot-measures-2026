@@ -19,6 +19,8 @@ POLICYENGINE_US_PIN = "policyengine-us==2.72.4"
 # state geography) on the Hugging Face dataset repo.
 MICROCOSM_REPO = "policyengine/populace-us"
 MICROCOSM_FILENAME = "populace_us_2024_acs_local.h5"
+POPULACE_REPO = MICROCOSM_REPO  # compat: populace alias, remove after 2.1.0
+POPULACE_FILENAME = MICROCOSM_FILENAME  # compat: populace alias, remove after 2.1.0
 DATASET_REVISIONS = {
     # 2026-10-17 release. It binds state x AGI-band SOI targets
     # (microcosm#1102), which the top-bracket measures (CO, CA, WA) need.

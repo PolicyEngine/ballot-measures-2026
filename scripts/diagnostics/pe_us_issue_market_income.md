@@ -14,7 +14,7 @@ Suggested title (only if filed separately):
 SPM resources omit partnership/S-corp income and farm rent: high-AGI units count as poor and state tax reforms flip their poverty status
 -->
 
-Related to #9919: same root cause, with state-level evidence from scoring the 2026 state ballot measures. The figures use policyengine-us 2.60.4, the Microcosm ACS local-area build `populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z`, and state subsets of it. The code is unchanged on `main` as of 7b729556cb (2026-10-23).
+Related to #9919: same root cause, with state-level evidence from scoring the 2026 state ballot measures. The figures use policyengine-us 2.60.4, the Populace ACS local-area build `populace-us-2024-buildo-acs-local-766b7c7-20261017T030317Z`, and state subsets of it. The code is unchanged on `main` as of 7b729556cb (2026-10-23).
 
 ## The inconsistency
 

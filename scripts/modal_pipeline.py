@@ -51,9 +51,9 @@ if str(REPO_ROOT) not in sys.path:
 
 from ballot_calc.config import (
     DEFAULT_REVISION,
-    PIPELINE_APP_NAME,
     MICROCOSM_FILENAME,
     MICROCOSM_REPO,
+    PIPELINE_APP_NAME,
     RESULTS_VOLUME_NAME,
     resolve_revision,
 )
