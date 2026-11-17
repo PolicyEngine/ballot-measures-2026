@@ -44,7 +44,7 @@ POLICIES = ("baseline", "reform")
 # subtracted in full. Census money income counts all three, so the
 # reducers add them back to SPM resources (metrics/__init__.py). The fourth
 # omitted source, debt_relief (cancelled debt), is not cash income and is
-# not added back; it is not in the Populace data (always 0), so passes
+# not added back; it is not in the Microcosm data (always 0), so passes
 # saved while this tuple still listed it hold the same sums.
 SPM_OMITTED_SOURCES = (
     "partnership_s_corp_income",

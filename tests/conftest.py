@@ -186,7 +186,7 @@ def synthetic_passes(slug: str, seed: int = 0) -> tuple[dict, dict]:
 
 def synthetic_filers(state: str) -> dict:
     """A filer tabulation (``top_tail.tabulate``) with 2x SOI's $1M+ returns
-    and half its income above $1M, like the Populace build."""
+    and half its income above $1M, like the Microcosm build."""
     soi = SOI[state]
     returns = 2 * soi["returns_1m_plus"]
     above = 0.5 * soi["agi_above_1m"]

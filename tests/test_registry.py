@@ -85,7 +85,7 @@ def test_districts_only_in_co_ca_wa():
             assert all(g // 100 == geo.fips for g in geo.district_geoids)
             assert geo.district_label(geo.district_geoids[0]) == f"{code}-01"
     # At-large states: one geoid, fips x 100 (confirmed in the 2026-10-17
-    # Populace build: ND 3800, SD 4600).
+    # Microcosm build: ND 3800, SD 4600).
     assert STATES["ND"].district_geoids == (3800,)
     assert STATES["SD"].district_geoids == (4600,)
     assert STATES["ND"].district_label(3800) == "ND-AL"

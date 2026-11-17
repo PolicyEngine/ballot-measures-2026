@@ -858,7 +858,7 @@ export default function ValidationMethodology({ measure, year, onYearChange }: P
         <Callout>
           PolicyEngine&apos;s microsimulation model,{' '}
           <ExternalLink href="https://github.com/PolicyEngine/policyengine-us">policyengine-us</ExternalLink>
-          , runs on a sample of US households (Populace), weighted to match administrative totals
+          , runs on a sample of US households (Microcosm), weighted to match administrative totals
           and assigned to states and congressional districts.
         </Callout>
       </section>

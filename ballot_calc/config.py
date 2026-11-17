@@ -1,7 +1,7 @@
 """Pins, dataset revisions and Modal names shared across the repository.
 
 Every number in the dashboard comes from one policyengine-us release and
-one Populace dataset revision, both recorded here and in each run's
+one Microcosm dataset revision, both recorded here and in each run's
 ``manifest.json``.
 """
 
@@ -15,10 +15,10 @@ from __future__ import annotations
 # scripts/modal_household_api.py; tests/test_registry.py keeps them equal.
 POLICYENGINE_US_PIN = "policyengine-us==2.72.4"
 
-# Populace ACS local-area national file (PUMA-assigned CD-119, county and
+# Microcosm ACS local-area national file (PUMA-assigned CD-119, county and
 # state geography) on the Hugging Face dataset repo.
-POPULACE_REPO = "policyengine/populace-us"
-POPULACE_FILENAME = "populace_us_2024_acs_local.h5"
+MICROCOSM_REPO = "policyengine/populace-us"
+MICROCOSM_FILENAME = "populace_us_2024_acs_local.h5"
 DATASET_REVISIONS = {
     # 2026-10-17 release. It binds state x AGI-band SOI targets
     # (microcosm#1102), which the top-bracket measures (CO, CA, WA) need.

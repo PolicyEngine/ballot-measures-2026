@@ -100,7 +100,7 @@ describe('ValidationMethodology', () => {
     expect(pamphlet).toHaveTextContent('Model before adjustment to the Department');
     // The survey weights are described in plain words; "calibrated" appears nowhere
     expect(screen.getByText(/from survey households weighted to\s+match administrative totals/)).toBeInTheDocument();
-    expect(screen.getByText(/runs on a sample of US households \(Populace\), weighted to match administrative totals/)).toBeInTheDocument();
+    expect(screen.getByText(/runs on a sample of US households \(Microcosm\), weighted to match administrative totals/)).toBeInTheDocument();
     expect(screen.queryByText(/calibrat/i)).toBeNull();
     expect(screen.getByText(/After adjustment to enrollment, Medicaid/)).toBeInTheDocument();
   });
